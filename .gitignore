@@ -73,5 +73,7 @@ crashlytics-build.properties
 
 # ADDED
 .DS_Store
+.vscode
+.idea
 /[Aa]ssets/_[Ii]mports/*
 /[Aa]ssets/_[Ii]mports.meta
