@@ -1,0 +1,147 @@
+using System;
+using System.Collections.Generic;
+public enum TileTerrain { Void, Default }
+
+[Serializable]
+public class Grid2D
+{
+    // Initial Parameters (Static)
+    public int X { get; private set; }
+    public int Y { get; private set; }
+    public int UnitCostTotal { get; private set; }
+    public int[] EntityStartPositions { get; private set; }
+
+    // State
+    public TileTerrain[] TileTerrain { get; private set; }
+    public Entity[] Entities { get; private set; }
+    public int Turn { get; private set; }
+
+    public Grid2D(MapData mapData)
+    {
+        Init(mapData.X, mapData.Y, mapData.UnitCostTotal, mapData.EntityStartPositions, mapData.TileTerrain);
+    }
+
+    public void Init(int x, int y, int unitCostTotal, List<int> entityStartPositions, List<TileTerrain> tileTerrain)
+    {
+        X = x;
+        Y = y;
+        UnitCostTotal = unitCostTotal;
+        EntityStartPositions = Util.ListToFixedSizeArray(entityStartPositions, GetLength());
+        TileTerrain = Util.ListToFixedSizeArray(tileTerrain, GetLength());
+    }
+
+    public int GetLength()
+    {
+        return X * Y;
+    }
+
+    public Entity GetEntity(int position1D)
+    {
+        if (!IsValidPosition(position1D))
+        {
+            return default;
+        }
+        return Entities[position1D];
+    }
+
+    public Entity GetEntity(Tuple<int, int> position2D)
+    {
+        return GetEntity(ToPosition1D(position2D));
+    }
+
+    public HashSet<int> GetOccupiedTilesPosition1DSet()
+    {
+        HashSet<int> indices = new();
+        for (int i = 0; i < GetLength(); i++)
+        {
+            if (Entities[i] != null)
+            {
+                indices.Add(i);
+            }
+        }
+        return indices;
+    }
+
+    public bool SetTileTerrain(int position1D, TileTerrain tileTerrain)
+    {
+        if (IsValidPosition(position1D))
+        {
+            TileTerrain[position1D] = tileTerrain;
+            return true;
+        }
+        return false;
+    }
+
+    public bool SetEntity(int position1D, Entity entity)
+    {
+        if (IsValidPosition(position1D))
+        {
+            Entities[position1D] = entity;
+            return true;
+        }
+        return false;
+    }
+
+    public bool MoveEntity(int startPosition1D, int targetPosition1D)
+    {
+        if (IsValidPosition(startPosition1D) && IsValidPosition(targetPosition1D))
+        {
+            return SetEntity(targetPosition1D, GetEntity(startPosition1D)) && SetEntity(startPosition1D, null);
+        }
+        return false;
+    }
+
+    public Tuple<int, int> ToPosition2D(int position1D)
+    {
+        if (!IsValidPosition(position1D)) return null;
+        return new Tuple<int, int>(position1D % X, position1D / X);
+    }
+
+    public int ToPosition1D(Tuple<int, int> position2D)
+    {
+        int position1D = position2D.Item2 * X + position2D.Item1;
+        if (!IsValidPosition(position1D)) return -1;
+        return position1D;
+    }
+
+    public List<int> ToPosition1DList(List<Tuple<int, int>> position2DList)
+    {
+        List<int> position1Dlist = new List<int>();
+        foreach (Tuple<int, int> position2D in position2DList)
+        {
+            position1Dlist.Add(ToPosition1D(position2D));
+        }
+        return position1Dlist;
+    }
+
+    public bool IsValidPosition(int position1D)
+    {
+        return position1D >= 0 && position1D <= X * Y;
+    }
+
+    public bool IsValidPosition(Tuple<int, int> position2D)
+    {
+        return IsValidPosition(ToPosition1D(position2D));
+    }
+
+
+    public bool ValidateStartPositions(List<int> startPositions)
+    {
+        return startPositions.Count == GetLength();
+    }
+
+    public bool ValidateUnitList(Unit[] unitList)
+    {
+        for (int i = 0; i < unitList.Length; i++)
+        {
+            Unit unit = unitList[i];
+            if (unit == null || unit.Id != i) return false;
+        }
+        return true;
+    }
+
+    public bool ValidateEntities(Entity[] entities)
+    {
+        return entities.Length == GetLength();
+    }
+}
