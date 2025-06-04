@@ -59,9 +59,12 @@ public class GridManager : MonoBehaviour
     }
     
     private void HandleMousePosition()
+    
+    
+    
     {
-        // Vector3 mouseWorldPosition = _cinemachineCameraHandler.GetMouseWorldPosition();
-        // Vector3Int gridPosition = _grid.WorldToCell(mouseWorldPosition);
+        Vector3 mouseWorldPosition = EngineUtil.GetMouseWorldPosition();
+        Vector3Int gridPosition = _grid.WorldToCell(mouseWorldPosition);
         // if (gridPosition.x >= 0 && gridPosition.x < Grid.X && gridPosition.y >= 0 && gridPosition.y < Grid.Y)
         // {
         //     _tileHoverIndicator.gameObject.SetActive(true);

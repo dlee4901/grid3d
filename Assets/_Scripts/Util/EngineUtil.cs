@@ -23,6 +23,14 @@ public static class EngineUtil
         return JsonUtility.FromJson<T>(jsonData);
     }
 
+    public static Vector3 GetMouseWorldPosition()
+    {
+        var camera = Camera.main;
+        if (!camera) return Vector3.zero;
+        var ray = camera.ScreenPointToRay(Input.mousePosition);
+        return Physics.Raycast(ray, out RaycastHit hit) ? hit.point : Vector3.zero;
+    }
+
     public static Vector3 GetMousePosition(bool zeroed=true)
     {
         Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Mouse.current.position.ReadValue());
