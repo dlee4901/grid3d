@@ -23,12 +23,25 @@ public static class EngineUtil
         return JsonUtility.FromJson<T>(jsonData);
     }
 
-    public static Vector3 GetMouseWorldPosition()
+    public static void GetMouseWorldPosition(Camera mainCamera, out Vector3 mouseWorldPosition, out bool error)
     {
-        var camera = Camera.main;
-        if (!camera) return Vector3.zero;
-        var ray = camera.ScreenPointToRay(Input.mousePosition);
-        return Physics.Raycast(ray, out RaycastHit hit) ? hit.point : Vector3.zero;
+        if (!mainCamera)
+        {
+            mouseWorldPosition = Vector3.zero;
+            error = true;
+            return;
+        }
+        var ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+        if (Physics.Raycast(ray, out RaycastHit hit))
+        {
+            mouseWorldPosition = hit.point;
+            error = false;
+        }
+        else
+        {
+            mouseWorldPosition = Vector3.zero;
+            error = true;
+        }
     }
 
     public static Vector3 GetMousePosition(bool zeroed=true)
