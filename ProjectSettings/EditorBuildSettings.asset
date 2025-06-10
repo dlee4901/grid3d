@@ -8,6 +8,10 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/Samples/Epic Online Services Plugin for Unity/4.0.1/Standard Pack
+      _ EOS Plugin for Unity Samples/Scenes/Peer2Peer.unity
+    guid: f0e74d05ae7114d4ba6ea2d6fcd2be54
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: da0b6c840362f45279630dfff3af32ea, type: 3}
   m_UseUCBPForAssetBundles: 0
