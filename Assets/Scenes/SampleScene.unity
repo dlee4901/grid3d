@@ -1347,6 +1347,10 @@ PrefabInstance:
       propertyPath: m_SizeDelta.x
       value: -17
       objectReference: {fileID: 0}
+    - target: {fileID: 5230680486899503332, guid: 80bd3d7ab999d4fdeb934d681df02428, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5440141521294495256, guid: 80bd3d7ab999d4fdeb934d681df02428, type: 3}
       propertyPath: m_AnchorMax.y
       value: 1
@@ -3915,6 +3919,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a5972c996ca246beb57ea8cab5020301, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _sessionManager: {fileID: 0}
+  _startHostButton: {fileID: 0}
+  _startClientButton: {fileID: 0}
+  _codeText: {fileID: 0}
+  _startGameButton: {fileID: 0}
+  _codeInputField: {fileID: 0}
+  _joinGameButton: {fileID: 0}
 --- !u!1001 &804843267
 PrefabInstance:
   m_ObjectHideFlags: 0
