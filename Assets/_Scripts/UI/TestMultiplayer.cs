@@ -1,59 +1,80 @@
 //using Unity.Netcode;
+
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class TestMultiplayer : MonoBehaviour
 {
-    // [SerializeField] private Button _startServer;
-    // [SerializeField] private Button _startClient;
-    // [SerializeField] private Button _startHost;
-    // [SerializeField] private Button _startGameButton;
-    //
-    // // Start is called once before the first execution of Update after the MonoBehaviour is created
-    // void Start()
-    // {
-    //     EnableUI(1);
-    //     _startServer.onClick.AddListener(() => {
-    //         NetworkManager.Singleton.StartServer();
-    //         Debug.Log("TestMultiplayer StartServer");
-    //         EnableUI(2);
-    //     });
-    //     _startClient.onClick.AddListener(() => {
-    //         NetworkManager.Singleton.StartClient();
-    //         EnableUI(0);
-    //     });
-    //     _startHost.onClick.AddListener(() => {
-    //         NetworkManager.Singleton.StartHost();
-    //         EnableUI(2);
-    //     });
-    //     _startGameButton.onClick.AddListener(() => {
-    //         EventManager.Singleton.StartGame();
-    //         EnableUI(0);
-    //     });
-    // }
-    //
-    // private void EnableUI(int level)
-    // {
-    //     if (level == 1)
-    //     {
-    //         _startServer.gameObject.SetActive(true);
-    //         _startClient.gameObject.SetActive(true);
-    //         _startHost.gameObject.SetActive(true);
-    //         _startGameButton.gameObject.SetActive(false);
-    //     }
-    //     else if (level == 2)
-    //     {
-    //         _startServer.gameObject.SetActive(false);
-    //         _startClient.gameObject.SetActive(false);
-    //         _startHost.gameObject.SetActive(false);
-    //         _startGameButton.gameObject.SetActive(true);
-    //     }
-    //     else
-    //     {
-    //         _startServer.gameObject.SetActive(false);
-    //         _startClient.gameObject.SetActive(false);
-    //         _startHost.gameObject.SetActive(false);
-    //         _startGameButton.gameObject.SetActive(false);
-    //     }
-    // }
+    [SerializeField] private SessionManager _sessionManager;
+    
+    [Header("Start")]
+    [SerializeField] private Button _startHostButton;
+    [SerializeField] private Button _startClientButton;
+    
+    [Header("Host Page")]
+    [SerializeField] private TMP_Text _codeText;
+    [SerializeField] private Button _startGameButton;
+
+    [Header("Client Page")]
+    [SerializeField] private TMP_InputField _codeInputField;
+    [SerializeField] private Button _joinGameButton;
+    
+    private enum TestMultiplayerPage {Hide, Start, Host, Client}
+    
+    void Start()
+    {
+        ToggleUI(TestMultiplayerPage.Start);
+        _startHostButton.onClick.AddListener(() => {
+            _sessionManager.StartSessionAsHost();
+            ToggleUI(TestMultiplayerPage.Host);
+        });
+        _startClientButton.onClick.AddListener(() => {
+            ToggleUI(TestMultiplayerPage.Client);
+        });
+        _startGameButton.onClick.AddListener(() => {
+            EventManager.Singleton.StartGame();
+            ToggleUI(TestMultiplayerPage.Hide);
+        });
+        _joinGameButton.onClick.AddListener(() => {
+            _sessionManager.JoinSessionAsClient(_codeInputField.text);
+            ToggleUI(TestMultiplayerPage.Hide);
+        });
+    }
+    
+    private void ToggleUI(TestMultiplayerPage page)
+    {
+        if (page == TestMultiplayerPage.Start)
+        {
+            gameObject.SetActive(true);
+            _startClientButton.gameObject.SetActive(true);
+            _startHostButton.gameObject.SetActive(true);
+            _codeText.gameObject.SetActive(false);
+            _startGameButton.gameObject.SetActive(false);
+            _codeInputField.gameObject.SetActive(false);
+            _joinGameButton.gameObject.SetActive(false);
+        }
+        else if (page == TestMultiplayerPage.Host)
+        {
+            _startClientButton.gameObject.SetActive(false);
+            _startHostButton.gameObject.SetActive(false);
+            _codeText.gameObject.SetActive(true);
+            _startGameButton.gameObject.SetActive(true);
+            _codeInputField.gameObject.SetActive(false);
+            _joinGameButton.gameObject.SetActive(false);
+        }
+        else if (page == TestMultiplayerPage.Client)
+        {
+            _startClientButton.gameObject.SetActive(false);
+            _startHostButton.gameObject.SetActive(false);
+            _codeText.gameObject.SetActive(false);
+            _startGameButton.gameObject.SetActive(false);
+            _codeInputField.gameObject.SetActive(true);
+            _joinGameButton.gameObject.SetActive(true);
+        }
+        else
+        {
+            gameObject.SetActive(false);
+        }
+    }
 }
