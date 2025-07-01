@@ -6,6 +6,18 @@ using Unity.Services.Multiplayer;
 
 public class SessionManager : MonoBehaviour
 {
+    public event EventHandler<OnCreateJoinCodeArgs> OnCreateJoinCode;
+
+    public class OnCreateJoinCodeArgs : EventArgs
+    {
+        public string JoinCode;
+    }
+
+    private void CreateJoinCode(string joinCode)
+    {
+        OnCreateJoinCode?.Invoke(this, new OnCreateJoinCodeArgs { JoinCode = joinCode });
+    }
+
     private async void Start()
     {
 
@@ -20,7 +32,7 @@ public class SessionManager : MonoBehaviour
             Debug.LogException(e);
         }
     }
-    
+
     public async void StartSessionAsHost()
     {
         try
@@ -31,6 +43,7 @@ public class SessionManager : MonoBehaviour
             }.WithRelayNetwork(); // or WithDistributedAuthorityNetwork() to use Distributed Authority instead of Relay
             var session = await MultiplayerService.Instance.CreateSessionAsync(options);
             Debug.Log($"Session {session.Id} created! Join code: {session.Code}");
+            CreateJoinCode(session.Code);
         }
         catch (Exception e)
         {

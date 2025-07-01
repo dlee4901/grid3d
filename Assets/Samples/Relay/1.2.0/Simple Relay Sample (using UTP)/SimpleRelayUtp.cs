@@ -1,4 +1,4 @@
-﻿// using System;
+// using System;
 // using System.Collections.Generic;
 // using System.Linq;
 // using Unity.Collections;
@@ -6,19 +6,20 @@
 // using Unity.Networking.Transport.Relay;
 // using Unity.Services.Authentication;
 // using Unity.Services.Core;
-// using Unity.Services.Relay;
-// using Unity.Services.Relay.Models;
+// //using Unity.Services.Relay;
+// //using Unity.Services.Relay.Models;
 // using UnityEngine;
 // using UnityEngine.Assertions;
 // using UnityEngine.EventSystems;
 // using UnityEngine.UI;
+// using Unity.Services.Multiplayer;
 //
 // /// <summary>
 // /// A simple sample showing how to use the Relay Allocation package with the Unity Transport Protocol (UTP).
 // /// It demonstrates how UTP can be used as either Hosts or Joining Players, covering the entire connection flow.
 // /// As a bonus, a simple demonstration of Relaying messages from Host to Players, and vice versa, is included.
 // /// </summary>
-// public class RelayManager : MonoBehaviour
+// public class SimpleRelayUtp : MonoBehaviour
 // {
 //     // GUI GameObjects
 //

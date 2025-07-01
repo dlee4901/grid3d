@@ -24,22 +24,31 @@ public class TestMultiplayer : MonoBehaviour
     
     void Start()
     {
+        _sessionManager.OnCreateJoinCode += SessionManager_OnCreateJoinCode;
         ToggleUI(TestMultiplayerPage.Start);
-        _startHostButton.onClick.AddListener(() => {
+        _startHostButton.onClick.AddListener(() =>
+        {
+            ToggleUI(TestMultiplayerPage.Hide);
             _sessionManager.StartSessionAsHost();
-            ToggleUI(TestMultiplayerPage.Host);
         });
         _startClientButton.onClick.AddListener(() => {
             ToggleUI(TestMultiplayerPage.Client);
         });
         _startGameButton.onClick.AddListener(() => {
             EventManager.Singleton.StartGame();
-            ToggleUI(TestMultiplayerPage.Hide);
+            gameObject.SetActive(false);
         });
         _joinGameButton.onClick.AddListener(() => {
             _sessionManager.JoinSessionAsClient(_codeInputField.text);
-            ToggleUI(TestMultiplayerPage.Hide);
+            gameObject.SetActive(false);
         });
+    }
+
+    private void SessionManager_OnCreateJoinCode(object sender, SessionManager.OnCreateJoinCodeArgs e)
+    {
+        _codeText.text = e.JoinCode;
+        Debug.Log("test");
+        ToggleUI(TestMultiplayerPage.Host);
     }
     
     private void ToggleUI(TestMultiplayerPage page)
@@ -71,6 +80,15 @@ public class TestMultiplayer : MonoBehaviour
             _startGameButton.gameObject.SetActive(false);
             _codeInputField.gameObject.SetActive(true);
             _joinGameButton.gameObject.SetActive(true);
+        }
+        else if (page == TestMultiplayerPage.Hide)
+        {
+            _startClientButton.gameObject.SetActive(false);
+            _startHostButton.gameObject.SetActive(false);
+            _codeText.gameObject.SetActive(false);
+            _startGameButton.gameObject.SetActive(false);
+            _codeInputField.gameObject.SetActive(false);
+            _joinGameButton.gameObject.SetActive(false);
         }
         else
         {
