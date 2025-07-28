@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -7,6 +8,21 @@ public class GridManager : MonoBehaviour
     [SerializeField] private LineRenderer _selectionOutline;
     [SerializeField] private GameObject _gridLines;
     [SerializeField] private Grid _grid;
+
+    [Header("Test Visuals")]
+    [SerializeField] private GameObjectList _testTileTerrainVisuals;
+    
+    [Header("Test Map Parameters")]
+    [SerializeField] private string _testMapName;
+    [SerializeField] private int _testMapX;
+    [SerializeField] private int _testMapY;
+    [SerializeField] private int _testMapPlayerCount;
+    [SerializeField] private int _testMapUnitCostTotal;
+    
+    [Header("Test Team Parameters")]
+    [SerializeField] private string _testTeamName;
+    [SerializeField] private List<int> _testTeamStartPositions;
+    [SerializeField] private List<int> _testTeamUnitIds;
     
     private Grid2D _grid2D;
     
@@ -18,7 +34,8 @@ public class GridManager : MonoBehaviour
     {
         _mainCamera = Camera.main;
         _selectAction = InputSystem.actions.FindAction("Player/Select");
-        LoadMap();
+        _grid.gameObject.SetActive(true);
+        LoadMapData();
     }
 
     // Update is called once per frame
@@ -31,53 +48,41 @@ public class GridManager : MonoBehaviour
     {
         return new Vector2(_grid2D.X, _grid2D.Y);
     }
-
-    private void LoadMap(MapData mapData=null)
+    
+    private void LoadMapData(MapData mapData=null)
     {
-        mapData ??= CreateTestData();
+        mapData ??= CreateTestMapData(_testMapName, _testMapX, _testMapY, _testMapPlayerCount, _testMapUnitCostTotal);
         _grid2D = new Grid2D(mapData);
         RenderGrid(_grid2D.X, _grid2D.Y);
     }
     
-    private static MapData CreateTestData()
+    private void LoadTeamData(TeamData teamData = null)
     {
-        return new MapData
+        teamData ??= CreateTestTeamData(_testTeamName, _testMapName, _testTeamStartPositions, _testTeamUnitIds);
+        
+    }
+    
+    private static MapData CreateTestMapData(string testMapName="Test Map", int testMapX = 8, int testMapY = 8, int testMapPlayerCount = 2, int testUnitCostTotal = 16)
+    {
+        var testEntityStartPositions = new List<int>();
+        for (var i = 0; i < testMapX; i++)
         {
-            X = 10,
-            Y = 10,
-            UnitCostTotal = 20, 
-            EntityStartPositions = new List<int>{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                -2, -2, -2, -2, -2, -2, -2, -2, -2, -2,
-                -2, -2, -2, -2, -2, -2, -2, -2, -2, -2},
-            TileTerrain = new List<TileTerrain>()
-        };
-        // return new MapData
-        // {
-        //     X = 8,
-        //     Y = 8,
-        //     UnitCostTotal = 16, 
-        //     EntityStartPositions = new List<int>{-1, -1, -1, -1, -1, -1, -1, -1, 
-        //         -1, -1, -1, -1, -1, -1, -1, -1,
-        //         0, 0, 0, 0, 0, 0, 0, 0,
-        //         0, 0, 0, 0, 0, 0, 0, 0,
-        //         0, 0, 0, 0, 0, 0, 0, 0,
-        //         0, 0, 0, 0, 0, 0, 0, 0,
-        //         -2, -2, -2, -2, -2, -2, -2, -2,
-        //         -2, -2, -2, -2, -2, -2, -2, -2},
-        //     TileTerrain = new List<TileTerrain>()
-        // };
+            if (i == 0) testEntityStartPositions.AddRange(Enumerable.Repeat(-1, testMapY).ToList());
+            else if (i == testMapX - 1) testEntityStartPositions.AddRange(Enumerable.Repeat(-2, testMapY).ToList());
+            else testEntityStartPositions.AddRange(Enumerable.Repeat(0, testMapY).ToList());
+        }
+        var testTileTerrain = Enumerable.Repeat(TileTerrain.Default, testMapX * testMapY).ToList();
+        return new MapData(testMapName, testMapX, testMapY, testMapPlayerCount, testUnitCostTotal, testEntityStartPositions, testTileTerrain);
+    }
+    
+    private static TeamData CreateTestTeamData(string testTeamName="Test Team", string testMapName="Test Map", List<int> testTeamStartPositions=null, List<int> testTeamUnitIds=null)
+    {
+        return new TeamData(testTeamName, testMapName, testTeamStartPositions, testTeamUnitIds);
     }
 
     private void RenderGrid(int x, int y)
     {
-        Debug.Log(new Vector3(x, 0, y));
+        _gridLines.SetActive(true);
         _gridLines.transform.position = new Vector3(x/2.0f, 0.01f, y/2.0f);
         _gridLines.transform.localScale = new Vector3(x/10.0f, 1, y/10.0f);
     }

@@ -4,14 +4,16 @@ using System.Collections.Generic;
 [Serializable]
 public class TeamData
 {
-    public string Name { get; set; }
-    public string MapName { get; set; }
-    public Dictionary<int, int> UnitIdPositions { get; set; }
+    public string Name;
+    public string MapName;
+    public List<int> StartPositions;
+    public List<int> UnitIds;
 
-    public TeamData(string name, string mapName, Dictionary<int,int> unitIdPositions)
+    public TeamData(string name, string mapName, List<int> startPositions, List<int> unitIds)
     {
         Name = name;
         MapName = mapName;
-        UnitIdPositions = unitIdPositions;
+        StartPositions = startPositions;
+        UnitIds = unitIds;
     }
 }

@@ -6,28 +6,47 @@ public enum TileTerrain { Void, Default }
 public class Grid2D
 {
     // Initial Parameters (Static)
+    public string Name { get; private set; }
     public int X { get; private set; }
     public int Y { get; private set; }
+    public int PlayerCount { get; private set; }
     public int UnitCostTotal { get; private set; }
-    public int[] EntityStartPositions { get; private set; }
+    public List<int> EntityStartPositions { get; private set; }
 
     // State
-    public TileTerrain[] TileTerrain { get; private set; }
-    public Entity[] Entities { get; private set; }
+    public List<TileTerrain> TileTerrain { get; private set; }
+    public List<Entity> Entities { get; private set; }
     public int Turn { get; private set; }
 
     public Grid2D(MapData mapData)
     {
-        Init(mapData.X, mapData.Y, mapData.UnitCostTotal, mapData.EntityStartPositions, mapData.TileTerrain);
+        Init(mapData.Name, mapData.X, mapData.Y, mapData.PlayerCount, mapData.UnitCostTotal, mapData.EntityStartPositions, mapData.TileTerrain);
     }
 
-    public void Init(int x, int y, int unitCostTotal, List<int> entityStartPositions, List<TileTerrain> tileTerrain)
+    public void Init(string name, int x, int y, int playerCount, int unitCostTotal, List<int> entityStartPositions, List<TileTerrain> tileTerrain)
     {
+        Name = name;
         X = x;
         Y = y;
+        PlayerCount = playerCount;
         UnitCostTotal = unitCostTotal;
-        EntityStartPositions = Util.ListToFixedSizeArray(entityStartPositions, GetLength());
-        TileTerrain = Util.ListToFixedSizeArray(tileTerrain, GetLength());
+        EntityStartPositions = entityStartPositions;
+        TileTerrain = tileTerrain;
+    }
+
+    public void LoadTeam(TeamData teamData, int player)
+    {
+        var unitIdStartPositions = new Dictionary<int, int>();
+        int unitCostTotal = 0;
+        for (int i = 0; i < teamData.StartPositions.Count; i++)
+        {
+            var startPosition = teamData.StartPositions[i];
+            var unitId = teamData.UnitIds[i];
+            if (EntityStartPositions[startPosition] == -player)
+            {
+                unitIdStartPositions[startPosition] = unitId;
+            }
+        }
     }
 
     public int GetLength()
@@ -128,20 +147,5 @@ public class Grid2D
     public bool ValidateStartPositions(List<int> startPositions)
     {
         return startPositions.Count == GetLength();
-    }
-
-    public bool ValidateUnitList(Unit[] unitList)
-    {
-        for (int i = 0; i < unitList.Length; i++)
-        {
-            Unit unit = unitList[i];
-            if (unit == null || unit.Id != i) return false;
-        }
-        return true;
-    }
-
-    public bool ValidateEntities(Entity[] entities)
-    {
-        return entities.Length == GetLength();
     }
 }
