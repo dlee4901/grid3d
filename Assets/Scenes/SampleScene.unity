@@ -4878,8 +4878,15 @@ MonoBehaviour:
   _selectionOutline: {fileID: 505637005}
   _gridLines: {fileID: 1936289542}
   _grid: {fileID: 947566297}
-  _testX: 5
-  _testY: 5
+  _testTileTerrainVisuals: {fileID: 11400000, guid: f38e3b16cf8f949c8be8029578118ffd, type: 2}
+  _testMapName: test map
+  _testMapX: 5
+  _testMapY: 5
+  _testMapPlayerCount: 2
+  _testMapUnitCostTotal: 10
+  _testTeamName: test team
+  _testTeamStartPositions: 
+  _testTeamUnitIds: 
 --- !u!1 &1006811928
 GameObject:
   m_ObjectHideFlags: 0
