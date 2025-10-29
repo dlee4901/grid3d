@@ -39,7 +39,7 @@ public class GridSelection
         if (Direction == Direction.step || Direction == Direction.stride)
         {
             Dictionary<Tuple<int, int>, bool> visitedTiles = new();
-            for (int i = 0; i < grid.GetLength(); i++) visitedTiles[grid.ToPosition2D(i)] = false;
+            for (int i = 0; i < grid.GetSize(); i++) visitedTiles[grid.ToPosition2D(i)] = false;
             List<Tuple<int, int>> checkTiles = new() {position};
             for (int i = 0; i <= distance; i++)
             {

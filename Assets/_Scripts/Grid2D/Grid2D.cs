@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
+
 public enum TileTerrain { Void, Default }
 
 [Serializable]
@@ -7,15 +9,64 @@ public class Grid2D
 {
     // Initial Parameters (Static)
     public string Name { get; private set; }
-    public int X { get; private set; }
-    public int Y { get; private set; }
-    public int PlayerCount { get; private set; }
+    
     public int UnitCostTotal { get; private set; }
-    public List<int> EntityStartPositions { get; private set; }
+    
+    private int _x;
+    public int X
+    {
+        get => _x; 
+        private set => _x = Math.Clamp(value, 2, 99);
+    }
+
+    private int _y;
+    public int Y
+    {
+        get => _y;
+        private set => _y = Math.Clamp(value, 2, 99);
+    }
+    
+    private int _playerCount;
+    public int PlayerCount
+    {
+        get => _playerCount;
+        private set => _playerCount = Math.Clamp(value, 1, 4);
+    }
+    
+    private List<int> _entityStartPositions;
+    public List<int> EntityStartPositions
+    {
+        get => _entityStartPositions;
+        private set
+        {
+            _entityStartPositions = value;
+            _entityStartPositions.Capacity = GetSize();
+        }
+    }
 
     // State
-    public List<TileTerrain> TileTerrain { get; private set; }
-    public List<Entity> Entities { get; private set; }
+    private List<TileTerrain> _tileTerrain;
+    public List<TileTerrain> TileTerrain
+    {
+        get => _tileTerrain;
+        private set
+        {
+            _tileTerrain = value;
+            _tileTerrain.Capacity = GetSize();
+        }
+    }
+    
+    private List<Entity> _entities;
+    public List<Entity> Entities
+    {
+        get => _entities;
+        private set
+        {
+            _entities = value;
+            _entities.Capacity = GetSize();
+        }
+    }
+    
     public int Turn { get; private set; }
 
     public Grid2D(MapData mapData)
@@ -45,11 +96,12 @@ public class Grid2D
             if (EntityStartPositions[startPosition] == -player)
             {
                 unitIdStartPositions[startPosition] = unitId;
+                unitCostTotal += 1;
             }
         }
     }
 
-    public int GetLength()
+    public int GetSize()
     {
         return X * Y;
     }
@@ -71,7 +123,7 @@ public class Grid2D
     public HashSet<int> GetOccupiedTilesPosition1DSet()
     {
         HashSet<int> indices = new();
-        for (int i = 0; i < GetLength(); i++)
+        for (int i = 0; i < GetSize(); i++)
         {
             if (Entities[i] != null)
             {
@@ -116,11 +168,15 @@ public class Grid2D
         return new Tuple<int, int>(position1D % X, position1D / X);
     }
 
-    public int ToPosition1D(Tuple<int, int> position2D)
+    public int ToPosition1D(int positionX, int positionY)
     {
-        int position1D = position2D.Item2 * X + position2D.Item1;
+        int position1D = positionX * X + positionY;
         if (!IsValidPosition(position1D)) return -1;
         return position1D;
+    }
+    public int ToPosition1D(Tuple<int, int> position2D)
+    {
+        return ToPosition1D(position2D.Item1, position2D.Item2);
     }
 
     public List<int> ToPosition1DList(List<Tuple<int, int>> position2DList)
@@ -146,6 +202,6 @@ public class Grid2D
 
     public bool ValidateStartPositions(List<int> startPositions)
     {
-        return startPositions.Count == GetLength();
+        return startPositions.Count == GetSize();
     }
 }

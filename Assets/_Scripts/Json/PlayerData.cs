@@ -6,12 +6,12 @@ public class PlayerData
 {
     public List<TeamData> Teams { get; set; }
 
-    public List<TeamData> GetTeams(string mapName)
+    public List<TeamData> GetTeams(int mapId)
     {
         List<TeamData> teams = new();
         foreach (TeamData team in Teams)
         {
-            if (team.MapName == mapName)
+            if (team.MapId == mapId)
             {
                 teams.Add(team);
             }
@@ -19,10 +19,10 @@ public class PlayerData
         return teams;
     }
 
-    public List<string> GetTeamNames(string mapName)
+    public List<string> GetTeamNames(int mapId)
     {
         List<string> teamNames = new();
-        List<TeamData> teams = GetTeams(mapName);
+        List<TeamData> teams = GetTeams(mapId);
         foreach (TeamData team in teams)
         {
             teamNames.Add(team.Name);

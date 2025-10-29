@@ -5,14 +5,14 @@ using System.Collections.Generic;
 public class TeamData
 {
     public string Name;
-    public string MapName;
+    public int MapId;
     public List<int> StartPositions;
     public List<int> UnitIds;
 
-    public TeamData(string name, string mapName, List<int> startPositions, List<int> unitIds)
+    public TeamData(string name, int mapId, List<int> startPositions, List<int> unitIds)
     {
         Name = name;
-        MapName = mapName;
+        MapId = mapId;
         StartPositions = startPositions;
         UnitIds = unitIds;
     }

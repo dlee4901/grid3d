@@ -4,6 +4,7 @@ using System.Collections.Generic;
 [Serializable]
 public class MapData
 {
+    public int Id;
     public string Name;
     public int X;
     public int Y;
@@ -17,8 +18,9 @@ public class MapData
 
     public List<TileTerrain> TileTerrain;
 
-    public MapData(string name, int x, int y, int playerCount, int unitCostTotal, List<int> entityStartPositions, List<TileTerrain> tileTerrain)
+    public MapData(int id, string name, int x, int y, int playerCount, int unitCostTotal, List<int> entityStartPositions, List<TileTerrain> tileTerrain)
     {
+        Id = id;
         Name = name;
         X = x;
         Y = y;

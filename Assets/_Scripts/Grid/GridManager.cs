@@ -13,14 +13,12 @@ public class GridManager : MonoBehaviour
     [SerializeField] private GameObjectList _testTileTerrainVisuals;
     
     [Header("Test Map Parameters")]
-    [SerializeField] private string _testMapName;
     [SerializeField] private int _testMapX;
     [SerializeField] private int _testMapY;
     [SerializeField] private int _testMapPlayerCount;
     [SerializeField] private int _testMapUnitCostTotal;
     
     [Header("Test Team Parameters")]
-    [SerializeField] private string _testTeamName;
     [SerializeField] private List<int> _testTeamStartPositions;
     [SerializeField] private List<int> _testTeamUnitIds;
     
@@ -51,18 +49,18 @@ public class GridManager : MonoBehaviour
     
     private void LoadMapData(MapData mapData=null)
     {
-        mapData ??= CreateTestMapData(_testMapName, _testMapX, _testMapY, _testMapPlayerCount, _testMapUnitCostTotal);
+        mapData ??= CreateTestMapData(_testMapX, _testMapY, _testMapPlayerCount, _testMapUnitCostTotal);
         _grid2D = new Grid2D(mapData);
-        RenderGrid(_grid2D.X, _grid2D.Y);
+        RenderGrid();
     }
     
     private void LoadTeamData(TeamData teamData = null)
     {
-        teamData ??= CreateTestTeamData(_testTeamName, _testMapName, _testTeamStartPositions, _testTeamUnitIds);
+        teamData ??= CreateTestTeamData(_testTeamStartPositions, _testTeamUnitIds);
         
     }
     
-    private static MapData CreateTestMapData(string testMapName="Test Map", int testMapX = 8, int testMapY = 8, int testMapPlayerCount = 2, int testUnitCostTotal = 16)
+    private static MapData CreateTestMapData(int testMapX = 8, int testMapY = 8, int testMapPlayerCount = 2, int testUnitCostTotal = 16)
     {
         var testEntityStartPositions = new List<int>();
         for (var i = 0; i < testMapX; i++)
@@ -72,19 +70,36 @@ public class GridManager : MonoBehaviour
             else testEntityStartPositions.AddRange(Enumerable.Repeat(0, testMapY).ToList());
         }
         var testTileTerrain = Enumerable.Repeat(TileTerrain.Default, testMapX * testMapY).ToList();
-        return new MapData(testMapName, testMapX, testMapY, testMapPlayerCount, testUnitCostTotal, testEntityStartPositions, testTileTerrain);
+        const int testMapId = 0;
+        const string testMapName = "Test Map";
+        return new MapData(testMapId, testMapName, testMapX, testMapY, testMapPlayerCount, testUnitCostTotal, testEntityStartPositions, testTileTerrain);
     }
     
-    private static TeamData CreateTestTeamData(string testTeamName="Test Team", string testMapName="Test Map", List<int> testTeamStartPositions=null, List<int> testTeamUnitIds=null)
+    private static TeamData CreateTestTeamData(List<int> testTeamStartPositions=null, List<int> testTeamUnitIds=null)
     {
-        return new TeamData(testTeamName, testMapName, testTeamStartPositions, testTeamUnitIds);
+        const int testMapId = 0;
+        const string testMapName = "Test Map";
+        return new TeamData(testMapName, testMapId, testTeamStartPositions, testTeamUnitIds);
     }
-
-    private void RenderGrid(int x, int y)
+    
+    private void RenderGrid()
     {
         _gridLines.SetActive(true);
-        _gridLines.transform.position = new Vector3(x/2.0f, 0.01f, y/2.0f);
-        _gridLines.transform.localScale = new Vector3(x/10.0f, 1, y/10.0f);
+        _gridLines.transform.position = new Vector3(_grid2D.X/2.0f, 0.01f, _grid2D.Y/2.0f);
+        _gridLines.transform.localScale = new Vector3(_grid2D.X/10.0f, 1, _grid2D.Y/10.0f);
+        for (var i = 0; i < _grid2D.X; i++)
+        {
+            for (var j = 0; j < _grid2D.Y; j++)
+            {
+                var tileTerrain = (int)_grid2D.TileTerrain[_grid2D.ToPosition1D(i, j)];
+                if (tileTerrain < 0 || tileTerrain > _testTileTerrainVisuals.GameObjects.Count - 1)
+                {
+                    Debug.LogError("GridManager: TestTileTerrainVisuals does not have all valid TileTerrain options");
+                    return;
+                }
+                // TODO: _testTileTerrainVisuals.GameObjects[tileTerrain];
+            }
+        }
     }
     
     private void HandleMousePosition()
