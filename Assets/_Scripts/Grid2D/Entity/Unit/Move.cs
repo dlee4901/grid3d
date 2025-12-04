@@ -26,7 +26,7 @@ public class Move
         HashSet<int> moves = new();
         foreach (GridSelection gridSelection in GridSelections)
         {
-            moves.UnionWith(gridSelection.GetSelectableTiles(grid, grid.ToPosition2D(position1D)));
+            moves.UnionWith(gridSelection.GetTiles(grid, grid.ToPosition2D(position1D)));
         }
         moves.Remove(position1D);
         moves.ExceptWith(grid.GetOccupiedTilesPosition1DSet());
