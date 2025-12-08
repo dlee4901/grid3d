@@ -1557,6 +1557,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -4048,6 +4049,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -4879,12 +4881,10 @@ MonoBehaviour:
   _gridLines: {fileID: 1936289542}
   _grid: {fileID: 947566297}
   _testTileTerrainVisuals: {fileID: 11400000, guid: f38e3b16cf8f949c8be8029578118ffd, type: 2}
-  _testMapName: test map
-  _testMapX: 5
-  _testMapY: 5
+  _testMapX: 10
+  _testMapY: 10
   _testMapPlayerCount: 2
   _testMapUnitCostTotal: 10
-  _testTeamName: test team
   _testTeamStartPositions: 
   _testTeamUnitIds: 
 --- !u!1 &1006811928
@@ -5212,6 +5212,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -5782,6 +5783,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0

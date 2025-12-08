@@ -10,7 +10,7 @@ public class GridManager : MonoBehaviour
     [SerializeField] private Grid _grid;
 
     [Header("Test Visuals")]
-    [SerializeField] private GameObjectList _testTileTerrainVisuals;
+    //[SerializeField] private GameObjectList _testTileTerrainVisuals;
     
     [Header("Test Map Parameters")]
     [SerializeField] private int _testMapX;
@@ -91,12 +91,12 @@ public class GridManager : MonoBehaviour
         {
             for (var j = 0; j < _grid2D.Y; j++)
             {
-                var tileTerrain = (int)_grid2D.TileTerrain[_grid2D.ToPosition1D(i, j)];
-                if (tileTerrain < 0 || tileTerrain > _testTileTerrainVisuals.GameObjects.Count - 1)
-                {
-                    Debug.LogError("GridManager: TestTileTerrainVisuals does not have all valid TileTerrain options");
-                    return;
-                }
+                // var tileTerrain = (int)_grid2D.TileTerrain[_grid2D.ToPosition1D(i, j)];
+                // if (tileTerrain < 0 || tileTerrain > _testTileTerrainVisuals.GameObjects.Count - 1)
+                // {
+                //     Debug.LogError("GridManager: TestTileTerrainVisuals does not have all valid TileTerrain options");
+                //     return;
+                // }
                 // TODO: _testTileTerrainVisuals.GameObjects[tileTerrain];
             }
         }

@@ -10,107 +10,103 @@ public enum DirectionCardinal {N, NE, E, SE, S, SW, W, NW}
 public class GridSelection
 {
     public Direction Direction { get; private set; }
-    public Team Passthrough { get; private set; }
-    public int Distance { get; private set; }
-    public bool Exact { get; private set; }
-    public bool RelativeFacing { get; private set; }
-    public bool Chain { get; private set; }
+    public int MaxDistance { get; private set; }
+    public int MinDistance { get; private set; }
+    
+    public int Width { get; private set; }
+    public bool AbsoluteDirection { get; private set; }
+    
+    public int Collide { get; private set;}
+    public GridSelection Chain { get; private set; }
 
-    public GridSelection(Direction direction, Team passthrough, int distance, bool exact, bool relativeFacing, bool chain)
+    public GridSelection(Direction direction, int maxDistance=-1, int minDistance=0, int width=0, bool absoluteDirection=false, int collide=0, GridSelection chain=null)
     {
         Direction = direction;
-        Passthrough = passthrough;
-        Distance = distance;
-        Exact = exact;
-        RelativeFacing = relativeFacing;
+        MaxDistance = maxDistance;
+        MinDistance = minDistance;
+        Width = width;
+        AbsoluteDirection = absoluteDirection;
+        Collide = collide;
         Chain = chain;
     }
-
-    public HashSet<int> GetSelectableTiles(Grid2D grid, Tuple<int, int> position)
+    
+    public HashSet<int> GetTiles(Grid2D grid, Tuple<int, int> startPosition, Unit sourceUnit=null)
     {
-        List<Tuple<int, int>> selectableTiles = new();
-        Unit unit = (Unit)grid.GetEntity(position);
-        List<Tuple<int, int>> unitVectors = GetUnitVectors(unit);
-        List<bool> collisions = new List<bool>{false, false, false, false, false, false, false, false};
-        int distance = Distance;
-        int x = grid.X;
-        int y = grid.Y;
-        if (distance == -1) distance = Math.Max(x, y);
-        if (Direction == Direction.step || Direction == Direction.stride)
-        {
-            Dictionary<Tuple<int, int>, bool> visitedTiles = new();
-            for (int i = 0; i < grid.GetSize(); i++) visitedTiles[grid.ToPosition2D(i)] = false;
-            List<Tuple<int, int>> checkTiles = new() {position};
-            for (int i = 0; i <= distance; i++)
-            {
-                List<Tuple<int, int>> nextTiles = new();
-                foreach (Tuple<int, int> tilePosition in checkTiles)
-                {
-                    for (int j = 0; j < 8; j++)
-                    {
-                        if (Direction == Direction.step && j % 2 == 1) continue;
-                        Tuple<int, int> startPosition = tilePosition;
-                        Tuple<int, int> targetPosition = Util.TupleArithmetic(startPosition, unitVectors[j], Util.ArithmeticOperation.Add);
-                        if (visitedTiles[tilePosition] || !grid.IsValidPosition(targetPosition)) continue;
-                        Entity entityColliding = grid.GetEntity(targetPosition);
-                        if (entityColliding != null)
-                        {
-                            if (Passthrough == 0
-                                || (Passthrough == Team.Ally && !entityColliding.HasSameController(unit))
-                                || (Passthrough == Team.Enemy && entityColliding.HasSameController(unit)))
-                            {
-                                continue;
-                            }
-                        }
-                        nextTiles.Add(targetPosition);
-                    }
-                    visitedTiles[tilePosition] = true;
-                }
-                selectableTiles.AddRange(checkTiles);
-                checkTiles = nextTiles;
-            }
-        }
-        else
-        {
-            for (int i = 0; i < distance; i++)
-            {
-                for (int j = 0; j < 8; j++)
-                {
-                    Tuple<int, int> startPosition = position;
-                    if (i > 0) startPosition = selectableTiles[8 * (i - 1) + j];
-                    if (collisions[j])
-                    {
-                        selectableTiles.Add(startPosition);
-                        continue;
-                    }
-                    Tuple<int, int> targetPosition = Util.TupleArithmetic(startPosition, unitVectors[j], Util.ArithmeticOperation.Add);
-                    bool targetPositionValid = true;
-                    if (!grid.IsValidPosition(targetPosition)) targetPositionValid = false;
-                    else 
-                    {
-                        Entity entityColliding = grid.GetEntity(targetPosition);
-                        if (entityColliding != null)
-                        {
-                            if (Passthrough == 0
-                                || (Passthrough == Team.Ally && !entityColliding.HasSameController(unit))
-                                || (Passthrough == Team.Enemy && entityColliding.HasSameController(unit)))
-                            {
-                                collisions[j] = true;
-                            }
-                        }
-                    }
-                    if (targetPositionValid) selectableTiles.Add(targetPosition);
-                    else selectableTiles.Add(startPosition);
-                }
-            }
-        }
-        return new HashSet<int>(grid.ToPosition1DList(selectableTiles));
+        var startPositions = new HashSet<Tuple<int, int>>();
+        startPositions.Add(startPosition);
+        return GetTiles(grid, startPositions, sourceUnit);
     }
 
-    public List<Tuple<int, int>> GetUnitVectors(Unit unit)
+    public HashSet<int> GetTiles(Grid2D grid, HashSet<Tuple<int, int>> startPositions, Unit sourceUnit=null)
+    {
+        HashSet<Tuple<int, int>> tiles = new();
+        Dictionary<Tuple<int, int>, int> tileDistances = new();
+        List<Tuple<int, int>> unitVectors = GetUnitVectors(sourceUnit?.DirectionFacing ?? DirectionFacing.N);
+        
+        int maxDistance = MaxDistance;
+        if (maxDistance == -1 || maxDistance > grid.X + grid.Y) maxDistance = grid.X + grid.Y;
+        int minDistance = MinDistance;
+        if (minDistance > grid.X + grid.Y) minDistance = grid.X + grid.Y;
+        
+        for (int i = 0; i < grid.GetSize(); i++) tileDistances[grid.ToPosition2D(i)] = -1;
+        List<Tuple<int, int>> checkTiles = startPositions.ToList();
+        
+        List<Tuple<int, int>> widthTiles = new();
+        for (int i = 0; i < Width; i++)
+        {
+            if (!unitVectors[0].Equals(new Tuple<int, int>(0, 0)) || !unitVectors[4].Equals(new Tuple<int, int>(0, 0)))
+            {
+                foreach (Tuple<int, int> tile in checkTiles)
+                {
+                    var newTile = Util.TupleArithmetic(tile, new Tuple<int, int>(i, 0), Util.ArithmeticOperation.Add);
+                    if (grid.IsValidPosition(newTile)) widthTiles.Add(newTile);
+                    newTile = Util.TupleArithmetic(tile, new Tuple<int, int>(-i, 0), Util.ArithmeticOperation.Add);
+                    if (grid.IsValidPosition(newTile)) widthTiles.Add(newTile);
+                }
+            }
+            if (!unitVectors[2].Equals(new Tuple<int, int>(0, 0)) || !unitVectors[6].Equals(new Tuple<int, int>(0, 0)))
+            {
+                foreach (Tuple<int, int> tile in checkTiles)
+                {
+                    var newTile = Util.TupleArithmetic(tile, new Tuple<int, int>(0, i), Util.ArithmeticOperation.Add);
+                    if (grid.IsValidPosition(newTile)) widthTiles.Add(newTile);
+                    newTile = Util.TupleArithmetic(tile, new Tuple<int, int>(0, -i), Util.ArithmeticOperation.Add);
+                    if (grid.IsValidPosition(newTile)) widthTiles.Add(newTile);
+                }
+            }
+        }
+        checkTiles.AddRange(widthTiles);
+        
+        for (int i = 0; i <= maxDistance; i++)
+        {
+            List<Tuple<int, int>> nextTiles = new();
+            foreach (Tuple<int, int> tilePosition in checkTiles)
+            {
+                tileDistances[tilePosition] = i;
+                if (i >= minDistance && i <= maxDistance) tiles.Add(tilePosition);
+                for (int j = 0; j < 8; j++)
+                {
+                    if (unitVectors[j].Equals(new Tuple<int, int>(0, 0))) continue;
+                    Tuple<int, int> targetPosition = Util.TupleArithmetic(tilePosition, unitVectors[j], Util.ArithmeticOperation.Add);
+                    if (!grid.IsValidPosition(targetPosition) || (tileDistances[targetPosition] >= 0 && tileDistances[targetPosition] <= i)) continue;
+                    // Add Collide Check
+                    nextTiles.Add(targetPosition);
+                }
+            }
+            checkTiles = nextTiles;
+        }
+        
+        if (Chain != null)
+        {
+            return GetTiles(grid, tiles, sourceUnit);
+        }
+        return tiles.Select(t => grid.ToPosition1D(t)).ToHashSet();
+    }
+
+    public List<Tuple<int, int>> GetUnitVectors(DirectionFacing directionFacing)
     {
         List<Tuple<int, int>> unitVectors = new();
-        List<bool> absoluteDirections = GetAbsoluteDirections(unit);
+        List<bool> absoluteDirections = GetAbsoluteDirections(directionFacing);
         for (int i = 0; i < 8; i++)
         {
             int xOffset = 0;
@@ -127,7 +123,7 @@ public class GridSelection
         return unitVectors;
     }
 
-    public List<bool> GetAbsoluteDirections(Unit unit)
+    public List<bool> GetAbsoluteDirections(DirectionFacing directionFacing)
     {
         List<bool> absoluteDirections = new List<bool>{false, false, false, false, false, false, false, false};
         switch (Direction)
@@ -176,10 +172,10 @@ public class GridSelection
             default:
                 return absoluteDirections;
         }
-        if (RelativeFacing && unit != null)
+        if (!AbsoluteDirection)
         {
             int shift = 0;
-            switch (unit.DirectionFacing)
+            switch (directionFacing)
             {
                 case DirectionFacing.E:
                     shift = 6;
