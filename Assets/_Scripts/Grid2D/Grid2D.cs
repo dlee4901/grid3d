@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 
 public enum TileTerrain { Void, Default }
 
@@ -8,6 +7,7 @@ public enum TileTerrain { Void, Default }
 public class Grid2D
 {
     // Initial Parameters (Static)
+    public string Test { get; set; }
     public string Name { get; private set; }
     
     public int UnitCostTotal { get; private set; }
@@ -196,10 +196,9 @@ public class Grid2D
 
     public bool IsValidPosition(Tuple<int, int> position2D)
     {
-        return IsValidPosition(ToPosition1D(position2D));
+        return position2D != null && position2D.Item1 >= 0 && position2D.Item1 < X && position2D.Item2 >= 0 && position2D.Item2 < Y;
     }
-
-
+    
     public bool ValidateStartPositions(List<int> startPositions)
     {
         return startPositions.Count == GetSize();

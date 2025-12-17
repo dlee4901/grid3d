@@ -31,7 +31,7 @@ public static class EngineUtil
             error = true;
             return;
         }
-        var ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+        var ray = mainCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
         if (Physics.Raycast(ray, out RaycastHit hit))
         {
             mouseWorldPosition = hit.point;

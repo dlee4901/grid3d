@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -5,38 +6,41 @@ using UnityEngine.InputSystem;
 
 public class GridManager : MonoBehaviour
 {
-    [SerializeField] private LineRenderer _selectionOutline;
-    [SerializeField] private GameObject _gridLines;
     [SerializeField] private Grid _grid;
+    [SerializeField] private GameObject _gridLines;
+    [SerializeField] private LineRenderer _pressOutline;
+    
+    [SerializeField] private MeshRenderer _selectionSquare;
+    private List<MeshRenderer> _selectionSquares;
 
     [Header("Test Visuals")]
     //[SerializeField] private GameObjectList _testTileTerrainVisuals;
     
     [Header("Test Map Parameters")]
-    [SerializeField] private int _testMapX;
-    [SerializeField] private int _testMapY;
-    [SerializeField] private int _testMapPlayerCount;
-    [SerializeField] private int _testMapUnitCostTotal;
+    [SerializeField] private int _testMapX = 8;
+    [SerializeField] private int _testMapY = 8;
+    [SerializeField] private int _testMapPlayerCount = 2;
+    [SerializeField] private int _testMapUnitCostTotal = 10;
+    [SerializeField] private GridSelection _testGridSelection;
     
     [Header("Test Team Parameters")]
     [SerializeField] private List<int> _testTeamStartPositions;
     [SerializeField] private List<int> _testTeamUnitIds;
     
-    private Grid2D _grid2D;
+    [SerializeField] private Grid2D _grid2D;
     
     private Camera _mainCamera;
     private InputAction _selectAction;
     
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         _mainCamera = Camera.main;
         _selectAction = InputSystem.actions.FindAction("Player/Select");
         _grid.gameObject.SetActive(true);
         LoadMapData();
+        InitSelectionOutlines();
     }
 
-    // Update is called once per frame
     void Update()
     {
         if (_selectAction.triggered) HandleMousePosition();
@@ -46,6 +50,33 @@ public class GridManager : MonoBehaviour
     {
         return new Vector2(_grid2D.X, _grid2D.Y);
     }
+    
+    private void HandleMousePosition()
+    {
+        EngineUtil.GetMouseWorldPosition(_mainCamera, out var mouseWorldPosition, out var error);
+        if (error)
+        {
+            _pressOutline.gameObject.SetActive(false);
+            return;
+        }
+        Vector3Int gridPosition = _grid.WorldToCell(mouseWorldPosition);
+        if (gridPosition.x >= 0 && gridPosition.x < _grid2D.X && gridPosition.y >= 0 && gridPosition.y < _grid2D.Y)
+        {
+            ShowTiles(
+                _testGridSelection.GetTiles(_grid2D, new Tuple<int, int>(gridPosition.x, gridPosition.y))
+                );
+            _pressOutline.gameObject.SetActive(true);
+            _pressOutline.transform.position = _grid.CellToWorld(gridPosition);
+        }
+        else
+        {
+            _pressOutline.gameObject.SetActive(false);
+        }
+    }
+    
+    //
+    // TESTING
+    //
     
     private void LoadMapData(MapData mapData=null)
     {
@@ -82,11 +113,40 @@ public class GridManager : MonoBehaviour
         return new TeamData(testMapName, testMapId, testTeamStartPositions, testTeamUnitIds);
     }
     
+    //
+    // RENDERING
+    //
+    
+    private void InitSelectionOutlines()
+    {
+        _selectionSquares = new List<MeshRenderer>();
+        for (var x = 0; x < _grid2D.X; x++)
+        {
+            for (var y = 0; y < _grid2D.Y; y++)
+            {
+                _selectionSquares.Add(Instantiate(_selectionSquare, _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, -0.1f, 0.5f),  Quaternion.identity));
+            }
+        }
+    }
+    
+    private void ShowTiles(HashSet<int> tiles)
+    {
+        for (int i = 0; i < _selectionSquares.Count; i++) { _selectionSquares[i].gameObject.SetActive(false); }
+        foreach (var tile in tiles)
+        {
+            if (_grid2D.IsValidPosition(tile))
+            {
+                _selectionSquares[tile].gameObject.SetActive(true);
+                Debug.Log(_grid2D.ToPosition2D(tile));
+            }
+        }
+    }
+    
     private void RenderGrid()
     {
         _gridLines.SetActive(true);
-        _gridLines.transform.position = new Vector3(_grid2D.X/2.0f, 0.01f, _grid2D.Y/2.0f);
-        _gridLines.transform.localScale = new Vector3(_grid2D.X/10.0f, 1, _grid2D.Y/10.0f);
+        _gridLines.transform.position = new Vector3(_grid2D.X/2.0f, -0.1f, _grid2D.Y/2.0f);
+        _gridLines.transform.localScale = new Vector3(_grid2D.X/10f, 1, _grid2D.Y/10f);
         for (var i = 0; i < _grid2D.X; i++)
         {
             for (var j = 0; j < _grid2D.Y; j++)
@@ -99,26 +159,6 @@ public class GridManager : MonoBehaviour
                 // }
                 // TODO: _testTileTerrainVisuals.GameObjects[tileTerrain];
             }
-        }
-    }
-    
-    private void HandleMousePosition()
-    {
-        EngineUtil.GetMouseWorldPosition(_mainCamera, out var mouseWorldPosition, out var error);
-        if (error)
-        {
-            _selectionOutline.gameObject.SetActive(false);
-            return;
-        }
-        Vector3Int gridPosition = _grid.WorldToCell(mouseWorldPosition);
-        if (gridPosition.x >= 0 && gridPosition.x < _grid2D.X && gridPosition.y >= 0 && gridPosition.y < _grid2D.Y)
-        {
-            _selectionOutline.gameObject.SetActive(true);
-            _selectionOutline.transform.position = _grid.CellToWorld(gridPosition);
-        }
-        else
-        {
-            _selectionOutline.gameObject.SetActive(false);
         }
     }
 }

@@ -2,31 +2,29 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public enum Direction {N, NE, E, SE, S, SW, W, NW, step, stride, line, diagonal, straight, horizontal, vertical}
-public enum DirectionCardinal {N, NE, E, SE, S, SW, W, NW}
-[Flags] public enum Team {Neutral=1, Ally=2, Enemy=4}
+public enum Direction {North, NorthEast, East, SouthEast, South, SouthWest, West, NorthWest, Vertical, Horizontal, Diagonal, Straight, Line, Step, Stride}
+// [Flags] public enum Team {Neutral=1, Ally=2, Enemy=4}
 
 [Serializable]
 public class GridSelection
 {
-    public Direction Direction { get; private set; }
-    public int MaxDistance { get; private set; }
-    public int MinDistance { get; private set; }
+    public Direction Direction;
+    public int MaxDistance;
+    public int MinDistance;
     
-    public int Width { get; private set; }
-    public bool AbsoluteDirection { get; private set; }
+    public int Width;
+    public bool AbsoluteDirection;
     
-    public int Collide { get; private set;}
-    public GridSelection Chain { get; private set; }
+    public int CollideMask;
+    public GridSelection Chain;
 
-    public GridSelection(Direction direction, int maxDistance=-1, int minDistance=0, int width=0, bool absoluteDirection=false, int collide=0, GridSelection chain=null)
+    public GridSelection(Direction direction, int maxDistance=-1, int minDistance=0, int width=0, bool absoluteDirection=false, GridSelection chain=null)
     {
         Direction = direction;
         MaxDistance = maxDistance;
         MinDistance = minDistance;
         Width = width;
         AbsoluteDirection = absoluteDirection;
-        Collide = collide;
         Chain = chain;
     }
     
@@ -41,7 +39,7 @@ public class GridSelection
     {
         HashSet<Tuple<int, int>> tiles = new();
         Dictionary<Tuple<int, int>, int> tileDistances = new();
-        List<Tuple<int, int>> unitVectors = GetUnitVectors(sourceUnit?.DirectionFacing ?? DirectionFacing.N);
+        List<Tuple<int, int>> unitVectors = GetUnitVectors(sourceUnit?.DirectionFacing ?? DirectionFacing.North);
         
         int maxDistance = MaxDistance;
         if (maxDistance == -1 || maxDistance > grid.X + grid.Y) maxDistance = grid.X + grid.Y;
@@ -52,7 +50,7 @@ public class GridSelection
         List<Tuple<int, int>> checkTiles = startPositions.ToList();
         
         List<Tuple<int, int>> widthTiles = new();
-        for (int i = 0; i < Width; i++)
+        for (int i = 1; i <= Width; i++)
         {
             if (!unitVectors[0].Equals(new Tuple<int, int>(0, 0)) || !unitVectors[4].Equals(new Tuple<int, int>(0, 0)))
             {
@@ -77,23 +75,60 @@ public class GridSelection
         }
         checkTiles.AddRange(widthTiles);
         
-        for (int i = 0; i <= maxDistance; i++)
+        if (Direction == Direction.Step || Direction == Direction.Stride)
         {
-            List<Tuple<int, int>> nextTiles = new();
+            for (int i = 0; i <= maxDistance; i++)
+            {
+                List<Tuple<int, int>> nextTiles = new();
+                foreach (Tuple<int, int> tilePosition in checkTiles)
+                {
+                    // If tile is invalid or collided, do not check
+                    if (!grid.IsValidPosition(tilePosition)) continue; // TODO: Add OR Collide Check
+                    
+                    // Update tile distance
+                    if (tileDistances[tilePosition] == -1) tileDistances[tilePosition] = i;
+                    else tileDistances[tilePosition] = Math.Min(tileDistances[tilePosition], i);
+                    
+                    // Tile checks
+                    if (tileDistances[tilePosition] >= minDistance) tiles.Add(tilePosition);
+                    else tiles.Remove(tilePosition);
+                    
+                    // Add adjacent tiles to next check list
+                    for (int j = 0; j < 8; j++)
+                    {
+                        if (unitVectors[j].Equals(new Tuple<int, int>(0, 0))) continue;
+                        Tuple<int, int> targetPosition = Util.TupleArithmetic(tilePosition, unitVectors[j], Util.ArithmeticOperation.Add);
+                        nextTiles.Add(targetPosition);
+                    }
+                }
+                checkTiles = nextTiles;
+            }
+        }
+        else
+        {
             foreach (Tuple<int, int> tilePosition in checkTiles)
             {
-                tileDistances[tilePosition] = i;
-                if (i >= minDistance && i <= maxDistance) tiles.Add(tilePosition);
-                for (int j = 0; j < 8; j++)
+                for (int i = 0; i < 8; i++)
                 {
-                    if (unitVectors[j].Equals(new Tuple<int, int>(0, 0))) continue;
-                    Tuple<int, int> targetPosition = Util.TupleArithmetic(tilePosition, unitVectors[j], Util.ArithmeticOperation.Add);
-                    if (!grid.IsValidPosition(targetPosition) || (tileDistances[targetPosition] >= 0 && tileDistances[targetPosition] <= i)) continue;
-                    // Add Collide Check
-                    nextTiles.Add(targetPosition);
+                    Tuple<int, int> targetPosition = tilePosition;
+                    for (int j = 0; j <= maxDistance; j++)
+                    {
+                        // If tile is invalid or collided, do not check
+                        if (!grid.IsValidPosition(targetPosition)) break; // TODO: Add OR Collide Check
+                        
+                        // Update tile distance
+                        if (tileDistances[targetPosition] == -1) tileDistances[targetPosition] = j;
+                        else tileDistances[targetPosition] = Math.Min(tileDistances[targetPosition], j);
+                        
+                        // Tile checks
+                        if (tileDistances[targetPosition] >= minDistance) tiles.Add(targetPosition);
+                        else tiles.Remove(targetPosition);
+                        
+                        // Update target position
+                        targetPosition = Util.TupleArithmetic(targetPosition, unitVectors[i], Util.ArithmeticOperation.Add);
+                    }
                 }
             }
-            checkTiles = nextTiles;
         }
         
         if (Chain != null)
@@ -115,8 +150,8 @@ public class GridSelection
             {
                 if (i > 4)               xOffset = -1;
                 else if (i > 0 && i < 4) xOffset = 1;
-                if (i > 2 && i < 6)      yOffset = 1;
-                else if (i < 2 || i > 6) yOffset = -1;
+                if (i > 2 && i < 6)      yOffset = -1;
+                else if (i < 2 || i > 6) yOffset = 1;
             }
             unitVectors.Add(new Tuple<int, int>(xOffset, yOffset));
         }
@@ -128,45 +163,45 @@ public class GridSelection
         List<bool> absoluteDirections = new List<bool>{false, false, false, false, false, false, false, false};
         switch (Direction)
         {
-            case Direction.stride: case Direction.line:
+            case Direction.Stride: case Direction.Line:
                 for (int i = 0; i < 8; i++) absoluteDirections[i] = true;
                 break;
-            case Direction.diagonal:
+            case Direction.Diagonal:
                 for (int i = 1; i < 8; i += 2) absoluteDirections[i] = true;
                 break;
-            case Direction.step: case Direction.straight:
+            case Direction.Step: case Direction.Straight:
                 for (int i = 0; i < 8; i += 2) absoluteDirections[i] = true;
                 break;
-            case Direction.horizontal:
+            case Direction.Horizontal:
                 absoluteDirections[2] = true;
                 absoluteDirections[6] = true;
                 break;
-            case Direction.vertical:
+            case Direction.Vertical:
                 absoluteDirections[0] = true;
                 absoluteDirections[4] = true;
                 break;
-            case Direction.N:
+            case Direction.North:
                 absoluteDirections[0] = true;
                 break;
-            case Direction.NE:
+            case Direction.NorthEast:
                 absoluteDirections[1] = true;
                 break;
-            case Direction.E:
+            case Direction.East:
                 absoluteDirections[2] = true;
                 break;
-            case Direction.SE:
+            case Direction.SouthEast:
                 absoluteDirections[3] = true;
                 break;
-            case Direction.S:
+            case Direction.South:
                 absoluteDirections[4] = true;
                 break;
-            case Direction.SW:
+            case Direction.SouthWest:
                 absoluteDirections[5] = true;
                 break;
-            case Direction.W:
+            case Direction.West:
                 absoluteDirections[6] = true;
                 break;
-            case Direction.NW:
+            case Direction.NorthWest:
                 absoluteDirections[7] = true;
                 break;
             default:
@@ -177,13 +212,13 @@ public class GridSelection
             int shift = 0;
             switch (directionFacing)
             {
-                case DirectionFacing.E:
+                case DirectionFacing.East:
                     shift = 6;
                     break;
-                case DirectionFacing.S:
+                case DirectionFacing.South:
                     shift = 2;
                     break;
-                case DirectionFacing.W:
+                case DirectionFacing.West:
                     shift = 4;
                     break;
                 default:

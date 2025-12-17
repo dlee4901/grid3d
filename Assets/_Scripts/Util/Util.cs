@@ -35,13 +35,37 @@ public static class Util
                 result = new Tuple<int, int>(a.Item1 + b.Item1, a.Item2 + b.Item2);
                 break;
             case ArithmeticOperation.Subtract:
-                result = new Tuple<int,int>(a.Item1 - b.Item1, a.Item2 - a.Item2);
+                result = new Tuple<int,int>(a.Item1 - b.Item1, a.Item2 - b.Item2);
                 break;
             case ArithmeticOperation.Multiply:
-                result = new Tuple<int,int>(a.Item1 * b.Item1, a.Item2 * a.Item2);
+                result = new Tuple<int,int>(a.Item1 * b.Item1, a.Item2 * b.Item2);
                 break;
             case ArithmeticOperation.Divide:
-                result = new Tuple<int,int>(a.Item1 / b.Item1, a.Item2 / a.Item2);
+                result = new Tuple<int,int>(a.Item1 / b.Item1, a.Item2 / b.Item2);
+                break;
+            default:
+                result = null;
+                break;
+        }
+        return result;
+    }
+    
+    public static Tuple<int, int> TupleArithmetic(Tuple<int, int> a, int b, ArithmeticOperation arithmeticOperation, bool flip=false)
+    {
+        Tuple<int, int> result;
+        switch (arithmeticOperation)
+        {
+            case ArithmeticOperation.Add:
+                result = new Tuple<int, int>(a.Item1 + b, a.Item2 + b);
+                break;
+            case ArithmeticOperation.Subtract:
+                result = flip ? new Tuple<int,int>(b - a.Item1, b - a.Item2) : new Tuple<int,int>(a.Item1 - b, a.Item2 - b);
+                break;
+            case ArithmeticOperation.Multiply:
+                result = new Tuple<int,int>(a.Item1 * b, a.Item2 * b);
+                break;
+            case ArithmeticOperation.Divide:
+                result = flip ? new Tuple<int,int>(b / a.Item1, b / a.Item2) : new Tuple<int,int>(a.Item1 / b, a.Item2 / b);
                 break;
             default:
                 result = null;

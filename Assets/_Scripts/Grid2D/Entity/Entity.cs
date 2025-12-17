@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-public enum DirectionFacing {N, E, S, W}
+public enum DirectionFacing {North, East, South, West}
 
 [Serializable]
 public class Entity
@@ -13,7 +13,7 @@ public class Entity
     public int Health { get; private set; }
     public List<StatusEffect> StatusEffects { get; private set; }
 
-    public Entity(int id = 0, int gridPosition = 0, DirectionFacing directionFacing = global::DirectionFacing.N, int playerController = 0, int health = 0)
+    public Entity(int id = 0, int gridPosition = 0, DirectionFacing directionFacing = global::DirectionFacing.North, int playerController = 0, int health = 0)
     {
         Id = id;
         GridPosition = gridPosition;
