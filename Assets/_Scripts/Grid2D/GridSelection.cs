@@ -15,16 +15,17 @@ public class GridSelection
     public int Width;
     public bool AbsoluteDirection;
     
-    public int CollideMask;
+    public ConditionBuilder<Entity> CollideMask;
     public GridSelection Chain;
 
-    public GridSelection(Direction direction, int maxDistance=-1, int minDistance=0, int width=0, bool absoluteDirection=false, GridSelection chain=null)
+    public GridSelection(Direction direction, int maxDistance=-1, int minDistance=0, int width=0, bool absoluteDirection=false, ConditionBuilder<Entity> collideMask=null, GridSelection chain=null)
     {
         Direction = direction;
         MaxDistance = maxDistance;
         MinDistance = minDistance;
         Width = width;
         AbsoluteDirection = absoluteDirection;
+        CollideMask = collideMask;
         Chain = chain;
     }
     
@@ -40,6 +41,7 @@ public class GridSelection
         HashSet<Tuple<int, int>> tiles = new();
         Dictionary<Tuple<int, int>, int> tileDistances = new();
         List<Tuple<int, int>> unitVectors = GetUnitVectors(sourceUnit?.DirectionFacing ?? DirectionFacing.North);
+        var collideMask = CollideMask?.Build();
         
         int maxDistance = MaxDistance;
         if (maxDistance == -1 || maxDistance > grid.X + grid.Y) maxDistance = grid.X + grid.Y;
@@ -82,8 +84,10 @@ public class GridSelection
                 List<Tuple<int, int>> nextTiles = new();
                 foreach (Tuple<int, int> tilePosition in checkTiles)
                 {
-                    // If tile is invalid or collided, do not check
-                    if (!grid.IsValidPosition(tilePosition)) continue; // TODO: Add OR Collide Check
+                    // If tile is invalid or collided with entity, do not check further
+                    if (!grid.IsValidPosition(tilePosition)) continue;
+                    Entity entity;
+                    if (collideMask != null && (entity = grid.GetEntity(tilePosition)) != null && collideMask(entity)) continue;
                     
                     // Update tile distance
                     if (tileDistances[tilePosition] == -1) tileDistances[tilePosition] = i;
@@ -113,8 +117,10 @@ public class GridSelection
                     Tuple<int, int> targetPosition = tilePosition;
                     for (int j = 0; j <= maxDistance; j++)
                     {
-                        // If tile is invalid or collided, do not check
-                        if (!grid.IsValidPosition(targetPosition)) break; // TODO: Add OR Collide Check
+                        // If tile is invalid or collided with entity, do not check further
+                        if (!grid.IsValidPosition(targetPosition)) break;
+                        Entity entity;
+                        if (collideMask != null && (entity = grid.GetEntity(tilePosition)) != null && collideMask(entity)) break;
                         
                         // Update tile distance
                         if (tileDistances[targetPosition] == -1) tileDistances[targetPosition] = j;
