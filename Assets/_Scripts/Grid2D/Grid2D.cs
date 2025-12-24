@@ -7,98 +7,56 @@ public enum TileTerrain { Void, Default }
 public class Grid2D
 {
     // Initial Parameters (Static)
-    public string Test { get; set; }
-    public string Name { get; private set; }
+    public string Name;
     
-    public int UnitCostTotal { get; private set; }
+    public int X;
+    public int Y;
     
-    private int _x;
-    public int X
-    {
-        get => _x; 
-        private set => _x = Math.Clamp(value, 2, 99);
-    }
-
-    private int _y;
-    public int Y
-    {
-        get => _y;
-        private set => _y = Math.Clamp(value, 2, 99);
-    }
-    
-    private int _playerCount;
-    public int PlayerCount
-    {
-        get => _playerCount;
-        private set => _playerCount = Math.Clamp(value, 1, 4);
-    }
-    
-    private List<int> _entityStartPositions;
-    public List<int> EntityStartPositions
-    {
-        get => _entityStartPositions;
-        private set
-        {
-            _entityStartPositions = value;
-            _entityStartPositions.Capacity = GetSize();
-        }
-    }
+    public int PlayerCount;
+    public int MaxTeamCost;
+    public List<int> EntityStartPositions;
 
     // State
-    private List<TileTerrain> _tileTerrain;
-    public List<TileTerrain> TileTerrain
-    {
-        get => _tileTerrain;
-        private set
-        {
-            _tileTerrain = value;
-            _tileTerrain.Capacity = GetSize();
-        }
-    }
-    
-    private List<Entity> _entities;
-    public List<Entity> Entities
-    {
-        get => _entities;
-        private set
-        {
-            _entities = value;
-            _entities.Capacity = GetSize();
-        }
-    }
-    
-    public int Turn { get; private set; }
+    public List<TileTerrain> TileTerrain;
+    public List<Entity> Entities;
+    public List<Entity> PrioritizedEntities;
+    public int Turn;
 
     public Grid2D(MapData mapData)
     {
-        Init(mapData.Name, mapData.X, mapData.Y, mapData.PlayerCount, mapData.UnitCostTotal, mapData.EntityStartPositions, mapData.TileTerrain);
+        Init(mapData.Name, mapData.X, mapData.Y, mapData.PlayerCount, mapData.MaxTeamCost, mapData.EntityStartPositions, mapData.TileTerrain);
     }
 
-    public void Init(string name, int x, int y, int playerCount, int unitCostTotal, List<int> entityStartPositions, List<TileTerrain> tileTerrain)
+    public void Init(string name, int x, int y, int playerCount, int maxTeamCost, List<int> entityStartPositions, List<TileTerrain> tileTerrain)
     {
         Name = name;
         X = x;
         Y = y;
         PlayerCount = playerCount;
-        UnitCostTotal = unitCostTotal;
+        MaxTeamCost = maxTeamCost;
         EntityStartPositions = entityStartPositions;
         TileTerrain = tileTerrain;
     }
 
-    public void LoadTeam(TeamData teamData, int player)
+    public void LoadTeams(List<TeamData> teamData)
     {
-        var unitIdStartPositions = new Dictionary<int, int>();
-        int unitCostTotal = 0;
-        for (int i = 0; i < teamData.StartPositions.Count; i++)
+        int[] teamCosts = new int[teamData.Count];
+        for (int i = 0; i < teamData.Count; i++)
         {
-            var startPosition = teamData.StartPositions[i];
-            var unitId = teamData.UnitIds[i];
-            if (EntityStartPositions[startPosition] == -player)
-            {
-                unitIdStartPositions[startPosition] = unitId;
-                unitCostTotal += 1;
-            }
+            
         }
+        // var unitIdStartPositions = new Dictionary<int, int>();
+        // int unitCostTotal = 0;
+        // for (int i = 0; i < teamData.StartPositions.Count; i++)
+        // {
+        //     var startPosition = teamData.StartPositions[i];
+        //     var unitId = teamData.UnitIds[i];
+        //     if (EntityStartPositions[startPosition] == -player)
+        //     {
+        //         unitIdStartPositions[startPosition] = unitId;
+        //         unitCostTotal += 1;
+        //     }
+        // }
     }
 
     public int GetSize()
@@ -106,21 +64,31 @@ public class Grid2D
         return X * Y;
     }
 
-    public Entity GetEntity(int position1D)
+    public Entity GetEntity(int position)
     {
-        if (!IsValidPosition(position1D))
+        if (!IsValidPosition(position))
         {
             return default;
         }
-        return Entities[position1D];
+        return Entities[position];
     }
 
-    public Entity GetEntity(Tuple<int, int> position2D)
+    public Entity GetEntity(int x, int y)
     {
-        return GetEntity(ToPosition1D(position2D));
+        return GetEntity(ToPosition1D(x, y));
     }
+    
+    public Entity GetEntity((int x, int y) position)
+    {
+        return GetEntity(ToPosition1D(position.x, position.y));
+    }
+    
+    // public Entity GetEntity(Tuple<int, int> position2D)
+    // {
+    //     return GetEntity(ToPosition1D(position2D));
+    // }
 
-    public HashSet<int> GetOccupiedTilesPosition1DSet()
+    public HashSet<int> GetOccupiedTilesPositionSet()
     {
         HashSet<int> indices = new();
         for (int i = 0; i < GetSize(); i++)
@@ -133,70 +101,118 @@ public class Grid2D
         return indices;
     }
 
-    public bool SetTileTerrain(int position1D, TileTerrain tileTerrain)
+    public bool SetTileTerrain(int position, TileTerrain tileTerrain)
     {
-        if (IsValidPosition(position1D))
+        if (IsValidPosition(position))
         {
-            TileTerrain[position1D] = tileTerrain;
+            TileTerrain[position] = tileTerrain;
             return true;
         }
         return false;
     }
 
-    public bool SetEntity(int position1D, Entity entity)
+    public bool SetEntity(int position, Entity entity)
     {
-        if (IsValidPosition(position1D))
+        if (IsValidPosition(position))
         {
-            Entities[position1D] = entity;
+            Entities[position] = entity;
             return true;
         }
         return false;
     }
-
-    public bool MoveEntity(int startPosition1D, int targetPosition1D)
+    
+    // -1 = passive, 0 = move, 1~n = skill
+    public bool PerformAction(int action, int sourceTile, int targetTile)
     {
-        if (IsValidPosition(startPosition1D) && IsValidPosition(targetPosition1D))
+        Entity entity = GetEntity(sourceTile);
+        if (entity == null) return false;
+        
+        return true;
+    }
+    
+    public bool PerformAction(int action, int sourceTile, List<int> targetTiles)
+    {
+        return false;
+    }
+
+    public bool MoveEntity(int startPosition, int targetPosition)
+    {
+        if (IsValidPosition(startPosition) && IsValidPosition(targetPosition))
         {
-            return SetEntity(targetPosition1D, GetEntity(startPosition1D)) && SetEntity(startPosition1D, null);
+            return SetEntity(targetPosition, GetEntity(startPosition)) && SetEntity(startPosition, null);
         }
         return false;
     }
 
-    public Tuple<int, int> ToPosition2D(int position1D)
+    // public Tuple<int, int> ToPosition2DTuple(int position1D)
+    // {
+    //     if (!IsValidPosition(position1D)) return null;
+    //     return new Tuple<int, int>(position1D % X, position1D / X);
+    // }
+    
+    public (int, int) ToPosition2D(int position)
     {
-        if (!IsValidPosition(position1D)) return null;
-        return new Tuple<int, int>(position1D % X, position1D / X);
+        if (!IsValidPosition(position)) return (-1, -1);
+        return (position % X, position / X);
     }
 
-    public int ToPosition1D(int positionX, int positionY)
+    public int ToPosition1D(int x, int y)
     {
-        int position1D = positionX * X + positionY;
-        if (!IsValidPosition(position1D)) return -1;
-        return position1D;
+        int position = x * X + y;
+        if (!IsValidPosition(position)) return -1;
+        return position;
     }
-    public int ToPosition1D(Tuple<int, int> position2D)
+    
+    public int ToPosition1D((int x, int y) position)
     {
-        return ToPosition1D(position2D.Item1, position2D.Item2);
+        int pos = position.x * X + position.y;
+        if (!IsValidPosition(pos)) return -1;
+        return pos;
     }
+    
+    // public int ToPosition1D(Tuple<int, int> position2D)
+    // {
+    //     return ToPosition1D(position2D.Item1, position2D.Item2);
+    // }
 
-    public List<int> ToPosition1DList(List<Tuple<int, int>> position2DList)
+    // public List<int> ToPosition1DList(List<Tuple<int, int>> position2DList)
+    // {
+    //     List<int> position1Dlist = new List<int>();
+    //     foreach (Tuple<int, int> position2D in position2DList)
+    //     {
+    //         position1Dlist.Add(ToPosition1D(position2D));
+    //     }
+    //     return position1Dlist;
+    // }
+    
+    public List<int> ToPositionList(List<(int, int)> xyList)
     {
-        List<int> position1Dlist = new List<int>();
-        foreach (Tuple<int, int> position2D in position2DList)
+        List<int> positionList = new List<int>();
+        foreach (var (x, y) in xyList)
         {
-            position1Dlist.Add(ToPosition1D(position2D));
+            positionList.Add(ToPosition1D(x, y));
         }
-        return position1Dlist;
+        return positionList;
     }
 
-    public bool IsValidPosition(int position1D)
+    public bool IsValidPosition(int position)
     {
-        return position1D >= 0 && position1D <= X * Y;
+        return position >= 0 && position <= X * Y;
     }
 
-    public bool IsValidPosition(Tuple<int, int> position2D)
+    // public bool IsValidPosition(Tuple<int, int> position2D)
+    // {
+    //     return position2D != null && position2D.Item1 >= 0 && position2D.Item1 < X && position2D.Item2 >= 0 && position2D.Item2 < Y;
+    // }
+    
+    public bool IsValidPosition(int x, int y)
     {
-        return position2D != null && position2D.Item1 >= 0 && position2D.Item1 < X && position2D.Item2 >= 0 && position2D.Item2 < Y;
+        return x >= 0 && x < X && y >= 0 && y < Y;
+    }
+    
+    public bool IsValidPosition((int x, int y) position)
+    {
+        return position.x >= 0 && position.x < X && position.y >= 0 && position.y < Y;
     }
     
     public bool ValidateStartPositions(List<int> startPositions)

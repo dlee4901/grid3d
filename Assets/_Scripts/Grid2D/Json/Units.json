@@ -1,0 +1,37 @@
+[
+  {
+    "Id": 1,
+    "Name": "unit1",
+    "Health": 10,
+    "Move": {
+      "TileSelectors": [
+        {
+          "Direction": "North",
+          "MaxDistance": 3
+        }
+      ]
+    },
+    "Skills": [],
+    "Passives": [
+      { "Type": "ExplodeOnDeath", "Radius": 1, "DamageAmount": 3 }
+    ]
+  },
+  {
+    "Id": 2,
+    "Name": "unit2",
+    "Health": 8,
+    "Moves": [],
+    "Skills": [],
+    "Passives": []
+  },
+  {
+    "Id": 3,
+    "Name": "unit3",
+    "Health": 7,
+    "Moves": [],
+    "Skills": [],
+    "Passives": [
+      { "Type": "HealOnAllyDeath", "HealAmount": 2 }
+    ]
+  }
+]

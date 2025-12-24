@@ -4,11 +4,11 @@ using System.Collections.Generic;
 [Serializable]
 public class Move
 {
-    public List<GridSelection> TileSelections { get; private set; }
+    public List<TileSelector> TileSelectors { get; private set; }
     
-    public Move(List<GridSelection> tileSelections)
+    public Move(List<TileSelector> tileSelectors)
     {
-        TileSelections = tileSelections;
+        TileSelectors = tileSelectors;
     }
 
     // public Move(MoveStruct moveStruct)
@@ -24,12 +24,12 @@ public class Move
     public HashSet<int> GetSelectableTiles(Grid2D grid, int position1D)
     {
         HashSet<int> moves = new();
-        foreach (GridSelection tileSelection in TileSelections)
+        foreach (var tileSelector in TileSelectors)
         {
-            moves.UnionWith(tileSelection.GetTiles(grid, grid.ToPosition2D(position1D)));
+            moves.UnionWith(tileSelector.GetTileSet(grid, grid.ToPosition2D(position1D)));
         }
         moves.Remove(position1D);
-        moves.ExceptWith(grid.GetOccupiedTilesPosition1DSet());
+        moves.ExceptWith(grid.GetOccupiedTilesPositionSet());
         return moves;
     }
 }

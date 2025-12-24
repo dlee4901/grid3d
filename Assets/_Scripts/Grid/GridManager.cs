@@ -21,7 +21,7 @@ public class GridManager : MonoBehaviour
     [SerializeField] private int _testMapY = 8;
     [SerializeField] private int _testMapPlayerCount = 2;
     [SerializeField] private int _testMapUnitCostTotal = 10;
-    [SerializeField] private GridSelection _testGridSelection;
+    [SerializeField] private TileSelector _testTileSelector;
     
     [Header("Test Team Parameters")]
     [SerializeField] private List<int> _testTeamStartPositions;
@@ -63,7 +63,7 @@ public class GridManager : MonoBehaviour
         if (gridPosition.x >= 0 && gridPosition.x < _grid2D.X && gridPosition.y >= 0 && gridPosition.y < _grid2D.Y)
         {
             ShowTiles(
-                _testGridSelection.GetTiles(_grid2D, new Tuple<int, int>(gridPosition.x, gridPosition.y))
+                _testTileSelector.GetTileSet(_grid2D, (gridPosition.x, gridPosition.y))
                 );
             _pressOutline.gameObject.SetActive(true);
             _pressOutline.transform.position = _grid.CellToWorld(gridPosition);

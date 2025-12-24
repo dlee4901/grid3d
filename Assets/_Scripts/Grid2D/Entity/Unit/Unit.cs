@@ -5,15 +5,15 @@ public enum UnitAction {Move, Skill}
 [Serializable]
 public class Unit : Entity
 {
-    public int UnitId;// { get; private set; }
+    public int UnitId;
 
-    public int Cost;// { get; private set; }
-    public int StartingHealth;// { get; private set; }
+    public int Cost;
+    public int StartingHealth;
 
-    public Move Move;// { get; private set; }
-    public Skill Skill1;// { get; private set; }
-    public Skill Skill2;// { get; private set; }
-
+    public Move Move;
+    public Skill Skill1;
+    public Skill Skill2;
+    
     public Unit(int unitId=0, int cost=0, int startingHealth=0, Move move=null, Skill skill1=null, Skill skill2=null) : base()
     {
         UnitId = unitId;

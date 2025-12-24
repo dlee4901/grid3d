@@ -1,20 +1,20 @@
 using System;
 
-public sealed class ConditionBuilder<T>
+public sealed class QueryBuilder<T>
 {
     private Func<T, bool> _predicate;
 
-    private ConditionBuilder(Func<T, bool> predicate)
+    private QueryBuilder(Func<T, bool> predicate)
     {
         _predicate = predicate;
     }
 
     // Entry point
-    public static ConditionBuilder<T> Match(Func<T, bool> predicate)
-        => new ConditionBuilder<T>(predicate);
+    public static QueryBuilder<T> Match(Func<T, bool> predicate)
+        => new QueryBuilder<T>(predicate);
 
     // AND
-    public ConditionBuilder<T> And(Func<T, bool> predicate)
+    public QueryBuilder<T> And(Func<T, bool> predicate)
     {
         var left = _predicate;
         _predicate = x => left(x) && predicate(x);
@@ -22,7 +22,7 @@ public sealed class ConditionBuilder<T>
     }
 
     // OR
-    public ConditionBuilder<T> Or(Func<T, bool> predicate)
+    public QueryBuilder<T> Or(Func<T, bool> predicate)
     {
         var left = _predicate;
         _predicate = x => left(x) || predicate(x);
@@ -30,7 +30,7 @@ public sealed class ConditionBuilder<T>
     }
 
     // NOT
-    public ConditionBuilder<T> Not()
+    public QueryBuilder<T> Not()
     {
         var prev = _predicate;
         _predicate = x => !prev(x);

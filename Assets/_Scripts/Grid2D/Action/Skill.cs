@@ -1,7 +1,5 @@
 using System;
 
-public enum Effect {Position, Health, Shield, Damage, Counter}
-
 // enum TargetType {Select, Projectile, Beam, AOE}
 
 // Select

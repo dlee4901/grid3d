@@ -9,7 +9,7 @@ public class MapData
     public int X;
     public int Y;
     public int PlayerCount;
-    public int UnitCostTotal;
+    public int MaxTeamCost;
 
     // 1 to n:   Entity Id
     // 0:        No Entity
@@ -18,14 +18,14 @@ public class MapData
 
     public List<TileTerrain> TileTerrain;
 
-    public MapData(int id, string name, int x, int y, int playerCount, int unitCostTotal, List<int> entityStartPositions, List<TileTerrain> tileTerrain)
+    public MapData(int id, string name, int x, int y, int playerCount, int maxTeamCost, List<int> entityStartPositions, List<TileTerrain> tileTerrain)
     {
         Id = id;
         Name = name;
         X = x;
         Y = y;
         PlayerCount = playerCount;
-        UnitCostTotal = unitCostTotal;
+        MaxTeamCost = maxTeamCost;
         EntityStartPositions = entityStartPositions;
         TileTerrain = tileTerrain;
     }
