@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 
-[Serializable]
 public class Move
 {
     public List<TileSelector> TileSelectors { get; private set; }
@@ -21,14 +20,14 @@ public class Move
     //     }
     // }
     
-    public HashSet<int> GetSelectableTiles(Grid2D grid, int position1D)
+    public HashSet<int> GetSelectableTiles(Grid2D grid, int position)
     {
         HashSet<int> moves = new();
         foreach (var tileSelector in TileSelectors)
         {
-            moves.UnionWith(tileSelector.GetTileSet(grid, grid.ToPosition2D(position1D)));
+            moves.UnionWith(tileSelector.GetTileSet(grid, position));
         }
-        moves.Remove(position1D);
+        moves.Remove(position);
         moves.ExceptWith(grid.GetOccupiedTilesPositionSet());
         return moves;
     }

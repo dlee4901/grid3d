@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 
 public enum Direction {North, NorthEast, East, SouthEast, South, SouthWest, West, NorthWest, Vertical, Horizontal, Diagonal, Straight, Line, Step, Stride}
 // [Flags] public enum Team {Neutral=1, Ally=2, Enemy=4}
@@ -21,7 +20,7 @@ public class TileSelector
     
     public QueryBuilder<Entity> CollideMask;
     public TileSelector Chain;
-
+    
     public TileSelector(Direction direction, int maxDistance=-1, int minDistance=0, int startWidth=0, int deltaWidth=0, bool absoluteDirection=false, QueryBuilder<Entity> collideMask=null, TileSelector chain=null)
     {
         Direction = direction;
@@ -34,17 +33,19 @@ public class TileSelector
         Chain = chain;
     }
     
+    public HashSet<int> GetTileSet(Grid2D grid, int startPosition, Unit sourceUnit=null)
+    {
+        return GetTileSet(grid, grid.ToPosition2D(startPosition), sourceUnit);
+    }
     public HashSet<int> GetTileSet(Grid2D grid, (int, int) startPosition, Unit sourceUnit=null)
     {
-        var startPositions = new HashSet<(int, int)>();
-        startPositions.Add(startPosition);
+        var startPositions = new HashSet<(int, int)> {startPosition};
         return GetTileSet(grid, startPositions, sourceUnit);
     }
 
     public HashSet<int> GetTileSet(Grid2D grid, HashSet<(int, int)> startPositions, Unit sourceUnit=null)
     {
         HashSet<(int, int)> tiles = new();
-        Dictionary<(int, int), int> tileDistances = new();
         var directionFacing = sourceUnit?.DirectionFacing ?? DirectionFacing.North;
         var unitVectors = GetUnitVectors(Direction, directionFacing);
         var collideMask = CollideMask?.Build();
@@ -53,6 +54,8 @@ public class TileSelector
         if (maxDistance == -1 || maxDistance > grid.X + grid.Y) maxDistance = grid.X + grid.Y;
         var minDistance = MinDistance;
         if (minDistance > grid.X + grid.Y) minDistance = grid.X + grid.Y;
+        
+         var tileDistances = new Dictionary<(int, int), int>();
         
         for (var i = 0; i < grid.GetSize(); i++) tileDistances[grid.ToPosition2D(i)] = -1;
         var checkTiles = startPositions.ToList();
@@ -124,6 +127,7 @@ public class TileSelector
             {
                 for (var i = 0; i < 8; i++)
                 {
+                    if (unitVectors[i].Equals((0, 0))) continue;
                     var targetPosition = tilePosition;
                     
                     // Width vars
@@ -138,35 +142,44 @@ public class TileSelector
                         Entity entity;
                         if (collideMask != null && (entity = grid.GetEntity(tilePosition)) != null && collideMask(entity)) break;
                         
-                        // Get delta width tiles
-                        for (var k = 0; k < width; k++)
-                        {   
-                            if (cacheUnitVectors[i] == null) cacheUnitVectors[i] = GetUnitVectors((Direction)i, directionFacing);
-                            deltaWidthTiles.AddRange(GetWidthTiles(grid, width, targetPosition, cacheUnitVectors[i]));
-                        }
-                        width += DeltaWidth;
-                        
                         // Update tile distance
                         if (tileDistances[targetPosition] == -1) tileDistances[targetPosition] = j;
                         else tileDistances[targetPosition] = Math.Min(tileDistances[targetPosition], j);
-                        foreach (var tile in deltaWidthTiles)
-                        {
-                            if (tileDistances[tile] == -1) tileDistances[tile] = j;
-                            else tileDistances[tile] = Math.Min(tileDistances[tile], j);
-                        }
                         
                         // Tile checks
                         if (tileDistances[targetPosition] >= minDistance) tiles.Add(targetPosition);
                         else tiles.Remove(targetPosition);
+                        
+                        // Update target position
+                        var prevPosition = targetPosition;
+                        var newPosition = Util.TupleArithmetic(targetPosition, unitVectors[i], Util.ArithmeticOperation.Add);
+                        if (newPosition.HasValue) targetPosition = newPosition.Value;
+                        
+                        //
+                        // Check width tiles if target tile was within distance bounds
+                        //
+                        if (DeltaWidth == 0 || tileDistances[prevPosition] < minDistance) continue;
+                        
+                        // Get delta width tiles
+                        for (var k = 0; k < width; k++)
+                        {   
+                            if (cacheUnitVectors[i] == null) cacheUnitVectors[i] = GetUnitVectors((Direction)i, directionFacing);
+                            deltaWidthTiles.AddRange(GetWidthTiles(grid, width, prevPosition, cacheUnitVectors[i]));
+                        }
+                        width += DeltaWidth;
+                        
+                        // Check each width tile
                         foreach (var tile in deltaWidthTiles)
                         {
+                            if (!grid.IsValidPosition(tile)) continue;
+                            if (collideMask != null && (entity = grid.GetEntity(tile)) != null && collideMask(entity)) continue;
+                            
+                            if (tileDistances[tile] == -1) tileDistances[tile] = j;
+                            else tileDistances[tile] = Math.Min(tileDistances[tile], j);
+                            
                             if (tileDistances[tile] >= minDistance) tiles.Add(tile);
                             else tiles.Remove(tile);
                         }
-                        
-                        // Update target position
-                        var newPosition = Util.TupleArithmetic(targetPosition, unitVectors[i], Util.ArithmeticOperation.Add);
-                        if (newPosition.HasValue) targetPosition = newPosition.Value;
                     }
                 }
             }
@@ -186,7 +199,7 @@ public class TileSelector
         var zeroTuple = (0, 0);
         var leftTile = zeroTuple;
         var rightTile = zeroTuple;
-        for (var i = 0; i < width; i++)
+        for (var i = 1; i <= width; i++)
         {
             if (!unitVectors[0].Equals(zeroTuple) || !unitVectors[4].Equals(zeroTuple)) // N, S
             {
@@ -205,8 +218,8 @@ public class TileSelector
             }
             if (!unitVectors[3].Equals(zeroTuple) || !unitVectors[7].Equals(zeroTuple)) // SE, NW
             {
-                leftTile = (-i, i);
-                rightTile = (i, -i);
+                leftTile = (-i, -i);
+                rightTile = (i, i);
             }
             var newTile = Util.TupleArithmetic(startPosition, leftTile, Util.ArithmeticOperation.Add);
             if (newTile.HasValue && grid.IsValidPosition(newTile.Value)) widthTiles.Add(newTile.Value);
@@ -219,7 +232,6 @@ public class TileSelector
     private List<(int, int)> GetUnitVectors(Direction direction, DirectionFacing directionFacing=DirectionFacing.North)
     {
         List<(int, int)> unitVectors = new();
-        var test = (x: 1, y: 2);
         List<bool> absoluteDirections = GetAbsoluteDirections(direction, directionFacing);
         for (int i = 0; i < 8; i++)
         {

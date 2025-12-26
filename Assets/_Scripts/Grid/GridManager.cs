@@ -137,7 +137,6 @@ public class GridManager : MonoBehaviour
             if (_grid2D.IsValidPosition(tile))
             {
                 _selectionSquares[tile].gameObject.SetActive(true);
-                Debug.Log(_grid2D.ToPosition2D(tile));
             }
         }
     }

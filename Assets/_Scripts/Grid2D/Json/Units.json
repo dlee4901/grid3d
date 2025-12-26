@@ -1,8 +1,9 @@
 [
   {
     "Id": 1,
-    "Name": "unit1",
-    "Health": 10,
+    "Name": "pawn",
+    "Cost": 1,
+    "Health": 1,
     "Move": {
       "TileSelectors": [
         {
@@ -11,7 +12,9 @@
         }
       ]
     },
-    "Skills": [],
+    "Skills": [
+      { "Name": "" }
+    ],
     "Passives": [
       { "Type": "ExplodeOnDeath", "Radius": 1, "DamageAmount": 3 }
     ]

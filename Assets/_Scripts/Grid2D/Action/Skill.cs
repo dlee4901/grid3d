@@ -6,10 +6,12 @@ using System;
 // Direction: any
 // Passthrough: 
 
-[Serializable]
 public class Skill
 {
-    public int Id { get; private set; }
+    public int Id;
+    public bool Usable;
+    
+    public QueryBuilder<Entity> Trigger;
 
     public Skill(int id=0)
     {

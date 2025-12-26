@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 public enum TileTerrain { Void, Default }
 
-[Serializable]
 public class Grid2D
 {
     // Initial Parameters (Static)

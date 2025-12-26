@@ -1,27 +1,25 @@
 using System;
+using System.Collections.Generic;
 
 public enum UnitAction {Move, Skill}
 
-[Serializable]
 public class Unit : Entity
 {
     public int UnitId;
-
     public int Cost;
-    public int StartingHealth;
 
     public Move Move;
-    public Skill Skill1;
-    public Skill Skill2;
+    public List<Skill> Skills;
+    public List<Passive> Passives;
     
-    public Unit(int unitId=0, int cost=0, int startingHealth=0, Move move=null, Skill skill1=null, Skill skill2=null) : base()
+    public Unit(int unitId, int cost, int health, Move move, List<Skill> skills, List<Passive> passives) : base()
     {
         UnitId = unitId;
         Cost = cost;
-        StartingHealth = startingHealth;
+        Health = health;
         Move = move;
-        Skill1 = skill1;
-        Skill2 = skill2;
+        Skills = skills;
+        Passives = passives;
     }
 
     // public Unit(UnitStruct unitStruct)
