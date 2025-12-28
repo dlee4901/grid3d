@@ -14,14 +14,8 @@ public class Entity
     public DirectionFacing DirectionFacing;
     
 
-    public Entity(int id, int gridPosition, DirectionFacing directionFacing, int playerController, int health)
-    {
-        Id = id;
-        DirectionFacing = directionFacing;
-        PlayerController = playerController;
-        Health = health;
-        StatusEffects = new List<StatusEffect>();
-    }
+    public Entity()
+    { }
 
     public bool HasSameController(Entity entity)
     {

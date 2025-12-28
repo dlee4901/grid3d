@@ -12,7 +12,7 @@ public class Unit : Entity
     public List<Skill> Skills;
     public List<Passive> Passives;
     
-    public Unit(int unitId, int cost, int health, Move move, List<Skill> skills, List<Passive> passives) : base()
+    public Unit(int unitId, int cost, int health, Move move, List<Skill> skills, List<Passive> passives)
     {
         UnitId = unitId;
         Cost = cost;

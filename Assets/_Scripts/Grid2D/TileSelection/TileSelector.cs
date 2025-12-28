@@ -5,60 +5,63 @@ using System.Linq;
 public enum Direction {North, NorthEast, East, SouthEast, South, SouthWest, West, NorthWest, Vertical, Horizontal, Diagonal, Straight, Line, Step, Stride}
 // [Flags] public enum Team {Neutral=1, Ally=2, Enemy=4}
 
-[Serializable]
 public class TileSelector
 {
     public Direction Direction;
-    
-    public int MaxDistance;
-    public int MinDistance;
+    public int Distance;
+    //public int MinDistance;
     
     public int StartWidth;
     public int DeltaWidth;
+    public int DeltaWidthOffset;
     
     public bool AbsoluteDirection;
     
     public QueryBuilder<Entity> CollideMask;
     public TileSelector Chain;
+    public int ChainOffset; // IF (n > 0) n ~ distance ELSE maxDistReached + n ~ maxDistReached
     
-    public TileSelector(Direction direction, int maxDistance=-1, int minDistance=0, int startWidth=0, int deltaWidth=0, bool absoluteDirection=false, QueryBuilder<Entity> collideMask=null, TileSelector chain=null)
+    public int TotalDistance { get; private set; }
+    
+    public TileSelector(Direction direction, int distance=-1, int startWidth=0, int deltaWidth=0, int deltaWidthOffset=0, bool absoluteDirection=false, QueryBuilder<Entity> collideMask=null, TileSelector chain=null, int chainOffset=0)
     {
         Direction = direction;
-        MaxDistance = maxDistance;
-        MinDistance = minDistance;
+        Distance = distance;
         StartWidth = startWidth;
         DeltaWidth = deltaWidth;
+        DeltaWidthOffset = deltaWidthOffset;
         AbsoluteDirection = absoluteDirection;
         CollideMask = collideMask;
         Chain = chain;
+        ChainOffset = chainOffset;
     }
     
-    public HashSet<int> GetTileSet(Grid2D grid, int startPosition, Unit sourceUnit=null)
+    public TileSelection GetTileSelection(Grid2D grid, int startPosition, Entity sourceEntity=null)
     {
-        return GetTileSet(grid, grid.ToPosition2D(startPosition), sourceUnit);
+        return GetTileSelection(grid, grid.ToPosition2D(startPosition), sourceEntity);
     }
-    public HashSet<int> GetTileSet(Grid2D grid, (int, int) startPosition, Unit sourceUnit=null)
+    
+    public TileSelection GetTileSelection(Grid2D grid, (int, int) startPosition, Entity sourceEntity=null)
     {
         var startPositions = new HashSet<(int, int)> {startPosition};
-        return GetTileSet(grid, startPositions, sourceUnit);
+        var tileSelection = new TileSelection(grid);
+        TotalDistance = 0;
+        return GetTileSelection(grid, startPositions, ref tileSelection, sourceEntity);
     }
 
-    public HashSet<int> GetTileSet(Grid2D grid, HashSet<(int, int)> startPositions, Unit sourceUnit=null)
+    private TileSelection GetTileSelection(Grid2D grid, HashSet<(int, int)> startPositions, ref TileSelection tileSelection, Entity sourceEntity=null, int chainDistance=0)
     {
-        HashSet<(int, int)> tiles = new();
-        var directionFacing = sourceUnit?.DirectionFacing ?? DirectionFacing.North;
+        var directionFacing = sourceEntity?.DirectionFacing ?? DirectionFacing.North;
         var unitVectors = GetUnitVectors(Direction, directionFacing);
         var collideMask = CollideMask?.Build();
         
-        var maxDistance = MaxDistance;
-        if (maxDistance == -1 || maxDistance > grid.X + grid.Y) maxDistance = grid.X + grid.Y;
-        var minDistance = MinDistance;
-        if (minDistance > grid.X + grid.Y) minDistance = grid.X + grid.Y;
+        var distance = Distance;
+        if (distance < 0 || distance > grid.X * grid.Y) distance = grid.X * grid.Y;
+        //var minDistance = MinDistance;
+        //if (minDistance > grid.X + grid.Y) minDistance = grid.X + grid.Y;
         
-         var tileDistances = new Dictionary<(int, int), int>();
-        
-        for (var i = 0; i < grid.GetSize(); i++) tileDistances[grid.ToPosition2D(i)] = -1;
         var checkTiles = startPositions.ToList();
+        var chainTiles = new HashSet<(int, int)>();
         
         List<(int, int)> widthTiles = new();
         for (var i = 1; i <= StartWidth; i++)
@@ -92,7 +95,8 @@ public class TileSelector
         
         if (Direction == Direction.Step || Direction == Direction.Stride)
         {
-            for (var i = 0; i <= maxDistance; i++)
+            var maxDistanceReached = 0;
+            for (var i = 0; i <= distance; i++)
             {
                 List<(int, int)> nextTiles = new();
                 foreach (var tile in checkTiles)
@@ -103,12 +107,15 @@ public class TileSelector
                     if (collideMask != null && (entity = grid.GetEntity(tile)) != null && collideMask(entity)) continue;
                     
                     // Update tile distance
-                    if (tileDistances[tile] == -1) tileDistances[tile] = i;
-                    else tileDistances[tile] = Math.Min(tileDistances[tile], i);
+                    // if (tileDistances[tile] == -1) tileDistances[tile] = i + chainDistance;
+                    // else tileDistances[tile] = Math.Min(tileDistances[tile], i + chainDistance);
+                    if (maxDistanceReached < i) maxDistanceReached = i;
+                    tileSelection.UpdateTileDistance(tile, i + chainDistance);
+                    if (tileSelection.GetTileDistance(tile) > TotalDistance) TotalDistance = tileSelection.GetTileDistance(tile);
                     
                     // Tile checks
-                    if (tileDistances[tile] >= minDistance) tiles.Add(tile);
-                    else tiles.Remove(tile);
+                    // if (tileDistances[tile] >= minDistance) tiles.Add(tile);
+                    // else tiles.Remove(tile);
                     
                     // Add adjacent tiles to next check list
                     for (int j = 0; j < 8; j++)
@@ -120,6 +127,11 @@ public class TileSelector
                 }
                 checkTiles = nextTiles;
             }
+            if (Chain != null)
+            {
+                if (ChainOffset < 0) chainTiles.UnionWith(tileSelection.GetTilesInDistanceRange(maxDistanceReached + ChainOffset, maxDistanceReached));
+                else chainTiles.UnionWith(tileSelection.GetTilesInDistanceRange(ChainOffset, distance));
+            }
         }
         else
         {
@@ -129,13 +141,15 @@ public class TileSelector
                 {
                     if (unitVectors[i].Equals((0, 0))) continue;
                     var targetPosition = tilePosition;
+                    var maxDistanceReached = 0;
+                    var axisTileSelection = new TileSelection(grid, new Dictionary<(int, int), int>{ { targetPosition, 0 } });
                     
                     // Width vars
                     var width = 0;
                     List<(int, int)> deltaWidthTiles = new();
                     var cacheUnitVectors = new List<(int, int)>[8];
                     
-                    for (var j = 0; j <= maxDistance; j++)
+                    for (var j = 0; j <= distance; j++)
                     {
                         // If tile is invalid or collided with entity, do not check further
                         if (!grid.IsValidPosition(targetPosition)) break;
@@ -143,12 +157,15 @@ public class TileSelector
                         if (collideMask != null && (entity = grid.GetEntity(tilePosition)) != null && collideMask(entity)) break;
                         
                         // Update tile distance
-                        if (tileDistances[targetPosition] == -1) tileDistances[targetPosition] = j;
-                        else tileDistances[targetPosition] = Math.Min(tileDistances[targetPosition], j);
+                        // if (tileDistances[targetPosition] == -1) tileDistances[targetPosition] = j + chainDistance;
+                        // else tileDistances[targetPosition] = Math.Min(tileDistances[targetPosition], j + chainDistance);
+                        if (maxDistanceReached < j) maxDistanceReached = j;
+                        axisTileSelection.UpdateTileDistance(targetPosition, j + chainDistance);
+                        if (axisTileSelection.GetTileDistance(targetPosition) > TotalDistance) TotalDistance = axisTileSelection.GetTileDistance(targetPosition);
                         
                         // Tile checks
-                        if (tileDistances[targetPosition] >= minDistance) tiles.Add(targetPosition);
-                        else tiles.Remove(targetPosition);
+                        // if (tileDistances[targetPosition] >= minDistance) tiles.Add(targetPosition);
+                        // else tiles.Remove(targetPosition);
                         
                         // Update target position
                         var prevPosition = targetPosition;
@@ -156,9 +173,9 @@ public class TileSelector
                         if (newPosition.HasValue) targetPosition = newPosition.Value;
                         
                         //
-                        // Check width tiles if target tile was within distance bounds
+                        // Compute DeltaWidth
                         //
-                        if (DeltaWidth == 0 || tileDistances[prevPosition] < minDistance) continue;
+                        if (DeltaWidth == 0 || axisTileSelection.GetTileDistance(prevPosition) < DeltaWidthOffset) continue;
                         
                         // Get delta width tiles
                         for (var k = 0; k < width; k++)
@@ -174,23 +191,26 @@ public class TileSelector
                             if (!grid.IsValidPosition(tile)) continue;
                             if (collideMask != null && (entity = grid.GetEntity(tile)) != null && collideMask(entity)) continue;
                             
-                            if (tileDistances[tile] == -1) tileDistances[tile] = j;
-                            else tileDistances[tile] = Math.Min(tileDistances[tile], j);
+                            // if (tileDistances[tile] == -1) tileDistances[tile] = j + chainDistance;
+                            // else tileDistances[tile] = Math.Min(tileDistances[tile], j + chainDistance);
+                            axisTileSelection.UpdateTileDistance(tile, j + chainDistance);
                             
-                            if (tileDistances[tile] >= minDistance) tiles.Add(tile);
-                            else tiles.Remove(tile);
+                            // if (tileDistances[tile] >= minDistance) tiles.Add(tile);
+                            // else tiles.Remove(tile);
                         }
+                    }
+                    
+                    tileSelection.Merge(axisTileSelection);
+                    
+                    if (Chain != null)
+                    {
+                        if (ChainOffset < 0) chainTiles.UnionWith(axisTileSelection.GetTilesInDistanceRange(maxDistanceReached + ChainOffset, maxDistanceReached, false));
+                        else chainTiles.UnionWith(axisTileSelection.GetTilesInDistanceRange(ChainOffset, distance));
                     }
                 }
             }
         }
-        
-        if (Chain != null)
-        {
-            return GetTileSet(grid, tiles, sourceUnit);
-        }
-        //return tiles.Select(t => grid.ToPosition1D(t)).ToHashSet();
-        return tiles.Select(grid.ToPosition1D).ToHashSet();
+        return Chain != null ? GetTileSelection(grid, chainTiles, ref tileSelection, sourceEntity, chainDistance + distance) : tileSelection;
     }
     
     private List<(int, int)> GetWidthTiles(Grid2D grid, int width, (int, int) startPosition, List<(int, int)> unitVectors)

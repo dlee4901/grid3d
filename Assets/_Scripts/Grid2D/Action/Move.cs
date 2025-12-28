@@ -25,7 +25,7 @@ public class Move
         HashSet<int> moves = new();
         foreach (var tileSelector in TileSelectors)
         {
-            moves.UnionWith(tileSelector.GetTileSet(grid, position));
+            //moves.UnionWith(tileSelector.GetTileSet(grid, position));
         }
         moves.Remove(position);
         moves.ExceptWith(grid.GetOccupiedTilesPositionSet());

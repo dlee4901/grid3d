@@ -1,0 +1,16 @@
+{
+  "Id": 1,
+  "Name": "pawn",
+  "Cost": 1,
+  "Health": 1,
+  "Skills": [1, 2],
+  "Passives": [1],
+  "Move": {
+    "TileSelectionBuilder": {
+      "TileSelectors": [
+        { "Direction": "North", "Distance": 1 }
+      ],
+      "CollideMask": ["Unit"]
+    }
+  }
+}

@@ -1,15 +1,22 @@
 using System;
-
-// enum TargetType {Select, Projectile, Beam, AOE}
+using System.Collections.Generic;
 
 // Select
 // Direction: any
-// Passthrough: 
+// Passthrough:
+
+// TileSelectors: Range, Selectable, Affected (Area, Wave, Projectile)
+// Num Selections
+// 
 
 public class Skill
 {
     public int Id;
-    public bool Usable;
+    
+    List<TileSelector> Range;
+    List<TileSelector> Targetable;
+    
+    
     
     public QueryBuilder<Entity> Trigger;
 
