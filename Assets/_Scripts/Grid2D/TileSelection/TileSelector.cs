@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 public enum Direction {North, NorthEast, East, SouthEast, South, SouthWest, West, NorthWest, Vertical, Horizontal, Diagonal, Straight, Line, Step, Stride}
-// [Flags] public enum Team {Neutral=1, Ally=2, Enemy=4}
+[Flags] public enum EntityPassthrough {None=0, Unit=1<<0, Obstacle=1<<1, Ally=Unit|1<<2, Enemy=Unit|1<<3, All=Unit|Obstacle|Ally|Enemy}
 
 public class TileSelector
 {
@@ -17,13 +17,13 @@ public class TileSelector
     
     public bool AbsoluteDirection;
     
-    public QueryBuilder<Entity> CollideMask;
+    public EntityPassthrough Passthrough;
     public TileSelector Chain;
     public int ChainOffset; // IF (n > 0) n ~ distance ELSE maxDistReached + n ~ maxDistReached
     
     public int TotalDistance { get; private set; }
     
-    public TileSelector(Direction direction, int distance=-1, int startWidth=0, int deltaWidth=0, int deltaWidthOffset=0, bool absoluteDirection=false, QueryBuilder<Entity> collideMask=null, TileSelector chain=null, int chainOffset=0)
+    public TileSelector(Direction direction, int distance=-1, int startWidth=0, int deltaWidth=0, int deltaWidthOffset=0, bool absoluteDirection=false, EntityPassthrough passthrough=EntityPassthrough.None, TileSelector chain=null, int chainOffset=0)
     {
         Direction = direction;
         Distance = distance;
@@ -31,7 +31,7 @@ public class TileSelector
         DeltaWidth = deltaWidth;
         DeltaWidthOffset = deltaWidthOffset;
         AbsoluteDirection = absoluteDirection;
-        CollideMask = collideMask;
+        Passthrough = passthrough;
         Chain = chain;
         ChainOffset = chainOffset;
     }
@@ -53,7 +53,7 @@ public class TileSelector
     {
         var directionFacing = sourceEntity?.DirectionFacing ?? DirectionFacing.North;
         var unitVectors = GetUnitVectors(Direction, directionFacing);
-        var collideMask = CollideMask?.Build();
+        //var collideMask = CollideMask?.Build();
         
         var distance = Distance;
         if (distance < 0 || distance > grid.X * grid.Y) distance = grid.X * grid.Y;
@@ -104,7 +104,8 @@ public class TileSelector
                     // If tile is invalid or collided with entity, do not check further
                     if (!grid.IsValidPosition(tile)) continue;
                     Entity entity;
-                    if (collideMask != null && (entity = grid.GetEntity(tile)) != null && collideMask(entity)) continue;
+                    if ((entity = grid.GetEntity(tile)) != null && IsColliding(entity, sourceEntity)) continue;
+                    //if (collideMask != null && (entity = grid.GetEntity(tile)) != null && collideMask(entity)) continue;
                     
                     // Update tile distance
                     // if (tileDistances[tile] == -1) tileDistances[tile] = i + chainDistance;
@@ -154,7 +155,8 @@ public class TileSelector
                         // If tile is invalid or collided with entity, do not check further
                         if (!grid.IsValidPosition(targetPosition)) break;
                         Entity entity;
-                        if (collideMask != null && (entity = grid.GetEntity(tilePosition)) != null && collideMask(entity)) break;
+                        if ((entity = grid.GetEntity(targetPosition)) != null && IsColliding(entity, sourceEntity)) continue;
+                        //if (collideMask != null && (entity = grid.GetEntity(tilePosition)) != null && collideMask(entity)) break;
                         
                         // Update tile distance
                         // if (tileDistances[targetPosition] == -1) tileDistances[targetPosition] = j + chainDistance;
@@ -189,7 +191,8 @@ public class TileSelector
                         foreach (var tile in deltaWidthTiles)
                         {
                             if (!grid.IsValidPosition(tile)) continue;
-                            if (collideMask != null && (entity = grid.GetEntity(tile)) != null && collideMask(entity)) continue;
+                            if ((entity = grid.GetEntity(tile)) != null && IsColliding(entity, sourceEntity)) continue;
+                            //if (collideMask != null && (entity = grid.GetEntity(tile)) != null && collideMask(entity)) continue;
                             
                             // if (tileDistances[tile] == -1) tileDistances[tile] = j + chainDistance;
                             // else tileDistances[tile] = Math.Min(tileDistances[tile], j + chainDistance);
@@ -211,6 +214,18 @@ public class TileSelector
             }
         }
         return Chain != null ? GetTileSelection(grid, chainTiles, ref tileSelection, sourceEntity, chainDistance + distance) : tileSelection;
+    }
+    
+    private bool IsColliding(Entity targetEntity, Entity sourceEntity=null)
+    {
+        if (sourceEntity != null)
+        {
+            if (!Passthrough.HasFlag(EntityPassthrough.Enemy) && !targetEntity.HasSameController(sourceEntity)) return true;
+            if (!Passthrough.HasFlag(EntityPassthrough.Ally) && targetEntity.HasSameController(sourceEntity)) return true;
+        }
+        if (!Passthrough.HasFlag(EntityPassthrough.Unit) && targetEntity.GetType() == typeof(Unit)) return true;
+        if (!Passthrough.HasFlag(EntityPassthrough.Obstacle) && targetEntity.GetType() != typeof(Unit)) return true;
+        return false;
     }
     
     private List<(int, int)> GetWidthTiles(Grid2D grid, int width, (int, int) startPosition, List<(int, int)> unitVectors)

@@ -9,8 +9,7 @@
     "TileSelectionBuilder": {
       "TileSelectors": [
         { "Direction": "North", "Distance": 1 }
-      ],
-      "CollideMask": ["Unit"]
+      ]
     }
   }
 }
