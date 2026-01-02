@@ -1,16 +1,14 @@
 using System;
 using System.Collections.Generic;
 
-public enum UnitAction {Move, Skill}
-
-public class Unit : Entity
+public class UnitArchetype
 {
-    public int UnitId;
+    public string Name;
     public int Cost;
-
+    
     public Move Move;
-    public List<Skill> Skills;
-    public List<Passive> Passives;
+    public List<string> Skills;
+    public List<string> Passives;
     
     public Unit(int unitId, int cost, int health, Move move, List<Skill> skills, List<Passive> passives)
     {

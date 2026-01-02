@@ -54,7 +54,7 @@ public class TileSelectionBuilder
         _excludedDistanceRanges.AddRange(ranges);
     }
     
-    public Dictionary<int, int> GetTileDistances()
+    public Dictionary<int, int> GetTileDistances(QueryBuilder<Entity> excludeQuery=null)
     {
         var tileSelection = new TileSelection(_grid);
         foreach (var tileSelector in _tileSelectors)
@@ -73,6 +73,6 @@ public class TileSelectionBuilder
             }
         }
         
-        return tileSelection.GetTileDistancesNotInRanges(_excludedDistanceRanges, false, true, _maxDistance);
+        return tileSelection.GetTileDistancesNotInRanges(_excludedDistanceRanges, false, true, _maxDistance, excludeQuery);
     }
 }

@@ -84,7 +84,7 @@ public class TileSelection
         return result;
     }
     
-    public Dictionary<int, int> GetTileDistancesNotInRanges(List<(int, int)> ranges, bool includeLower=true, bool includeUpper=true, int maxDistance=0)
+    public Dictionary<int, int> GetTileDistancesNotInRanges(List<(int, int)> ranges, bool includeLower=true, bool includeUpper=true, int maxDistance=0, QueryBuilder<Entity> excludeQuery=null)
     {
         var result = new Dictionary<int, int>();
         foreach (var (tile, distance) in _tileDistances)
@@ -93,11 +93,19 @@ public class TileSelection
             if (maxDistance > 0 && distance > maxDistance) continue;
             foreach (var (min, max) in ranges)
             {
-                if ((includeLower ? distance <= min : distance < min) || (includeUpper ? distance >= max : distance > max))
+                if ((includeLower ? distance > min : distance >= min) &&
+                    (includeUpper ? distance < max : distance <= max)) continue;
+                if (excludeQuery != null)
                 {
-                    result[_grid.ToPosition1D(tile)] = distance;
-                    break;
+                    var entity = _grid.GetEntity(tile);
+                    var query = excludeQuery.Build();
+                    if (entity != null && query(entity))
+                    {
+                        continue;
+                    }
                 }
+                result[_grid.ToPosition1D(tile)] = distance;
+                break;
             }
         }
         return result;

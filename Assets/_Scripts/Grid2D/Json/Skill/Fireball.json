@@ -1,0 +1,22 @@
+{
+  "Name": "Fireball",
+  "Trigger": "OnCast",
+  "CastTime": 1,
+  "Cooldown": 2,
+  "SelectableAreas": [
+    { 
+      "TileSelectionBuilder": {
+        "TileSelectors": [
+          { "Direction": "step", "Distance": 4 }
+        ]
+      }
+    }
+  ],
+  "EffectArea": {
+    "TileSelectionBuilder": {
+      "TileSelectors": [
+        { "Direction": "step", "Distance": 2 }
+      ]
+    }
+  }
+}
