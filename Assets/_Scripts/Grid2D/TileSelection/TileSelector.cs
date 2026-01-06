@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,56 +8,54 @@ public enum Direction {North, NorthEast, East, SouthEast, South, SouthWest, West
 
 public class TileSelector
 {
-    public Direction Direction;
-    public int Distance;
-    //public int MinDistance;
+    public Direction Direction { get; set; }
     
-    public int StartWidth;
-    public int DeltaWidth;
-    public int DeltaWidthOffset;
+    public int Distance { get; set; } = 0;
+    public bool AbsoluteDirection { get; set; } = false;
     
-    public bool AbsoluteDirection;
+    public int StartWidth { get; set; } = 0;
+    public int DeltaWidth { get; set; } = 0;
+    public int DeltaWidthOffset { get; set; } = 0;
     
-    public EntityPassthrough Passthrough;
-    public TileSelector Chain;
-    public int ChainOffset; // IF (n > 0) n ~ distance ELSE maxDistReached + n ~ maxDistReached
+    public EntityPassthrough Passthrough { get; set; } = EntityPassthrough.None;
+    public QueryNode? PassthroughQuery { get; set; }
     
-    public int TotalDistance { get; private set; }
+    public TileSelector? Chain { get; set; }
+    public int ChainOffset { get; set; } = 0; // IF (n > 0) n ~ distance ELSE maxDistReached + n ~ maxDistReached
     
-    public TileSelector(Direction direction, int distance=-1, int startWidth=0, int deltaWidth=0, int deltaWidthOffset=0, bool absoluteDirection=false, EntityPassthrough passthrough=EntityPassthrough.None, TileSelector chain=null, int chainOffset=0)
-    {
-        Direction = direction;
-        Distance = distance;
-        StartWidth = startWidth;
-        DeltaWidth = deltaWidth;
-        DeltaWidthOffset = deltaWidthOffset;
-        AbsoluteDirection = absoluteDirection;
-        Passthrough = passthrough;
-        Chain = chain;
-        ChainOffset = chainOffset;
-    }
+    // public TileSelector(Direction direction, int distance=0, int startWidth=0, int deltaWidth=0, int deltaWidthOffset=0, bool absoluteDirection=false, EntityPassthrough passthrough=EntityPassthrough.None, TileSelector chain=null, int chainOffset=0)
+    // {
+    //     Direction = direction;
+    //     Distance = distance;
+    //     StartWidth = startWidth;
+    //     DeltaWidth = deltaWidth;
+    //     DeltaWidthOffset = deltaWidthOffset;
+    //     AbsoluteDirection = absoluteDirection;
+    //     Passthrough = passthrough;
+    //     Chain = chain;
+    //     ChainOffset = chainOffset;
+    // }
     
-    public TileSelection GetTileSelection(Grid2D grid, int startPosition, Entity sourceEntity=null)
+    public TileSelection GetTileSelection(Grid2D grid, int startPosition, Entity? sourceEntity=null)
     {
         return GetTileSelection(grid, grid.ToPosition2D(startPosition), sourceEntity);
     }
     
-    public TileSelection GetTileSelection(Grid2D grid, (int, int) startPosition, Entity sourceEntity=null)
+    public TileSelection GetTileSelection(Grid2D grid, (int, int) startPosition, Entity? sourceEntity=null)
     {
         var startPositions = new HashSet<(int, int)> {startPosition};
         var tileSelection = new TileSelection(grid);
-        TotalDistance = 0;
         return GetTileSelection(grid, startPositions, ref tileSelection, sourceEntity);
     }
 
-    private TileSelection GetTileSelection(Grid2D grid, HashSet<(int, int)> startPositions, ref TileSelection tileSelection, Entity sourceEntity=null, int chainDistance=0)
+    private TileSelection GetTileSelection(Grid2D grid, HashSet<(int, int)> startPositions, ref TileSelection tileSelection, Entity? sourceEntity=null, int chainDistance=0)
     {
-        var directionFacing = sourceEntity?.DirectionFacing ?? DirectionFacing.North;
+        var directionFacing = sourceEntity?.Facing ?? DirectionFacing.North;
         var unitVectors = GetUnitVectors(Direction, directionFacing);
         //var collideMask = CollideMask?.Build();
         
         var distance = Distance;
-        if (distance < 0 || distance > grid.X * grid.Y) distance = grid.X * grid.Y;
+        if (distance <= 0 || distance > grid.X * grid.Y) distance = grid.X * grid.Y;
         //var minDistance = MinDistance;
         //if (minDistance > grid.X + grid.Y) minDistance = grid.X + grid.Y;
         
@@ -112,7 +111,6 @@ public class TileSelector
                     // else tileDistances[tile] = Math.Min(tileDistances[tile], i + chainDistance);
                     if (maxDistanceReached < i) maxDistanceReached = i;
                     tileSelection.UpdateTileDistance(tile, i + chainDistance);
-                    if (tileSelection.GetTileDistance(tile) > TotalDistance) TotalDistance = tileSelection.GetTileDistance(tile);
                     
                     // Tile checks
                     // if (tileDistances[tile] >= minDistance) tiles.Add(tile);
@@ -163,7 +161,6 @@ public class TileSelector
                         // else tileDistances[targetPosition] = Math.Min(tileDistances[targetPosition], j + chainDistance);
                         if (maxDistanceReached < j) maxDistanceReached = j;
                         axisTileSelection.UpdateTileDistance(targetPosition, j + chainDistance);
-                        if (axisTileSelection.GetTileDistance(targetPosition) > TotalDistance) TotalDistance = axisTileSelection.GetTileDistance(targetPosition);
                         
                         // Tile checks
                         // if (tileDistances[targetPosition] >= minDistance) tiles.Add(targetPosition);
@@ -216,15 +213,18 @@ public class TileSelector
         return Chain != null ? GetTileSelection(grid, chainTiles, ref tileSelection, sourceEntity, chainDistance + distance) : tileSelection;
     }
     
-    private bool IsColliding(Entity targetEntity, Entity sourceEntity=null)
+    private bool IsColliding(Entity targetEntity, Entity? sourceEntity=null)
     {
-        if (sourceEntity != null)
+        Func<Entity, bool>? query = null;
+        if (PassthroughQuery != null) query = QueryCompiler<Entity>.Compile(PassthroughQuery);
+
+        if (sourceEntity != null && targetEntity.Control != null)
         {
-            if (!Passthrough.HasFlag(EntityPassthrough.Enemy) && !targetEntity.HasSameController(sourceEntity)) return true;
-            if (!Passthrough.HasFlag(EntityPassthrough.Ally) && targetEntity.HasSameController(sourceEntity)) return true;
+            if (!Passthrough.HasFlag(EntityPassthrough.Enemy) && !targetEntity.Control.HasSameController(sourceEntity)) return query?.Invoke(targetEntity) ?? true;
+            if (!Passthrough.HasFlag(EntityPassthrough.Ally) && targetEntity.Control.HasSameController(sourceEntity)) return query?.Invoke(targetEntity) ?? true;
         }
-        if (!Passthrough.HasFlag(EntityPassthrough.Unit) && targetEntity.GetType() == typeof(Unit)) return true;
-        if (!Passthrough.HasFlag(EntityPassthrough.Obstacle) && targetEntity.GetType() != typeof(Unit)) return true;
+        //if (!Passthrough.HasFlag(EntityPassthrough.Unit) && targetEntity.GetType() == typeof(Unit)) return true;
+        //if (!Passthrough.HasFlag(EntityPassthrough.Obstacle) && targetEntity.GetType() != typeof(Unit)) return true;
         return false;
     }
     

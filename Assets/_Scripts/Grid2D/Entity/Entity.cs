@@ -1,37 +1,64 @@
-using System.Collections.Generic;
-using System.Linq;
+#nullable enable
+
+using Newtonsoft.Json;
 
 public enum DirectionFacing {North, East, South, West}
 
 public class Entity
 {
     public string Name { get; }
-    private readonly List<IComponent> _components = new();
+    public int Cost { get; } // -1: map, 0: summons, 1~n: units
     
-    public Entity(string name)
+    public DirectionFacing Facing { get; private set; } = DirectionFacing.North;
+    
+    public SkillComponent? Skills { get; }
+    public HealthComponent? Health { get; }
+    public ControlComponent? Control { get; }
+    public MoveComponent? Move { get; }
+    
+    static Entity()
+    {
+        AccessorRegistry<Entity>.Register<string>("Name", e => e.Name);
+        AccessorRegistry<Entity>.Register<int>("Cost", e => e.Cost);
+    }
+    
+    [JsonConstructor]
+    public Entity(string name, int cost, SkillComponent? skills, HealthComponent? health, ControlComponent? control, MoveComponent? move)
     {
         Name = name;
+        Cost = cost;
+        Skills = skills;
+        Health = health;
+        Control = control;
+        Move = move;
     }
     
-    public void AddComponent(IComponent component) => _components.Add(component);
-    
-    public bool TryGetComponent<T>(out T component) where T : class, IComponent
+    internal void SetFacing(DirectionFacing facing)
     {
-        component = _components.OfType<T>().FirstOrDefault();
-        return component != null;
+        Facing = facing;
     }
     
-    public IEnumerable<T> GetAllComponents<T>() where T : class, IComponent => _components.OfType<T>();
+    // private readonly List<IComponent> _components = new();
+    
+    // public void AddComponent(IComponent component) => _components.Add(component);
+    //
+    // public bool TryGetComponent<T>(out T component) where T : class, IComponent
+    // {
+    //     component = _components.OfType<T>().FirstOrDefault();
+    //     return component != null;
+    // }
+    //
+    // public IEnumerable<T> GetAllComponents<T>() where T : class, IComponent => _components.OfType<T>();
 
 
     // public int Health;
     // public List<StatusEffect> StatusEffects;
     //
-    public int PlayerController;
-    public DirectionFacing DirectionFacing;
-    
-    public bool HasSameController(Entity entity)
-    {
-        return PlayerController == entity.PlayerController;
-    }
+    // public int PlayerController;
+    // public DirectionFacing DirectionFacing;
+    //
+    // public bool HasSameController(Entity entity)
+    // {
+    //     return PlayerController == entity.PlayerController;
+    // }
 }

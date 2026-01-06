@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 
 public struct RangePattern
 {
@@ -17,62 +16,60 @@ public struct RangePattern
 
 public class TileSelectionBuilder
 {
-    private List<TileSelector> _tileSelectors;
+    public List<TileSelector> TileSelectors { get; set; } = new();
+    public int MinDistance { get; set; }
+    public int MaxDistance { get; set; }
+    public List<(int, int)> ExcludedDistanceRanges { get; set; } = new();
     
-    private readonly Grid2D _grid;
-    private readonly int _startPosition;
-    private readonly Entity _sourceEntity;
+    public TileSelectionBuilder(TileSelector tileSelector, int minDistance=0, int maxDistance=0, List<(int, int)> excludedDistanceRanges=null) : this(new List<TileSelector>{tileSelector}, minDistance, maxDistance, excludedDistanceRanges) {}
     
-    private readonly int _minDistance;
-    private readonly int _maxDistance;
-    private readonly RangePattern? _rangePattern;
-    
-    private readonly List<(int, int)> _excludedDistanceRanges;
-    
-    public TileSelectionBuilder(Grid2D grid, int startPosition, Entity sourceEntity=null, int minDistance=0, int maxDistance=0, RangePattern? rangePattern=null)
+    public TileSelectionBuilder(List<TileSelector> tileSelectors=null, int minDistance=0, int maxDistance=0, List<(int, int)> excludedDistanceRanges=null)
     {
-        _grid = grid;
-        _startPosition = startPosition;
-        _sourceEntity = sourceEntity;
-        _minDistance = minDistance;
-        _maxDistance = maxDistance;
-        _rangePattern = rangePattern;
+        TileSelectors = tileSelectors ?? new List<TileSelector>();
+        MinDistance = minDistance;
+        MaxDistance = maxDistance;
+        ExcludedDistanceRanges = excludedDistanceRanges ?? new List<(int, int)>();
+    }
+    
+    public void SetDistances(int minDistance, int maxDistance)
+    {
+        MinDistance = minDistance;
+        MaxDistance = maxDistance;
     }
     
     public void AddSelector(TileSelector tileSelector)
     {
-        _tileSelectors.Add(tileSelector);
+        TileSelectors.Add(tileSelector);
     }
     
     public void AddExcludedDistanceRange((int, int) range)
     {
-        _excludedDistanceRanges.Add(range);
+        ExcludedDistanceRanges.Add(range);
     }
     
     public void AddExcludedDistanceRanges(List<(int, int)> ranges)
     {
-        _excludedDistanceRanges.AddRange(ranges);
+        ExcludedDistanceRanges.AddRange(ranges);
     }
     
-    public Dictionary<int, int> GetTileDistances(QueryBuilder<Entity> excludeQuery=null)
+    public void AddExcludedDistanceRangePattern(RangePattern rangePattern)
     {
-        var tileSelection = new TileSelection(_grid);
-        foreach (var tileSelector in _tileSelectors)
+        for (var i = rangePattern.Start; i <= MaxDistance; i += rangePattern.Span + rangePattern.Gap + 1)
         {
-            var selection = tileSelector.GetTileSelection(_grid, _startPosition, _sourceEntity);
+            ExcludedDistanceRanges.Add((i, i + rangePattern.Span));
+        }
+    }
+    
+    public Dictionary<int, int> GetTileDistances(Grid2D grid, int startPosition, Entity sourceEntity=null, QueryBuilder<Entity> excludeQuery=null)
+    {
+        var tileSelection = new TileSelection(grid);
+        foreach (var tileSelector in TileSelectors)
+        {
+            var selection = tileSelector.GetTileSelection(grid, startPosition, sourceEntity);
             tileSelection.Merge(selection);
         }
+        if (MinDistance > 0) ExcludedDistanceRanges.Add((0, MinDistance));
         
-        if (_minDistance > 0) _excludedDistanceRanges.Add((0, _minDistance));
-        if (_rangePattern.HasValue)
-        {
-            var rangePattern = _rangePattern.Value;
-            for (var i = rangePattern.Start; i <= _maxDistance; i += rangePattern.Span + rangePattern.Gap + 1)
-            {
-                _excludedDistanceRanges.Add((i, i + rangePattern.Span));
-            }
-        }
-        
-        return tileSelection.GetTileDistancesNotInRanges(_excludedDistanceRanges, false, true, _maxDistance, excludeQuery);
+        return tileSelection.GetTileDistancesNotInRanges(ExcludedDistanceRanges, false, true, MaxDistance, excludeQuery);
     }
 }

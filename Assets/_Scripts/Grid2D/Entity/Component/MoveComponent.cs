@@ -1,12 +1,12 @@
-using System;
-using System.Collections.Generic;
-
-public sealed class Move : IComponent
+public sealed class MoveComponent
 {
     public TileSelectionBuilder TileSelectionBuilder { get; }
     
-    public Move(TileSelectionBuilder tileSelectionBuilder)
+    private readonly Entity _entity;
+    
+    public MoveComponent(Entity entity, TileSelectionBuilder tileSelectionBuilder)
     {
+        _entity = entity;
         TileSelectionBuilder = tileSelectionBuilder;
     }
 
@@ -20,10 +20,10 @@ public sealed class Move : IComponent
     //     }
     // }
     
-    public HashSet<int> GetSelectableTiles()
-    {
-        var query = QueryBuilder<Entity>.Match(e => e.GetType == typeof(Entity));
-        var tileDistances = TileSelectionBuilder.GetTileDistances();
-        
-    }
+    // public HashSet<int> GetSelectableTiles()
+    // {
+    //     var query = QueryBuilder<Entity>.Match(e => e.GetType == typeof(Entity));
+    //     var tileDistances = TileSelectionBuilder.GetTileDistances();
+    //     
+    // }
 }

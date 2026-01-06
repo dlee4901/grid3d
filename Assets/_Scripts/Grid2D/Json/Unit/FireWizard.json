@@ -1,0 +1,15 @@
+{
+  "Name": "FireWizard",
+  "Cost": 4,
+  "Health": 6,
+  "Skills": ["Fireball"],
+  "Move": {
+    "TileSelectionBuilder": {
+      "MinDistance": 3,
+      "TileSelectors": [
+        { "Direction": "Horizontal", "Distance": 1, "Chain": { "TileSelector": { "Direction": "Vertical", "Distance": 2 } } },
+        { "Direction": "Horizontal", "Distance": 2, "Chain": { "TileSelector": { "Direction": "Vertical", "Distance": 1 } } }
+      ]
+    }
+  }
+}
