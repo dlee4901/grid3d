@@ -10,7 +10,7 @@ public class TileSelector
 {
     public Direction Direction { get; set; }
     
-    public int Distance { get; set; } = 0;
+    public int Distance { get; set; } = 0; // -1: inf
     public bool AbsoluteDirection { get; set; } = false;
     
     public int StartWidth { get; set; } = 0;
@@ -55,7 +55,7 @@ public class TileSelector
         //var collideMask = CollideMask?.Build();
         
         var distance = Distance;
-        if (distance <= 0 || distance > grid.X * grid.Y) distance = grid.X * grid.Y;
+        if (distance < 0 || distance > grid.X * grid.Y) distance = grid.X * grid.Y;
         //var minDistance = MinDistance;
         //if (minDistance > grid.X + grid.Y) minDistance = grid.X + grid.Y;
         

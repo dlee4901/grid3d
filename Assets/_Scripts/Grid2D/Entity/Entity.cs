@@ -22,8 +22,7 @@ public class Entity
         AccessorRegistry<Entity>.Register<int>("Cost", e => e.Cost);
     }
     
-    [JsonConstructor]
-    public Entity(string name, int cost, SkillComponent? skills, HealthComponent? health, ControlComponent? control, MoveComponent? move)
+    private Entity(string name, int cost, SkillComponent? skills, HealthComponent? health, ControlComponent? control, MoveComponent? move)
     {
         Name = name;
         Cost = cost;
@@ -31,6 +30,16 @@ public class Entity
         Health = health;
         Control = control;
         Move = move;
+    }
+    
+    public static Entity Create(EntityConfig config)
+    {
+        return new Entity(
+            name: config.Name,
+            cost: config.Cost,
+            skills: config.Skills?.Count > 0 ? new SkillComponent(Skills) : null,
+            health: config.Health > 0 ? new HealthComponent(config.Health) : null,
+        )
     }
     
     internal void SetFacing(DirectionFacing facing)
