@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 
@@ -17,7 +18,7 @@ public class Grid2D
 
     // State
     public List<TileTerrain> TileTerrain;
-    public List<Entity> Entities;
+    public Entity?[] Entities;
     public List<Entity> PrioritizedEntities;
     public int Turn;
 
@@ -26,7 +27,7 @@ public class Grid2D
         Init(mapData.Name, mapData.X, mapData.Y, mapData.PlayerCount, mapData.MaxTeamCost, mapData.EntityStartPositions, mapData.TileTerrain);
     }
 
-    public void Init(string name, int x, int y, int playerCount, int maxTeamCost, List<int> entityStartPositions, List<TileTerrain> tileTerrain)
+    private void Init(string name, int x, int y, int playerCount, int maxTeamCost, List<int> entityStartPositions, List<TileTerrain> tileTerrain)
     {
         Name = name;
         X = x;

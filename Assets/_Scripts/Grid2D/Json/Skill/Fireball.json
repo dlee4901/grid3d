@@ -1,8 +1,5 @@
 {
   "Name": "Fireball",
-  "Trigger": "OnCast",
-  "CastTime": 1,
-  "Cooldown": 2,
   "SelectableAreas": [
     { 
       "TileSelectionBuilder": {

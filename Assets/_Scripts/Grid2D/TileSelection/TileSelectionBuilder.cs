@@ -1,35 +1,32 @@
+#nullable enable
 using System.Collections.Generic;
 
 public struct RangePattern
 {
-    public readonly int Start;
-    public readonly int Span;
-    public readonly int Gap;
-
-    public RangePattern(int start,  int span, int gap)
-    {
-        Start = start;
-        Span = span;
-        Gap = gap;
-    }
+    public int Start { get; set; }
+    public int Span { get; set; }
+    public int Gap { get; set; }
 }
 
 public class TileSelectionBuilder
 {
     public List<TileSelector> TileSelectors { get; set; } = new();
-    public int MinDistance { get; set; }
-    public int MaxDistance { get; set; }
+    public int MinDistance { get; set; } = 0;
+    public int MaxDistance { get; set; } = 0;
     public List<(int, int)> ExcludedDistanceRanges { get; set; } = new();
+    public RangePattern? RangePattern { get; set; }
+    public QueryNode? EntityAllowlist { get; set; }
+    public QueryNode? EntityDenylist { get; set; }
     
-    public TileSelectionBuilder(TileSelector tileSelector, int minDistance=0, int maxDistance=0, List<(int, int)> excludedDistanceRanges=null) : this(new List<TileSelector>{tileSelector}, minDistance, maxDistance, excludedDistanceRanges) {}
-    
-    public TileSelectionBuilder(List<TileSelector> tileSelectors=null, int minDistance=0, int maxDistance=0, List<(int, int)> excludedDistanceRanges=null)
-    {
-        TileSelectors = tileSelectors ?? new List<TileSelector>();
-        MinDistance = minDistance;
-        MaxDistance = maxDistance;
-        ExcludedDistanceRanges = excludedDistanceRanges ?? new List<(int, int)>();
-    }
+    // public TileSelectionBuilder(TileSelector tileSelector, int minDistance=0, int maxDistance=0, List<(int, int)> excludedDistanceRanges=null) : this(new List<TileSelector>{tileSelector}, minDistance, maxDistance, excludedDistanceRanges) {}
+    //
+    // public TileSelectionBuilder(List<TileSelector> tileSelectors=null, int minDistance=0, int maxDistance=0, List<(int, int)> excludedDistanceRanges=null)
+    // {
+    //     TileSelectors = tileSelectors ?? new List<TileSelector>();
+    //     MinDistance = minDistance;
+    //     MaxDistance = maxDistance;
+    //     ExcludedDistanceRanges = excludedDistanceRanges ?? new List<(int, int)>();
+    // }
     
     public void SetDistances(int minDistance, int maxDistance)
     {
@@ -60,7 +57,7 @@ public class TileSelectionBuilder
         }
     }
     
-    public Dictionary<int, int> GetTileDistances(Grid2D grid, int startPosition, Entity sourceEntity=null, QueryBuilder<Entity> excludeQuery=null)
+    public Dictionary<int, int> GetTileDistances(Grid2D grid, int startPosition, Entity? sourceEntity=null)
     {
         var tileSelection = new TileSelection(grid);
         foreach (var tileSelector in TileSelectors)

@@ -84,7 +84,7 @@ public class TileSelection
         return result;
     }
     
-    public Dictionary<int, int> GetTileDistancesNotInRanges(List<(int, int)> ranges, bool includeLower=true, bool includeUpper=true, int maxDistance=0, QueryBuilder<Entity> excludeQuery=null)
+    public Dictionary<int, int> GetTileDistancesNotInRanges(List<(int, int)> ranges, bool includeLower=true, bool includeUpper=true, int maxDistance=0, QueryNode entityAllowList=null, QueryNode entityDenyList=null)
     {
         var result = new Dictionary<int, int>();
         foreach (var (tile, distance) in _tileDistances)
@@ -95,14 +95,25 @@ public class TileSelection
             {
                 if ((includeLower ? distance > min : distance >= min) &&
                     (includeUpper ? distance < max : distance <= max)) continue;
-                if (excludeQuery != null)
+                // if (excludeQuery != null)
+                // {
+                //     var entity = _grid.GetEntity(tile);
+                //     var query = excludeQuery.Build();
+                //     if (entity != null && query(entity))
+                //     {
+                //         continue;
+                //     }
+                // }
+                Entity entity;
+                if (entityAllowList != null && (entity = _grid.GetEntity(tile)) != null)
                 {
-                    var entity = _grid.GetEntity(tile);
-                    var query = excludeQuery.Build();
-                    if (entity != null && query(entity))
-                    {
-                        continue;
-                    }
+                    var query = QueryCompiler<Entity>.Compile(entityAllowList);
+                    if (!query(entity)) continue;
+                }
+                if (entityDenyList != null && (entity = _grid.GetEntity(tile)) != null)
+                {
+                    var query = QueryCompiler<Entity>.Compile(entityAllowList);
+                    if (query(entity)) continue;
                 }
                 result[_grid.ToPosition1D(tile)] = distance;
                 break;

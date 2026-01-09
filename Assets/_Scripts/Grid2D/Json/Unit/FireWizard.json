@@ -2,7 +2,8 @@
   "Name": "FireWizard",
   "Cost": 4,
   "Health": 6,
-  "Skills": ["Fireball", "Big Fireball"],
+  "Skills": ["Fireball"],
+  "Passives": ["ExplosiveCurse"],
   "Move": {
     "TileSelectionBuilder": {
       "MinDistance": 3,

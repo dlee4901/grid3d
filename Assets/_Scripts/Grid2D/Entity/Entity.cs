@@ -37,9 +37,11 @@ public class Entity
         return new Entity(
             name: config.Name,
             cost: config.Cost,
-            skills: config.Skills?.Count > 0 ? new SkillComponent(Skills) : null,
             health: config.Health > 0 ? new HealthComponent(config.Health) : null,
-        )
+            skills: null,
+            control: null,
+            move: null
+        );
     }
     
     internal void SetFacing(DirectionFacing facing)
