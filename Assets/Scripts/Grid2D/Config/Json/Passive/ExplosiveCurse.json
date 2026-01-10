@@ -1,0 +1,11 @@
+{
+  "Id": "ExplosiveCurse",
+  "Triggers": ["OnKill", "OnDeath"],
+  "EffectArea": {
+    "TileSelectionBuilder": {
+      "TileSelectors": [
+        { "Direction": "step", "Distance": 1 }
+      ]
+    }
+  }
+}
