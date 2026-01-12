@@ -18,7 +18,7 @@ public class TileSelector
     public int DeltaWidthOffset { get; set; } = 0;
     
     public EntityPassthrough Passthrough { get; set; } = EntityPassthrough.None;
-    public QueryNode? PassthroughQuery { get; set; }
+    public PredicateConfig? PassthroughQuery { get; set; }
     
     public TileSelector? Chain { get; set; }
     public int ChainOffset { get; set; } = 0; // IF (n > 0) n ~ distance ELSE maxDistReached + n ~ maxDistReached
@@ -215,13 +215,13 @@ public class TileSelector
     
     private bool IsColliding(Entity targetEntity, Entity? sourceEntity=null)
     {
-        Func<Entity, bool>? query = null;
-        if (PassthroughQuery != null) query = QueryCompiler<Entity>.Compile(PassthroughQuery);
+        Func<Entity, bool>? predicate = null;
+        if (PassthroughQuery != null) predicate = PredicateFactory<Entity>.Create(PassthroughQuery);
 
         if (sourceEntity != null && targetEntity.Control != null)
         {
-            if (!Passthrough.HasFlag(EntityPassthrough.Enemy) && !targetEntity.Control.HasSameController(sourceEntity)) return query?.Invoke(targetEntity) ?? true;
-            if (!Passthrough.HasFlag(EntityPassthrough.Ally) && targetEntity.Control.HasSameController(sourceEntity)) return query?.Invoke(targetEntity) ?? true;
+            if (!Passthrough.HasFlag(EntityPassthrough.Enemy) && !targetEntity.Control.HasSameController(sourceEntity)) return predicate?.Invoke(targetEntity) ?? true;
+            if (!Passthrough.HasFlag(EntityPassthrough.Ally) && targetEntity.Control.HasSameController(sourceEntity)) return predicate?.Invoke(targetEntity) ?? true;
         }
         //if (!Passthrough.HasFlag(EntityPassthrough.Unit) && targetEntity.GetType() == typeof(Unit)) return true;
         //if (!Passthrough.HasFlag(EntityPassthrough.Obstacle) && targetEntity.GetType() != typeof(Unit)) return true;

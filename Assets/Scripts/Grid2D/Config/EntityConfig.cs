@@ -2,9 +2,9 @@ using System.Collections.Generic;
 
 public class EntityConfig
 {
-    public string Id;
-    public int Cost = 0;
-    public int Health = 0;
-    public List<string> Skills;
-    public MoveComponent Move;
+    public string Id { get; set; }
+    public int Cost { get; set; } = 0;
+    public int Health { get; set; } = 0;
+    public List<string> Skills { get; set; }
+    public MoveComponent Move { get; set; }
 }

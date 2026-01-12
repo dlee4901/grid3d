@@ -13,19 +13,28 @@ public class Grid2D
     
     public int MaxTeamCost { get; }
     public int PlayerCount { get; }
-    public int[][] EntityStartPositions;
+    public int[][] EntityStartPositions { get; }
 
     // State
-    public TileTerrain[] TileTerrain;
-    public Entity?[] Entities;
-    public List<Entity> PrioritizedEntities;
-    public int Turn;
+    public TileTerrain[] TileTerrain { get; }
+    public Entity?[] Entities { get; }
+    public List<Entity> PrioritizedEntities { get; }
+    public int Turn { get; }
 
-    // public Grid2D(MapData mapData)
-    // {
-    //     Init(mapData.Name, mapData.X, mapData.Y, mapData.PlayerCount, mapData.MaxTeamCost, mapData.EntityStartPositions, mapData.TileTerrain);
-    // }
-    //
+    public Grid2D(string id, int x, int y, int maxTeamCost, int playerCount, int[][] entityStartPositions, TileTerrain[] tileTerrain, Entity?[] entities, List<Entity> prioritizedEntities)
+    {
+        Id = id;
+        X = x;
+        Y = y;
+        MaxTeamCost = maxTeamCost;
+        PlayerCount = playerCount;
+        EntityStartPositions = entityStartPositions;
+        TileTerrain = tileTerrain;
+        Entities = entities;
+        PrioritizedEntities = prioritizedEntities;
+        Turn = 0;
+    }
+    
     // private void Init(string Id, int x, int y, int playerCount, int maxTeamCost, List<int> entityStartPositions, List<TileTerrain> tileTerrain)
     // {
     //     Name = name;

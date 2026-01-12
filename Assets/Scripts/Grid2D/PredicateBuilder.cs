@@ -1,32 +1,32 @@
 using System;
 
-public sealed class QueryBuilder<T>
+public sealed class PredicateBuilder<T>
 {
     private Func<T, bool> _predicate;
 
-    private QueryBuilder(Func<T, bool> predicate)
+    private PredicateBuilder(Func<T, bool> predicate)
     {
         _predicate = predicate;
     }
     
-    public static QueryBuilder<T> Match(Func<T, bool> predicate)
-        => new QueryBuilder<T>(predicate);
+    public static PredicateBuilder<T> Match(Func<T, bool> predicate)
+        => new PredicateBuilder<T>(predicate);
     
-    public QueryBuilder<T> And(Func<T, bool> predicate)
+    public PredicateBuilder<T> And(Func<T, bool> predicate)
     {
         var left = _predicate;
         _predicate = x => left(x) && predicate(x);
         return this;
     }
     
-    public QueryBuilder<T> Or(Func<T, bool> predicate)
+    public PredicateBuilder<T> Or(Func<T, bool> predicate)
     {
         var left = _predicate;
         _predicate = x => left(x) || predicate(x);
         return this;
     }
     
-    public QueryBuilder<T> Not()
+    public PredicateBuilder<T> Not()
     {
         var prev = _predicate;
         _predicate = x => !prev(x);

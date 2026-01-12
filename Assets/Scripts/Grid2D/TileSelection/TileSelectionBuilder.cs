@@ -15,8 +15,8 @@ public class TileSelectionBuilder
     public int MaxDistance { get; set; } = 0;
     public List<(int, int)> ExcludedDistanceRanges { get; set; } = new();
     public RangePattern? RangePattern { get; set; }
-    public QueryNode? EntityAllowlist { get; set; }
-    public QueryNode? EntityDenylist { get; set; }
+    public PredicateConfig? EntityAllowlist { get; set; }
+    public PredicateConfig? EntityDenylist { get; set; }
     
     // public TileSelectionBuilder(TileSelector tileSelector, int minDistance=0, int maxDistance=0, List<(int, int)> excludedDistanceRanges=null) : this(new List<TileSelector>{tileSelector}, minDistance, maxDistance, excludedDistanceRanges) {}
     //

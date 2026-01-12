@@ -2,20 +2,20 @@ using System.Collections.Generic;
 
 public class SkillConfig
 {
-    public string Id;
-    public int Cost = 1;
-    public int InitialCooldown = 0;
-    public int CastTime = 0;
-    public int Duration = 0;
-    public int Cooldown = 1;
+    public string Id { get; set; }
+    public int Cost { get; set; } = 1;
+    public int InitialCooldown { get; set; } = 0;
+    public int CastTime { get; set; } = 0;
+    public int Duration { get; set; } = 0;
+    public int Cooldown { get; set; } = 1;
     
-    public List<Effect> Effects;
+    public List<Effect> Effects { get; set; }
     
-    public int SelectionAmount = 1;
-    public List<TileSelectionBuilder> SelectableAreas;
-    public QueryNode SelectionFilter;
+    public int SelectionAmount { get; set; } = 1;
+    public List<TileSelectionBuilder> SelectableAreas { get; set; }
+    public PredicateConfig SelectionFilter { get; set; }
     
-    public bool EffectEntireSelection = false;
-    public TileSelectionBuilder EffectArea;
-    public QueryNode EffectFilter;
+    public bool EffectEntireSelection { get; set; } = false;
+    public TileSelectionBuilder EffectArea { get; set; }
+    public PredicateConfig EffectFilter { get; set; }
 }

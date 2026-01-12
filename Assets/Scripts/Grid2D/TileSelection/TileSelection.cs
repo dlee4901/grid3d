@@ -84,7 +84,7 @@ public class TileSelection
         return result;
     }
     
-    public Dictionary<int, int> GetTileDistancesNotInRanges(List<(int, int)> ranges, bool includeLower=true, bool includeUpper=true, int maxDistance=0, QueryNode entityAllowList=null, QueryNode entityDenyList=null)
+    public Dictionary<int, int> GetTileDistancesNotInRanges(List<(int, int)> ranges, bool includeLower=true, bool includeUpper=true, int maxDistance=0, PredicateConfig entityAllowList=null, PredicateConfig entityDenyList=null)
     {
         var result = new Dictionary<int, int>();
         foreach (var (tile, distance) in _tileDistances)
@@ -107,13 +107,13 @@ public class TileSelection
                 Entity entity;
                 if (entityAllowList != null && (entity = _grid.GetEntity(tile)) != null)
                 {
-                    var query = QueryCompiler<Entity>.Compile(entityAllowList);
-                    if (!query(entity)) continue;
+                    var predicate = PredicateFactory<Entity>.Create(entityAllowList);
+                    if (!predicate(entity)) continue;
                 }
                 if (entityDenyList != null && (entity = _grid.GetEntity(tile)) != null)
                 {
-                    var query = QueryCompiler<Entity>.Compile(entityAllowList);
-                    if (query(entity)) continue;
+                    var predicate = PredicateFactory<Entity>.Create(entityAllowList);
+                    if (predicate(entity)) continue;
                 }
                 result[_grid.ToPosition1D(tile)] = distance;
                 break;
