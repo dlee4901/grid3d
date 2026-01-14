@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 public enum DirectionFacing {North, East, South, West}
 
-public class Entity
+public class Entity : INameId
 {
     public string Id { get; }
     public int Cost { get; } // -1: map, 0: summons, 1~n: units

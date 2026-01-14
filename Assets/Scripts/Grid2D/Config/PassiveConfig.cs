@@ -1,4 +1,4 @@
-public class PassiveConfig
+public class PassiveConfig 
 {
         
 }

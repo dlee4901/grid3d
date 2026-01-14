@@ -4,8 +4,8 @@
   "Y": 11,
   "MaxTeamCost": 22,
   "PlayerStartPositions": [
-    { "Player": 1, "Positions": [], "Ranges": [ { "Start": 0, "End": 22 } ] },
-    { "Player": 2, "Positions": [], "Ranges": [ { "Start": 99, "End": 121 } ] }
+    { "Positions": [], "Ranges": [ { "Start": 0, "End": 22 } ] },
+    { "Positions": [], "Ranges": [ { "Start": 99, "End": 121 } ] }
   ],
   "Terrain": [
     { "Type": "Wall", "Positions": [], "Ranges": [ { "Start": 56, "End": 59 }, { "Start": 64, "End": 67 } ] }

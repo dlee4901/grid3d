@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -78,9 +79,13 @@ public class GridManager : MonoBehaviour
     // TESTING
     //
     
-    private void LoadData(string mapId)
+    private void LoadResources()
     {
-        //var json = File.ReadAllText("")
+        string mapsPath = Path.Combine(Application.streamingAssetsPath, "Configs/Maps");
+        var mapConfigs = ConfigLoader<MapConfig>.LoadFolder(mapsPath);
+        var factory = new GridFactory();
+        var maps = mapConfigs.Select(c => factory.Create(c)).ToList();
+        Registry<Grid2D>.Register(maps);
     }
     
     // private void LoadMapData(MapData mapData=null)

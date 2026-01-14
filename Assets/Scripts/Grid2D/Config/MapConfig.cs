@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 
 public struct RangeConfig
@@ -13,10 +12,9 @@ public class PositionRangeConfig
     public List<RangeConfig> Ranges { get; set; } = new();
     
     public string Type { get; set; } = "";
-    public int Player { get; set; } = 0;
 }
 
-public class GridConfig
+public class MapConfig : INameId
 {
     public string Id { get; set; }
     public int X { get; set; }
@@ -24,8 +22,7 @@ public class GridConfig
     public int MaxTeamCost { get; set; }
     
     public int PlayerCount { get; set; } = 2;
-    public List<PositionRangeConfig> PlayerStartPositions { get; set; }
-    
     public List<PositionRangeConfig> Terrain { get; set; }
+    public List<PositionRangeConfig> PlayerStartPositions { get; set; }
     public List<PositionRangeConfig> EntityStartPositions { get; set; }
 }

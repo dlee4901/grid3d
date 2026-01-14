@@ -1,10 +1,9 @@
-#nullable enable
 using System;
 using System.Collections.Generic;
 
-public enum TileTerrain { Void, Default }
+public enum TileTerrain { Default, Void, Wall }
 
-public class Grid2D
+public class Grid2D : INameId
 {
     // Initial Parameters (Static)
     public string Id { get; }
@@ -13,39 +12,70 @@ public class Grid2D
     
     public int MaxTeamCost { get; }
     public int PlayerCount { get; }
-    public int[][] EntityStartPositions { get; }
+    public int[] PlayerStartPositions { get; private set; }
 
     // State
-    public TileTerrain[] TileTerrain { get; }
-    public Entity?[] Entities { get; }
-    public List<Entity> PrioritizedEntities { get; }
+    public TileTerrain[] Terrain { get; private set; }
+    public Entity[] Entities { get; private set; }
+    public List<Entity> PrioritizedEntities { get; private set; }
     public int Turn { get; }
 
-    public Grid2D(string id, int x, int y, int maxTeamCost, int playerCount, int[][] entityStartPositions, TileTerrain[] tileTerrain, Entity?[] entities, List<Entity> prioritizedEntities)
+    public Grid2D(string id, int x, int y, int maxTeamCost, int playerCount, (string[], int[][]) terrain, (string[], int[][]) playerStartPositions, (string[], int[][]) entityStartPositions)
     {
         Id = id;
         X = x;
         Y = y;
         MaxTeamCost = maxTeamCost;
         PlayerCount = playerCount;
-        EntityStartPositions = entityStartPositions;
-        TileTerrain = tileTerrain;
-        Entities = entities;
-        PrioritizedEntities = prioritizedEntities;
-        Turn = 0;
+        InitTypePositions(terrain, playerStartPositions, entityStartPositions);
     }
     
-    // private void Init(string Id, int x, int y, int playerCount, int maxTeamCost, List<int> entityStartPositions, List<TileTerrain> tileTerrain)
-    // {
-    //     Name = name;
-    //     X = x;
-    //     Y = y;
-    //     PlayerCount = playerCount;
-    //     MaxTeamCost = maxTeamCost;
-    //     EntityStartPositions = entityStartPositions;
-    //     TileTerrain = tileTerrain;
-    // }
-
+    private void InitTypePositions((string[] types, int[][] positions) terrain, (string[] types, int[][] positions) playerStartPositions, (string[] types, int[][] positions) entityStartPositions)
+    {
+        Terrain = new TileTerrain[GetSize()];
+        for (var i = 0; i < terrain.positions.Length; i++)
+        {
+            var type = terrain.types[i];
+            var positions = terrain.positions[i];
+            if (Enum.TryParse(type, out TileTerrain terrainType) && terrainType != TileTerrain.Default)
+            {
+                foreach (var position in positions) 
+                    if (Terrain[position] == TileTerrain.Default) 
+                        Terrain[position] = terrainType;
+            }
+        }
+        
+        PlayerStartPositions = new int[GetSize()];
+        for (var i = 0; i < playerStartPositions.positions.Length; i++)
+        {
+            var player = i + 1;
+            var positions = playerStartPositions.positions[i];
+            foreach (var position in positions)
+            {
+                if (PlayerStartPositions[position] == 0 && Terrain[position] == TileTerrain.Default) 
+                    PlayerStartPositions[position] = player;
+            }
+        }
+        
+        Entities = new Entity[GetSize()];
+        for (var i = 0; i < entityStartPositions.positions.Length; i++)
+        {
+            var entity = Registry<Entity>.Get(entityStartPositions.types[i]);
+            if (entity == null) continue;
+            
+            var positions = entityStartPositions.positions[i];
+            foreach (var position in positions)
+            {
+                if (Entities[position] != null)
+                {
+                    Entities[position] = entity;
+                    var player = PlayerStartPositions[position];
+                    if (player != 0) Entities[position].Control?.SetPlayerId(player);
+                }
+            }
+        }
+    }
+    
     public void LoadTeams(List<TeamData> teamData)
     {
         int[] teamCosts = new int[teamData.Count];
@@ -74,11 +104,7 @@ public class Grid2D
 
     public Entity GetEntity(int position)
     {
-        if (!IsValidPosition(position))
-        {
-            return default;
-        }
-        return Entities[position];
+        return !IsValidPosition(position) ? null : Entities[position];
     }
 
     public Entity GetEntity(int x, int y)
@@ -91,10 +117,20 @@ public class Grid2D
         return GetEntity(ToPosition1D(position.x, position.y));
     }
     
-    // public Entity GetEntity(Tuple<int, int> position2D)
-    // {
-    //     return GetEntity(ToPosition1D(position2D));
-    // }
+    public int[] GetPlayerStartPositions(int player)
+    {
+        var positions = new List<int>();
+        for (int i = 0; i < PlayerStartPositions.Length; i++)
+        {
+            if (PlayerStartPositions[i] == player) positions.Add(i);
+        }
+        return positions.ToArray();
+    }
+    
+    public TileTerrain GetTerrain(int position)
+    {
+        return Terrain[position];
+    }
 
     public HashSet<int> GetOccupiedTilesPositionSet()
     {
@@ -113,13 +149,13 @@ public class Grid2D
     {
         if (IsValidPosition(position))
         {
-            TileTerrain[position] = tileTerrain;
+            Terrain[position] = tileTerrain;
             return true;
         }
         return false;
     }
 
-    public bool SetEntity(int position, Entity entity)
+    public bool SetEntity(int position, Entity entity=null)
     {
         if (IsValidPosition(position))
         {
