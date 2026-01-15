@@ -79,13 +79,19 @@ public class GridManager : MonoBehaviour
     // TESTING
     //
     
-    private void LoadResources()
+    private void LoadRegistries()
     {
         string mapsPath = Path.Combine(Application.streamingAssetsPath, "Configs/Maps");
         var mapConfigs = ConfigLoader<MapConfig>.LoadFolder(mapsPath);
-        var factory = new GridFactory();
-        var maps = mapConfigs.Select(c => factory.Create(c)).ToList();
+        //var factory = new GridFactory();
+        //var maps = mapConfigs.Select(c => factory.Create(c)).ToList();
+        var maps = mapConfigs.Select(Grid2D.Create).ToList();
         Registry<Grid2D>.Register(maps);
+        
+        string unitPaths = Path.Combine(Application.streamingAssetsPath, "Configs/Units");
+        var unitConfigs = ConfigLoader<EntityConfig>.LoadFolder(unitPaths);
+        var units = unitConfigs.Select(Entity.Create).ToList();
+        Registry<Entity>.Register(units);
     }
     
     // private void LoadMapData(MapData mapData=null)

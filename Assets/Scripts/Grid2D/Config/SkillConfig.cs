@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-public class SkillConfig
+public class SkillConfig : INameId
 {
     public string Id { get; set; }
     public int Cost { get; set; } = 1;
