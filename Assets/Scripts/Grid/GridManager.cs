@@ -18,20 +18,10 @@ public class GridManager : MonoBehaviour
     [Header("Test Visuals")]
     //[SerializeField] private GameObjectList _testTileTerrainVisuals;
     
-    [Header("Test Map Parameters")]
-    [SerializeField] private int _testMapX = 8;
-    [SerializeField] private int _testMapY = 8;
-    [SerializeField] private int _testMapPlayerCount = 2;
-    [SerializeField] private int _testMapUnitCostTotal = 10;
-    
-    [Header("Test Team Parameters")]
-    [SerializeField] private List<int> _testTeamStartPositions;
-    [SerializeField] private List<int> _testTeamUnitIds;
-    
-    [SerializeField] private Grid2D _grid2D;
-    
     private Camera _mainCamera;
     private InputAction _selectAction;
+    
+    private Grid2D _grid2D;
     
     void Start()
     {
@@ -79,19 +69,38 @@ public class GridManager : MonoBehaviour
     // TESTING
     //
     
-    private void LoadRegistries()
+    private void InitRegistries()
     {
         string mapsPath = Path.Combine(Application.streamingAssetsPath, "Configs/Maps");
         var mapConfigs = ConfigLoader<MapConfig>.LoadFolder(mapsPath);
         //var factory = new GridFactory();
         //var maps = mapConfigs.Select(c => factory.Create(c)).ToList();
-        var maps = mapConfigs.Select(Grid2D.Create).ToList();
-        Registry<Grid2D>.Register(maps);
+        var maps = mapConfigs.ToList();
+        Registry<MapConfig>.Register(maps);
+        Debug.Log("maps " + Registry<MapConfig>.GetCount());
         
         string unitPaths = Path.Combine(Application.streamingAssetsPath, "Configs/Units");
         var unitConfigs = ConfigLoader<EntityConfig>.LoadFolder(unitPaths);
         var units = unitConfigs.Select(Entity.Create).ToList();
         Registry<Entity>.Register(units);
+        Debug.Log("entities " + Registry<Entity>.GetCount());
+    }
+    
+    private void CreateTestTeams()
+    {
+        var team1 = new TeamData("TestTeam1", "TestMap1", new Dictionary<int, string>{ {0, "FireWizard"}, {1, "FireWizard"}, {119, "FireWizard"}, {120, "FireWizard"} });
+        var team2 = new TeamData("TestTeam2", "TestMap1", new Dictionary<int, string>{ {9, "FireWizard"}, {10, "FireWizard"}, {110, "FireWizard"}, {111, "FireWizard"} });
+        JsonHandler.SaveData(team1);
+        JsonHandler.SaveData(team2);
+    }
+    
+    private void InitGrid()
+    {
+        _grid2D = Grid2D.Create(Registry<MapConfig>.Get("TestMap1"));
+        var team1 = JsonHandler.LoadData<TeamData>("TestTeam1");
+        var team2 = JsonHandler.LoadData<TeamData>("TestTeam2");
+        _grid2D.LoadPlayerTeam(1, team1);
+        _grid2D.LoadPlayerTeam(2, team2);
     }
     
     // private void LoadMapData(MapData mapData=null)

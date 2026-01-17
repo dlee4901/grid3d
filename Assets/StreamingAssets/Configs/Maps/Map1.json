@@ -1,11 +1,11 @@
 {
-  "Id": "Starter",
+  "Id": "TestMap1",
   "X": 11,
   "Y": 11,
   "MaxTeamCost": 22,
   "PlayerStartPositions": [
     { "Positions": [], "Ranges": [ { "Start": 0, "End": 22 } ] },
-    { "Positions": [], "Ranges": [ { "Start": 99, "End": 121 } ] }
+    { "Positions": [], "Ranges": [ { "Start": 97, "End": 120 } ] }
   ],
   "Terrain": [
     { "Type": "Wall", "Positions": [], "Ranges": [ { "Start": 56, "End": 59 }, { "Start": 64, "End": 67 } ] }

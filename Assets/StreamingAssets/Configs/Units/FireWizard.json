@@ -1,5 +1,6 @@
 {
   "Id": "FireWizard",
+  "Visual": "Mage",
   "Cost": 4,
   "Health": 6,
   "Skills": ["Fireball"],

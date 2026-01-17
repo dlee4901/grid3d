@@ -104,25 +104,24 @@ public class Grid2D : INameId
         }
     }
     
-    public void LoadTeams(List<TeamData> teamData)
+    public void LoadPlayerTeam(int player, TeamData teamData)
     {
-        int[] teamCosts = new int[teamData.Count];
-        for (int i = 0; i < teamData.Count; i++)
+        if (!ValidatePlayerTeam(player, teamData)) return;
+        
+        foreach (var (position, unit) in teamData.UnitStartPositions)
         {
-            
+            if (PlayerStartPositions[position] == player) Entities[position] = Registry<Entity>.Get(unit);
         }
-        // var unitIdStartPositions = new Dictionary<int, int>();
-        // int unitCostTotal = 0;
-        // for (int i = 0; i < teamData.StartPositions.Count; i++)
-        // {
-        //     var startPosition = teamData.StartPositions[i];
-        //     var unitId = teamData.UnitIds[i];
-        //     if (EntityStartPositions[startPosition] == -player)
-        //     {
-        //         unitIdStartPositions[startPosition] = unitId;
-        //         unitCostTotal += 1;
-        //     }
-        // }
+    }
+    
+    private bool ValidatePlayerTeam(int player, TeamData teamData)
+    {
+        if (teamData.MapId != Id) return false;
+        foreach (var (position, unit) in teamData.UnitStartPositions)
+        {
+            if (!IsValidPosition(position) || PlayerStartPositions[position] == 0 || Entities[position] != null || Registry<Entity>.Get(unit) == null) return false;
+        }
+        return true;
     }
 
     public int GetSize()

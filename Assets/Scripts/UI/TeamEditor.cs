@@ -47,11 +47,11 @@ public class TeamEditor : MonoBehaviour
 
     private void LoadPlayerData()
     {
-        PlayerData playerData = EngineUtil.LoadJsonData<PlayerData>();
-        if (playerData != null)
-        {
-            List<TeamData> teams = playerData.Teams;
-        }
+        // PlayerData playerData = EngineUtil.LoadJsonData<PlayerData>();
+        // if (playerData != null)
+        // {
+        //     List<TeamData> teams = playerData.Teams;
+        // }
     }
 
     // private void InitUnits()

@@ -33,4 +33,6 @@ public static class Registry<T> where T : INameId
 
     public static T Get(string id)
         => _items.TryGetValue(id, out var item) ? item : throw new InvalidOperationException($"Item with id '{id}' not registered");
+        
+    public static int GetCount() => _items.Count;
 }
