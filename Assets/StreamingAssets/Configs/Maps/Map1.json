@@ -4,13 +4,12 @@
   "Y": 11,
   "MaxTeamCost": 22,
   "PlayerStartPositions": [
-    { "Positions": [], "Ranges": [ { "Start": 0, "End": 22 } ] },
-    { "Positions": [], "Ranges": [ { "Start": 97, "End": 120 } ] }
+    { "Positions": [], "Ranges": [ {"Start": 0, "End": 22}, {"Start": 97, "End": 120} ] }
   ],
   "Terrain": [
-    { "Type": "Wall", "Positions": [], "Ranges": [ { "Start": 56, "End": 59 }, { "Start": 64, "End": 67 } ] }
+    { "Type": "Wall", "Positions": [], "Ranges": [ {"Start": 56, "End": 64}, {"Start": 59, "End": 67} ] }
   ],
   "Entities": [
-    { "Type": "ExplosiveBarrel", "Positions": [42, 44], "Ranges": [ { "Start": 35, "End": 37 } ] }
+    { "Type": "ExplosiveBarrel", "Positions": [42, 44], "Ranges": [ {"Start": 35, "End": 37} ] }
   ]
 }

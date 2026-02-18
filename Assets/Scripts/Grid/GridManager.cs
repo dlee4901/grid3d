@@ -28,8 +28,10 @@ public class GridManager : MonoBehaviour
         _mainCamera = Camera.main;
         _selectAction = InputSystem.actions.FindAction("Player/Select");
         _grid.gameObject.SetActive(true);
-        //LoadMapData();
+        InitRegistries();
+        InitGrid();
         InitSelectionOutlines();
+        Debug.Log(_grid2D.PrintGrid());
     }
 
     void Update()
@@ -73,8 +75,6 @@ public class GridManager : MonoBehaviour
     {
         string mapsPath = Path.Combine(Application.streamingAssetsPath, "Configs/Maps");
         var mapConfigs = ConfigLoader<MapConfig>.LoadFolder(mapsPath);
-        //var factory = new GridFactory();
-        //var maps = mapConfigs.Select(c => factory.Create(c)).ToList();
         var maps = mapConfigs.ToList();
         Registry<MapConfig>.Register(maps);
         Debug.Log("maps " + Registry<MapConfig>.GetCount());
@@ -94,13 +94,21 @@ public class GridManager : MonoBehaviour
         JsonHandler.SaveData(team2);
     }
     
-    private void InitGrid()
+    private void LoadTestTeams()
     {
-        _grid2D = Grid2D.Create(Registry<MapConfig>.Get("TestMap1"));
         var team1 = JsonHandler.LoadData<TeamData>("TestTeam1");
         var team2 = JsonHandler.LoadData<TeamData>("TestTeam2");
         _grid2D.LoadPlayerTeam(1, team1);
         _grid2D.LoadPlayerTeam(2, team2);
+    }
+    
+    private void InitGrid()
+    {
+        _grid2D = Grid2D.Create(Registry<MapConfig>.Get("TestMap1"));
+        
+        CreateTestTeams();
+        LoadTestTeams();
+        
     }
     
     // private void LoadMapData(MapData mapData=null)

@@ -1,17 +1,27 @@
 using System.Collections.Generic;
 
-public struct RangeConfig
+public class RangeConfig
 {
     public int Start { get; set; }
     public int End { get; set; }
 }
 
-public class PositionRangeConfig
+public class PositionConfig
 {
-    public List<int> Positions { get; set; } = new();
+    public List<int> Values { get; set; } = new();
     public List<RangeConfig> Ranges { get; set; } = new();
-    
-    public string Type { get; set; } = "";
+}
+
+public class TerrainConfig
+{
+    public string Type { get; set; }
+    public PositionConfig Positions { get; set; } = new();
+}
+
+public class EntityStartConfig
+{
+    public string EntityId { get; set; }
+    public PositionConfig Positions { get; set; } = new();
 }
 
 public class MapConfig : INameId
@@ -22,7 +32,7 @@ public class MapConfig : INameId
     public int MaxTeamCost { get; set; }
     
     public int PlayerCount { get; set; } = 2;
-    public List<PositionRangeConfig> Terrain { get; set; }
-    public List<PositionRangeConfig> PlayerStartPositions { get; set; }
-    public List<PositionRangeConfig> EntityStartPositions { get; set; }
+    public List<TerrainConfig> Terrain { get; set; }
+    public List<PositionConfig> PlayerStartPositions { get; set; }
+    public List<EntityStartConfig> EntityStartPositions { get; set; }
 }
