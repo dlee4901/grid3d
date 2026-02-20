@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-public class RangeConfig
+public class IntRange
 {
     public int Start { get; set; }
     public int End { get; set; }
@@ -8,20 +8,18 @@ public class RangeConfig
 
 public class PositionConfig
 {
-    public List<int> Values { get; set; } = new();
-    public List<RangeConfig> Ranges { get; set; } = new();
+    public List<int> PositionValues { get; set; } = new();
+    public List<IntRange> PositionRanges { get; set; } = new();
 }
 
-public class TerrainConfig
+public class TerrainConfig : PositionConfig
 {
-    public string Type { get; set; }
-    public PositionConfig Positions { get; set; } = new();
+    public string TerrainType { get; set; }
 }
 
-public class EntityStartConfig
+public class EntityStartConfig : PositionConfig
 {
     public string EntityId { get; set; }
-    public PositionConfig Positions { get; set; } = new();
 }
 
 public class MapConfig : INameId

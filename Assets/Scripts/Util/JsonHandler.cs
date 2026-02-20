@@ -8,7 +8,6 @@ public static class JsonHandler
     {
         var filePath = Path.Combine(Application.persistentDataPath, data.Id + ".json");
         var jsonData = JsonConvert.SerializeObject(data); //JsonUtility.ToJson(data);
-        Debug.Log(filePath);
         File.WriteAllText(filePath, jsonData);
     }
 
@@ -16,7 +15,6 @@ public static class JsonHandler
     {
         string filePath = Path.Combine(Application.persistentDataPath, id + ".json");
         if (!File.Exists(filePath)) throw new FileNotFoundException("Save file not found", filePath);
-        Debug.Log(filePath);
         var jsonData = File.ReadAllText(filePath);
         return JsonConvert.DeserializeObject<T>(jsonData);
     }

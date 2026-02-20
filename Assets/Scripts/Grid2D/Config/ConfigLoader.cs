@@ -5,13 +5,14 @@ using Newtonsoft.Json;
 
 public static class ConfigLoader<T> where T : INameId
 {
-    public static List<T> LoadFolder(string folderPath) 
+    public static List<T> LoadFolder(string folderPath, bool searchSubfolders=false) 
     {
         if (!Directory.Exists(folderPath))
             throw new DirectoryNotFoundException(folderPath);
 
         var objects = new List<T>();
-        foreach (var filePath in Directory.GetFiles(folderPath, "*.json"))
+        var filePaths = searchSubfolders ? Directory.GetFiles(folderPath, "*.json", SearchOption.AllDirectories) : Directory.GetFiles(folderPath, "*.json");
+        foreach (var filePath in filePaths)
         {
             objects.Add(LoadFile(filePath));
         }

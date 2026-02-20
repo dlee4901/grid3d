@@ -45,40 +45,45 @@ public class Grid2D : INameId
         Terrain = new TerrainType[GetSize()];
         foreach (var config in terrain)
         {
-            if (!Enum.TryParse(config.Type, out TerrainType terrainType) || terrainType == TerrainType.Default) continue;
-            var positions = GetPositions(config.Positions);
+            if (!Enum.TryParse(config.TerrainType, out TerrainType terrainType) || terrainType == TerrainType.Default) continue;
+            var positions = GetPositions(config.PositionValues, config.PositionRanges);
             foreach (var position in positions)
                 if (Terrain[position] == TerrainType.Default)
                     Terrain[position] = terrainType;
         }
         
+        var debugTest = "";
         PlayerStartPositions = new int[GetSize()];
         for (int i = 0; i < playerStartPositions.Count; i++)
         {
             var player = i + 1;
-            var positions = GetPositions(playerStartPositions[i]);
+            var positions = GetPositions(playerStartPositions[i].PositionValues, playerStartPositions[i].PositionRanges);
             foreach (var position in positions)
+            {
+                debugTest += position + " ";
                 if (PlayerStartPositions[position] == 0) // TODO: add Terrain mask
                     PlayerStartPositions[position] = player;
+            }
         }
+        Debug.Log(debugTest);
         
         Entities = new Entity[GetSize()];
         foreach (var config in entityStartPositions)
         {
             var entity = Registry<Entity>.Get(config.EntityId);
             if (entity == null) continue;
-            var positions = GetPositions(config.Positions);
+            var positions = GetPositions(config.PositionValues, config.PositionRanges);
             foreach (var position in positions)
                 if (Entities[position] == null) // TODO: add Terrain and PlayerStartPosition mask
                     Entities[position] = entity;
         }
     }
     
-    private int[] GetPositions(PositionConfig positionConfig)
+    private int[] GetPositions(List<int> positionValues, List<IntRange> positionRanges)
     {
         var positions = new List<int>();
-        positions.AddRange(positionConfig.Values);
-        foreach (var range in positionConfig.Ranges)
+        positions.AddRange(positionValues);
+        foreach (var range in positionRanges)
             positions.AddRange(Enumerable.Range(range.Start, range.End - range.Start + 1));
         return positions.Distinct().Where(position => position >= 0 && position < GetSize()).ToArray();
     }
@@ -245,7 +250,7 @@ public class Grid2D : INameId
     //     if (!IsValidPosition(position1D)) return null;
     //     return new Tuple<int, int>(position1D % X, position1D / X);
     // }
-    
+
     public (int, int) ToPosition2D(int position)
     {
         if (!IsValidPosition(position)) return (-1, -1);
@@ -254,14 +259,14 @@ public class Grid2D : INameId
 
     public int ToPosition1D(int x, int y)
     {
-        int position = x * X + y;
+        int position = y * X + x;
         if (!IsValidPosition(position)) return -1;
         return position;
     }
     
     public int ToPosition1D((int x, int y) position)
     {
-        int pos = position.x * X + position.y;
+        int pos = position.y * X + position.x;
         if (!IsValidPosition(pos)) return -1;
         return pos;
     }
@@ -319,17 +324,33 @@ public class Grid2D : INameId
     public string PrintGrid()
     {
         var grid = "";
-        grid += "TERRAIN + START POSITIONS\n";
-        for (var y = 1; y <= Y; y++)
+        
+        grid += "START POSITIONS\n";
+        for (int i = 0; i < PlayerStartPositions.Length; i++)
         {
-            for (var x = 0; x < X; x++)
-            {
-                var terrain = (int)Terrain[GetSize() - y * (GetSize() / Y) + x];
-                var playerStartPosition = PlayerStartPositions[GetSize() - y * (GetSize() / Y) + x];
-                grid += (playerStartPosition != 0 ? "-" + playerStartPosition + " " : terrain + "  ");
-            }
+            grid += PlayerStartPositions[i] + " ";
         }
         grid += "\n";
+        
+        grid += "TERRAIN\n";
+        for (int i = 0; i < Terrain.Length; i++)
+        {
+            grid += Terrain[i] + " ";
+        }
+        grid += "\n";
+        
+        // grid += "TERRAIN + START POSITIONS\n";
+        // for (var y = Y-1; y >= 0; y--)
+        // {
+        //     for (var x = 0; x < X; x++)
+        //     {
+        //         // grid += ToPosition1D(x, y) + " ";
+        //         var terrain = (int)Terrain[ToPosition1D(x, y)];
+        //         var playerStartPosition = PlayerStartPositions[ToPosition1D(x, y)];
+        //         grid += (playerStartPosition != 0 ? "-" + playerStartPosition + " " : terrain + "  ");
+        //     }
+        //     grid += "\n";
+        // }
         
         grid += "ENTITIES\n";
         for (var i = 0; i < GetSize(); i++)

@@ -31,7 +31,6 @@ public class GridManager : MonoBehaviour
         InitRegistries();
         InitGrid();
         InitSelectionOutlines();
-        Debug.Log(_grid2D.PrintGrid());
     }
 
     void Update()
@@ -73,16 +72,16 @@ public class GridManager : MonoBehaviour
     
     private void InitRegistries()
     {
-        string mapsPath = Path.Combine(Application.streamingAssetsPath, "Configs/Maps");
+        var mapsPath = Path.Combine(Application.streamingAssetsPath, "Configs/Maps");
         var mapConfigs = ConfigLoader<MapConfig>.LoadFolder(mapsPath);
         var maps = mapConfigs.ToList();
         Registry<MapConfig>.Register(maps);
         Debug.Log("maps " + Registry<MapConfig>.GetCount());
         
-        string unitPaths = Path.Combine(Application.streamingAssetsPath, "Configs/Units");
-        var unitConfigs = ConfigLoader<EntityConfig>.LoadFolder(unitPaths);
-        var units = unitConfigs.Select(Entity.Create).ToList();
-        Registry<Entity>.Register(units);
+        var entitiesPath = Path.Combine(Application.streamingAssetsPath, "Configs/Entities");
+        var entityConfigs = ConfigLoader<EntityConfig>.LoadFolder(entitiesPath, true);
+        var entities = entityConfigs.Select(Entity.Create).ToList();
+        Registry<Entity>.Register(entities);
         Debug.Log("entities " + Registry<Entity>.GetCount());
     }
     
@@ -106,9 +105,10 @@ public class GridManager : MonoBehaviour
     {
         _grid2D = Grid2D.Create(Registry<MapConfig>.Get("TestMap1"));
         
-        CreateTestTeams();
-        LoadTestTeams();
+        // CreateTestTeams();
+        // LoadTestTeams();
         
+        Debug.Log(_grid2D.PrintGrid());
     }
     
     // private void LoadMapData(MapData mapData=null)
