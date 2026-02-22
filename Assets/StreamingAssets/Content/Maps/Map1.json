@@ -1,0 +1,16 @@
+{
+  "Id": "TestMap1",
+  "X": 11,
+  "Y": 11,
+  "MaxTeamCost": 22,
+  "Terrain": [
+    { "TerrainType": "Void", "PositionValues": [60, 62] }
+  ],
+  "PlayerStartPositions": [
+    { "PositionRanges": [ {"Start": 0, "End": 22} ] },
+    { "PositionRanges": [ {"Start": 97, "End": 120} ] }
+  ],
+  "EntityStartPositions": [
+    { "EntityId": "ExplosiveBarrel", "PositionValues": [42, 44], "PositionRanges": [ {"Start": 35, "End": 37} ] }
+  ]
+}

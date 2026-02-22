@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using Newtonsoft.Json;
 
 public interface INameId
 {
@@ -20,19 +18,26 @@ public static class Registry<T> where T : INameId
         }
     }
     
-    public static void Register(T item)
-    {
-        Register(item.Id, item);
-    }
+    private static void Register(T item) 
+        => _items.TryAdd(item.Id, item);
     
-    public static void Register(string id, T item)
-    {
-        if (_items.ContainsKey(id)) throw new InvalidOperationException($"Item with id '{id}' already registered");
-        _items[id] = item;
-    }
+    public static void Clear() 
+        => _items.Clear();
 
     public static T Get(string id)
         => _items.TryGetValue(id, out var item) ? item : throw new InvalidOperationException($"Item with id '{id}' not registered");
         
-    public static int GetCount() => _items.Count;
+    public static int GetCount()
+        => _items.Count;
+    
+    public static string PrintItems()
+    {
+        var output = "";
+        foreach (var kvp in _items)
+        {
+            output += $"{kvp.Key} ";
+        }
+        output += "\n";
+        return output;
+    }
 }

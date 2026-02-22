@@ -3142,6 +3142,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a076c17fe76165e4f8ed21498b877bf9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Easing: 0
   Modifiers: []
   references:
     version: 2
@@ -4889,20 +4890,8 @@ MonoBehaviour:
   _gridLines: {fileID: 1936289542}
   _pressOutline: {fileID: 505637005}
   _selectionSquare: {fileID: 1947471885}
-  _testMapX: 10
-  _testMapY: 10
-  _testMapPlayerCount: 2
-  _testMapUnitCostTotal: 10
-  _testGridSelection:
-    Direction: 0
-    MaxDistance: 2
-    MinDistance: 0
-    Width: 0
-    AbsoluteDirection: 0
-    CollideMask: 0
-    Chain: []
-  _testTeamStartPositions: 
-  _testTeamUnitIds: 
+  _entityAssets:
+  - {fileID: 11400000, guid: 3ba3968f451e84546a1c6e6fe9751c06, type: 2}
 --- !u!1 &1006811928
 GameObject:
   m_ObjectHideFlags: 0

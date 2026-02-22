@@ -2,10 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.Rendering;
-using UnityEngine.Splines;
 
-public enum TerrainType { Default, Void, Wall }
+public enum TerrainType { Default, Void }
 
 public class Grid2D : INameId
 {
@@ -16,7 +14,7 @@ public class Grid2D : INameId
     
     public int MaxTeamCost { get; }
     public int PlayerCount { get; }
-    public int[] PlayerStartPositions { get; private set; }
+    public Dictionary<int, int> PlayerStartPositions { get; private set; }
 
     // State
     public TerrainType[] Terrain { get; private set; }
@@ -43,6 +41,8 @@ public class Grid2D : INameId
     private void InitPositions(List<TerrainConfig> terrain, List<PositionConfig> playerStartPositions, List<EntityStartConfig> entityStartPositions)
     {
         Terrain = new TerrainType[GetSize()];
+        PlayerStartPositions = new Dictionary<int, int>();
+        Entities = new Entity[GetSize()];
         foreach (var config in terrain)
         {
             if (!Enum.TryParse(config.TerrainType, out TerrainType terrainType) || terrainType == TerrainType.Default) continue;
@@ -51,30 +51,21 @@ public class Grid2D : INameId
                 if (Terrain[position] == TerrainType.Default)
                     Terrain[position] = terrainType;
         }
-        
-        var debugTest = "";
-        PlayerStartPositions = new int[GetSize()];
-        for (int i = 0; i < playerStartPositions.Count; i++)
+        for (var i = 0; i < playerStartPositions.Count; i++)
         {
             var player = i + 1;
             var positions = GetPositions(playerStartPositions[i].PositionValues, playerStartPositions[i].PositionRanges);
             foreach (var position in positions)
-            {
-                debugTest += position + " ";
-                if (PlayerStartPositions[position] == 0) // TODO: add Terrain mask
-                    PlayerStartPositions[position] = player;
-            }
+                if (IsTraversable(position)) // TODO: add Terrain mask
+                    PlayerStartPositions.TryAdd(position, player);
         }
-        Debug.Log(debugTest);
-        
-        Entities = new Entity[GetSize()];
         foreach (var config in entityStartPositions)
         {
             var entity = Registry<Entity>.Get(config.EntityId);
             if (entity == null) continue;
             var positions = GetPositions(config.PositionValues, config.PositionRanges);
             foreach (var position in positions)
-                if (Entities[position] == null) // TODO: add Terrain and PlayerStartPosition mask
+                if (IsTraversable(position) && !PlayerStartPositions.ContainsKey(position))
                     Entities[position] = entity;
         }
     }
@@ -84,55 +75,11 @@ public class Grid2D : INameId
         var positions = new List<int>();
         positions.AddRange(positionValues);
         foreach (var range in positionRanges)
+        {
             positions.AddRange(Enumerable.Range(range.Start, range.End - range.Start + 1));
+        }
         return positions.Distinct().Where(position => position >= 0 && position < GetSize()).ToArray();
     }
-    
-    // private void InitTypePositions((string[] types, int[][] positions) terrain, (string[] types, int[][] positions) playerStartPositions, (string[] types, int[][] positions) entityStartPositions)
-    // {
-    //     Terrain = new TerrainType[GetSize()];
-    //     for (var i = 0; i < terrain.positions.Length; i++)
-    //     {
-    //         var type = terrain.types[i];
-    //         var positions = terrain.positions[i];
-    //         if (Enum.TryParse(type, out TerrainType terrainType) && terrainType != TerrainType.Default)
-    //         {
-    //             foreach (var position in positions) 
-    //                 if (Terrain[position] == TerrainType.Default) 
-    //                     Terrain[position] = terrainType;
-    //         }
-    //     }
-    //     
-    //     PlayerStartPositions = new int[GetSize()];
-    //     for (var i = 0; i < playerStartPositions.positions.Length; i++)
-    //     {
-    //         var player = i + 1;
-    //         var positions = playerStartPositions.positions[i];
-    //         foreach (var position in positions)
-    //         {
-    //             if (PlayerStartPositions[position] == 0 && Terrain[position] == TerrainType.Default) 
-    //                 PlayerStartPositions[position] = player;
-    //         }
-    //     }
-    //     
-    //     Entities = new Entity[GetSize()];
-    //     for (var i = 0; i < entityStartPositions.positions.Length; i++)
-    //     {
-    //         var entity = Registry<Entity>.Get(entityStartPositions.types[i]);
-    //         if (entity == null) continue;
-    //         
-    //         var positions = entityStartPositions.positions[i];
-    //         foreach (var position in positions)
-    //         {
-    //             if (Entities[position] != null)
-    //             {
-    //                 Entities[position] = entity;
-    //                 var player = PlayerStartPositions[position];
-    //                 if (player != 0) Entities[position].Control?.SetPlayerId(player);
-    //             }
-    //         }
-    //     }
-    // }
     
     public void LoadPlayerTeam(int player, TeamData teamData)
     {
@@ -172,16 +119,6 @@ public class Grid2D : INameId
     public Entity GetEntity((int x, int y) position)
     {
         return GetEntity(ToPosition1D(position.x, position.y));
-    }
-    
-    public int[] GetPlayerStartPositions(int player)
-    {
-        var positions = new List<int>();
-        for (int i = 0; i < PlayerStartPositions.Length; i++)
-        {
-            if (PlayerStartPositions[i] == player) positions.Add(i);
-        }
-        return positions.ToArray();
     }
     
     public TerrainType GetTerrain(int position)
@@ -316,6 +253,21 @@ public class Grid2D : INameId
         return position.x >= 0 && position.x < X && position.y >= 0 && position.y < Y;
     }
     
+    public bool IsTraversable(int position)
+    {
+        return Terrain[position] != TerrainType.Void && Entities[position] == null;
+    }
+    
+    public bool IsTraversable(int x, int y)
+    {
+        return IsTraversable(ToPosition1D(x, y));
+    }
+    
+    public bool IsTraversable((int x, int y) position)
+    {
+        return IsTraversable(ToPosition1D(position.x, position.y));
+    }
+    
     public bool ValidateStartPositions(List<int> startPositions)
     {
         return startPositions.Count == GetSize();
@@ -326,9 +278,9 @@ public class Grid2D : INameId
         var grid = "";
         
         grid += "START POSITIONS\n";
-        for (int i = 0; i < PlayerStartPositions.Length; i++)
+        foreach (var kvp in PlayerStartPositions)
         {
-            grid += PlayerStartPositions[i] + " ";
+            grid += "(" + kvp.Key + "-"+ kvp.Value + ") ";
         }
         grid += "\n";
         

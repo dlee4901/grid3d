@@ -9,14 +9,13 @@ using UnityEngine.Windows;
 public class GridManager : MonoBehaviour
 {
     [SerializeField] private Grid _grid;
+    
     [SerializeField] private GameObject _gridLines;
     [SerializeField] private LineRenderer _pressOutline;
-    
     [SerializeField] private MeshRenderer _selectionSquare;
     private List<MeshRenderer> _selectionSquares;
-
-    [Header("Test Visuals")]
-    //[SerializeField] private GameObjectList _testTileTerrainVisuals;
+    
+    [SerializeField] private List<EntityAssets> _entityAssets;
     
     private Camera _mainCamera;
     private InputAction _selectAction;
@@ -72,23 +71,25 @@ public class GridManager : MonoBehaviour
     
     private void InitRegistries()
     {
-        var mapsPath = Path.Combine(Application.streamingAssetsPath, "Configs/Maps");
-        var mapConfigs = ConfigLoader<MapConfig>.LoadFolder(mapsPath);
+        var mapsPath = Path.Combine(Application.streamingAssetsPath, "Content/Maps");
+        var mapConfigs = ConfigLoader.LoadFolder<MapConfig>(mapsPath);
         var maps = mapConfigs.ToList();
         Registry<MapConfig>.Register(maps);
         Debug.Log("maps " + Registry<MapConfig>.GetCount());
         
-        var entitiesPath = Path.Combine(Application.streamingAssetsPath, "Configs/Entities");
-        var entityConfigs = ConfigLoader<EntityConfig>.LoadFolder(entitiesPath, true);
+        var entitiesPath = Path.Combine(Application.streamingAssetsPath, "Content/Entities");
+        var entityConfigs = ConfigLoader.LoadFolder<EntityConfig>(entitiesPath, true);
         var entities = entityConfigs.Select(Entity.Create).ToList();
         Registry<Entity>.Register(entities);
         Debug.Log("entities " + Registry<Entity>.GetCount());
+        
+        Registry<EntityAssets>.Register(_entityAssets);
     }
     
     private void CreateTestTeams()
     {
-        var team1 = new TeamData("TestTeam1", "TestMap1", new Dictionary<int, string>{ {0, "FireWizard"}, {1, "FireWizard"}, {119, "FireWizard"}, {120, "FireWizard"} });
-        var team2 = new TeamData("TestTeam2", "TestMap1", new Dictionary<int, string>{ {9, "FireWizard"}, {10, "FireWizard"}, {110, "FireWizard"}, {111, "FireWizard"} });
+        var team1 = new TeamData("TestTeam1", "TestMap1", new Dictionary<int, string>{ {0, "FireWizard"}, {1, "FireWizard"} });
+        var team2 = new TeamData("TestTeam2", "TestMap1", new Dictionary<int, string>{ {110, "FireWizard"}, {111, "FireWizard"} });
         JsonHandler.SaveData(team1);
         JsonHandler.SaveData(team2);
     }
@@ -110,41 +111,6 @@ public class GridManager : MonoBehaviour
         
         Debug.Log(_grid2D.PrintGrid());
     }
-    
-    // private void LoadMapData(MapData mapData=null)
-    // {
-    //     mapData ??= CreateTestMapData(_testMapX, _testMapY, _testMapPlayerCount, _testMapUnitCostTotal);
-    //     _grid2D = new Grid2D(mapData);
-    //     RenderGrid();
-    // }
-    //
-    // private void LoadTeamData(TeamData teamData = null)
-    // {
-    //     teamData ??= CreateTestTeamData(_testTeamStartPositions, _testTeamUnitIds);
-    //     
-    // }
-    //
-    // private static MapData CreateTestMapData(int testMapX = 8, int testMapY = 8, int testMapPlayerCount = 2, int testUnitCostTotal = 16)
-    // {
-    //     var testEntityStartPositions = new List<int>();
-    //     for (var i = 0; i < testMapX; i++)
-    //     {
-    //         if (i == 0) testEntityStartPositions.AddRange(Enumerable.Repeat(-1, testMapY).ToList());
-    //         else if (i == testMapX - 1) testEntityStartPositions.AddRange(Enumerable.Repeat(-2, testMapY).ToList());
-    //         else testEntityStartPositions.AddRange(Enumerable.Repeat(0, testMapY).ToList());
-    //     }
-    //     var testTileTerrain = Enumerable.Repeat(TileTerrain.Default, testMapX * testMapY).ToList();
-    //     const int testMapId = 0;
-    //     const string testMapName = "Test Map";
-    //     return new MapData(testMapId, testMapName, testMapX, testMapY, testMapPlayerCount, testUnitCostTotal, testEntityStartPositions, testTileTerrain);
-    // }
-    //
-    // private static TeamData CreateTestTeamData(List<int> testTeamStartPositions=null, List<int> testTeamUnitIds=null)
-    // {
-    //     const int testMapId = 0;
-    //     const string testMapName = "Test Map";
-    //     return new TeamData(testMapName, testMapId, testTeamStartPositions, testTeamUnitIds);
-    // }
     
     //
     // RENDERING
