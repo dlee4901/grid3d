@@ -2,18 +2,19 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Windows;
 
 public class GridManager : MonoBehaviour
 {
-    [SerializeField] private Grid _grid;
+    [SerializeField] private CinemachineCamera _cinemachineCamera;
     
+    [SerializeField] private Grid _grid;
     [SerializeField] private GameObject _gridLines;
     [SerializeField] private LineRenderer _pressOutline;
     [SerializeField] private MeshRenderer _selectionSquare;
-    private List<MeshRenderer> _selectionSquares;
     
     [SerializeField] private List<EntityAssets> _entityAssets;
     
@@ -22,14 +23,19 @@ public class GridManager : MonoBehaviour
     
     private Grid2D _grid2D;
     
+    private MeshRenderer[] _selectionSquares;
+    
     void Start()
     {
         _mainCamera = Camera.main;
         _selectAction = InputSystem.actions.FindAction("Player/Select");
         _grid.gameObject.SetActive(true);
+        
         InitRegistries();
         InitGrid();
-        InitSelectionOutlines();
+        
+        InitCamera();
+        InitRendering();
     }
 
     void Update()
@@ -57,11 +63,21 @@ public class GridManager : MonoBehaviour
             //     _testTileSelector.GetTileSet(_grid2D, (gridPosition.x, gridPosition.y))
             //     );
             _pressOutline.gameObject.SetActive(true);
-            _pressOutline.transform.position = _grid.CellToWorld(gridPosition);
+            var worldPos = _grid.CellToWorld(gridPosition);
+            _pressOutline.transform.position = new Vector3(worldPos.x, 0.05f, worldPos.z);
         }
         else
         {
             _pressOutline.gameObject.SetActive(false);
+        }
+    }
+    
+    private void InitCamera()
+    {
+        var targetScreenHeight = Math.Max(_grid2D.X / 2.0f, _grid2D.Y);
+        if (_cinemachineCamera.Target.TrackingTarget.Equals(_gridLines.transform))
+        {
+            _cinemachineCamera.GetComponent<CinemachineFollow>().FollowOffset = new Vector3(0f, targetScreenHeight, 0f);
         }
     }
     
@@ -116,35 +132,32 @@ public class GridManager : MonoBehaviour
     // RENDERING
     //
     
-    private void InitSelectionOutlines()
+    private void InitRendering()
     {
-        _selectionSquares = new List<MeshRenderer>();
+        _selectionSquares = new MeshRenderer[_grid2D.GetSize()];
         for (var x = 0; x < _grid2D.X; x++)
         {
             for (var y = 0; y < _grid2D.Y; y++)
             {
-                _selectionSquares.Add(Instantiate(_selectionSquare, _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, -0.1f, 0.5f),  Quaternion.identity));
+                _selectionSquares[_grid2D.ToPosition1D(x, y)] = Instantiate(_selectionSquare, _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, -0.1f, 0.5f),  Quaternion.identity);
             }
         }
+        _gridLines.SetActive(true);
+        _gridLines.transform.position = new Vector3(_grid2D.X/2.0f, 0, _grid2D.Y/2.0f);
+        _gridLines.transform.localScale = new Vector3(_grid2D.X/10f, 1, _grid2D.Y/10f);
     }
     
     private void ShowTiles(HashSet<int> tiles)
     {
-        for (int i = 0; i < _selectionSquares.Count; i++) { _selectionSquares[i].gameObject.SetActive(false); }
+        for (int i = 0; i < _selectionSquares.Length; i++) 
+            _selectionSquares[i].gameObject.SetActive(false);
         foreach (var tile in tiles)
-        {
             if (_grid2D.IsValidPosition(tile))
-            {
-                _selectionSquares[tile].gameObject.SetActive(true);
-            }
-        }
+                 _selectionSquares[tile].gameObject.SetActive(true);
     }
     
     private void RenderGrid()
     {
-        _gridLines.SetActive(true);
-        _gridLines.transform.position = new Vector3(_grid2D.X/2.0f, -0.1f, _grid2D.Y/2.0f);
-        _gridLines.transform.localScale = new Vector3(_grid2D.X/10f, 1, _grid2D.Y/10f);
         for (var i = 0; i < _grid2D.X; i++)
         {
             for (var j = 0; j < _grid2D.Y; j++)

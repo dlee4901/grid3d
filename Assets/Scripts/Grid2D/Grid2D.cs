@@ -43,30 +43,39 @@ public class Grid2D : INameId
         Terrain = new TerrainType[GetSize()];
         PlayerStartPositions = new Dictionary<int, int>();
         Entities = new Entity[GetSize()];
-        foreach (var config in terrain)
+        if (terrain != null)
         {
-            if (!Enum.TryParse(config.TerrainType, out TerrainType terrainType) || terrainType == TerrainType.Default) continue;
-            var positions = GetPositions(config.PositionValues, config.PositionRanges);
-            foreach (var position in positions)
-                if (Terrain[position] == TerrainType.Default)
-                    Terrain[position] = terrainType;
+            foreach (var config in terrain)
+            {
+                if (!Enum.TryParse(config.TerrainType, out TerrainType terrainType) || terrainType == TerrainType.Default) continue;
+                var positions = GetPositions(config.PositionValues, config.PositionRanges);
+                foreach (var position in positions)
+                    if (Terrain[position] == TerrainType.Default)
+                        Terrain[position] = terrainType;
+            }
         }
-        for (var i = 0; i < playerStartPositions.Count; i++)
+        if (playerStartPositions != null)
         {
-            var player = i + 1;
-            var positions = GetPositions(playerStartPositions[i].PositionValues, playerStartPositions[i].PositionRanges);
-            foreach (var position in positions)
-                if (IsTraversable(position)) // TODO: add Terrain mask
-                    PlayerStartPositions.TryAdd(position, player);
+            for (var i = 0; i < playerStartPositions.Count; i++)
+            {
+                var player = i + 1;
+                var positions = GetPositions(playerStartPositions[i].PositionValues, playerStartPositions[i].PositionRanges);
+                foreach (var position in positions)
+                    if (IsTraversable(position)) // TODO: add Terrain mask
+                        PlayerStartPositions.TryAdd(position, player);
+            }
         }
-        foreach (var config in entityStartPositions)
+        if (entityStartPositions != null)
         {
-            var entity = Registry<Entity>.Get(config.EntityId);
-            if (entity == null) continue;
-            var positions = GetPositions(config.PositionValues, config.PositionRanges);
-            foreach (var position in positions)
-                if (IsTraversable(position) && !PlayerStartPositions.ContainsKey(position))
-                    Entities[position] = entity;
+            foreach (var config in entityStartPositions)
+            {
+                var entity = Registry<Entity>.Get(config.EntityId);
+                if (entity == null) continue;
+                var positions = GetPositions(config.PositionValues, config.PositionRanges);
+                foreach (var position in positions)
+                    if (IsTraversable(position) && !PlayerStartPositions.ContainsKey(position))
+                        Entities[position] = entity;
+            }
         }
     }
     
