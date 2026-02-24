@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -13,15 +14,18 @@ public class GridManager : MonoBehaviour
     [SerializeField] private GameObject _gridLines;
     [SerializeField] private LineRenderer _pressOutline;
     [SerializeField] private MeshRenderer _selectionSquare;
-    
+    [SerializeField] private GameObject _squarePrefab;
+     
     [SerializeField] private List<EntityAssets> _entityAssets;
     
     private Camera _mainCamera;
     private InputAction _selectAction;
     
     private Grid2D _grid2D;
+    private float _gridGroundLevel;
     
     private MeshRenderer[] _selectionSquares;
+    private GameObject[] _squarePrefabs;
     
     void Start()
     {
@@ -62,7 +66,7 @@ public class GridManager : MonoBehaviour
             //     );
             _pressOutline.gameObject.SetActive(true);
             var worldPos = _grid.CellToWorld(gridPosition);
-            _pressOutline.transform.position = new Vector3(worldPos.x, 0.05f, worldPos.z);
+            _pressOutline.transform.position = new Vector3(worldPos.x, _gridGroundLevel + 0.05f, worldPos.z);
         }
         else
         {
@@ -132,16 +136,19 @@ public class GridManager : MonoBehaviour
     
     private void InitRendering()
     {
+        _gridGroundLevel = _squarePrefab.transform.localScale.y;
         _selectionSquares = new MeshRenderer[_grid2D.GetSize()];
+        _squarePrefabs = new GameObject[_grid2D.GetSize()];
         for (var x = 0; x < _grid2D.X; x++)
         {
             for (var y = 0; y < _grid2D.Y; y++)
             {
                 _selectionSquares[_grid2D.ToPosition1D(x, y)] = Instantiate(_selectionSquare, _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, -0.1f, 0.5f),  Quaternion.identity);
+                _squarePrefabs[_grid2D.ToPosition1D(x, y)] = Instantiate(_squarePrefab, _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel / 2.0f, 0.5f), Quaternion.identity);
             }
         }
         _gridLines.SetActive(true);
-        _gridLines.transform.position = new Vector3(_grid2D.X/2.0f, 0, _grid2D.Y/2.0f);
+        _gridLines.transform.position = new Vector3(_grid2D.X/2.0f, _gridGroundLevel + 0.01f, _grid2D.Y/2.0f);
         _gridLines.transform.localScale = new Vector3(_grid2D.X/10f, 1, _grid2D.Y/10f);
     }
     

@@ -13,4 +13,5 @@ MonoBehaviour:
   m_Name: FireWizard
   m_EditorClassIdentifier: Assembly-CSharp::EntityAssets
   <Id>k__BackingField: FireWizard
-  Prefab: {fileID: 6769735443732236303, guid: 27ff49a3e50e14f79989e456f85b39dc, type: 3}
+  Prefab3D: {fileID: 6769735443732236303, guid: 27ff49a3e50e14f79989e456f85b39dc, type: 3}
+  Prefab2D: {fileID: 0}
