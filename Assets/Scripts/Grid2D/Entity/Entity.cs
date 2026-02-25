@@ -2,8 +2,6 @@
 
 using Newtonsoft.Json;
 
-public enum DirectionFacing {North, East, South, West}
-
 public class Entity : INameId
 {
     public string Id { get; }
