@@ -6,7 +6,7 @@ using System.Linq;
 public enum DirectionType {North, NorthEast, East, SouthEast, South, SouthWest, West, NorthWest, Vertical, Horizontal, Diagonal, Straight, Line}
 public enum DirectionFacing {North, East, South, West}
 
-struct Step
+public struct Step : IEquatable<Step>
 {
     public (int x, int y) Position;
     public int Distance;
@@ -18,57 +18,75 @@ struct Step
         Distance = distance;
         Direction = direction;
     }
+
+    public bool Equals(Step other)
+    {
+        return Position.Equals(other.Position) && Direction == other.Direction; //&& Distance == other.Distance;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is Step other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Position, Distance, (int)Direction);
+    }
 }
 
 public class GridTraversal
 {
     public DirectionType Direction { get; set; }
-    
+
     public int MaxDistance { get; set; } = 0; // -1: inf
     public bool AbsoluteDirection { get; set; } = false;
     public bool Linear { get; set; } = false;
-    public bool Trace { get; set; } = false;
-    
+
     public int StartWidth { get; set; } = 0;
     public int DeltaWidth { get; set; } = 0;
     public int DeltaWidthStep { get; set; } = 1;
     public int DeltaWidthDistanceOffset { get; set; } = 0;
-    
+
     public EntityPassthrough Passthrough { get; set; } = EntityPassthrough.None;
     public PredicateConfig? PassthroughQuery { get; set; }
-    
-    public TraversalConfig? Chain { get; set; }
+
+    public GridTraversalConfig? Chain { get; set; }
     public int ChainOffset { get; set; } = 0; // IF (n > 0) n ~ distance ELSE maxDistReached + n ~ maxDistReached
     
-    private IEnumerable<Step> Traverse(Grid2D grid, Dictionary<(int, int), int> tileDistances, (int, int) startPosition, Entity? sourceEntity=null)
+    public List<Step> GetSteps(Grid2D grid, (int, int) startPosition, Entity? sourceEntity=null)
     {
-        // if (tileDistances.TryGetValue(initialPosition, out var distance) && distance < curDistance)
-        //     yield break;
-        // tileDistances.Add(initialPosition, curDistance);
+        return Traverse(grid, startPosition, sourceEntity).Last().ToList();
+    }
+    
+    public HashSet<Step> GetStepsSet(Grid2D grid, (int, int) startPosition, Entity? sourceEntity=null)
+    {
+        return Traverse(grid, startPosition, sourceEntity).Last();
+    }
+    
+    public List<Step> GetTraceSteps(Grid2D grid, (int, int) startPosition, Entity? sourceEntity=null)
+    {
+        return GetTraceSteps(grid, new Step(startPosition, 0, Direction), sourceEntity);
+    }
+    
+    private List<Step> GetTraceSteps(Grid2D grid, Step initialStep, Entity? sourceEntity=null)
+    {
+        return Expand(grid, initialStep.Position, sourceEntity, initialStep.Distance, initialStep.Direction).ToList();
+    }
+    
+    private IEnumerable<HashSet<Step>> Traverse(Grid2D grid, (int, int) startPosition, Entity? sourceEntity=null)
+    {
+        var steps = new HashSet<Step>();
         var queue = new Queue<Step>();
         queue.Enqueue(new Step(startPosition, 0, Direction));
-        var visitedDirections = new Dictionary<(int, int), List<DirectionType>>();
         while (queue.Count > 0)
         {
             var currentStep = queue.Dequeue();
             foreach (var nextStep in Expand(grid, currentStep.Position, sourceEntity, currentStep.Distance + 1, currentStep.Direction))
             {
-                if (!tileDistances.TryGetValue(nextStep.Position, out var distance))
-                {
-                    tileDistances.Add(nextStep.Position, nextStep.Distance + 1);
-                    yield return nextStep;
-                    queue.Enqueue(nextStep);
-                    
-                    if (Linear) visitedDirections[nextStep.Position] = new List<DirectionType>() {nextStep.Direction};
-                    continue;
-                }
-                
-                if (Linear && visitedDirections.TryGetValue(nextStep.Position, out var directions) && directions.Contains(nextStep.Direction))
-                {
-                    visitedDirections[nextStep.Position].Add(nextStep.Direction);
-                    yield return nextStep;
-                    queue.Enqueue(nextStep);
-                }
+                if (!steps.Add(nextStep)) continue;
+                queue.Enqueue(nextStep);
+                yield return steps;
             }
         }
     }
@@ -79,35 +97,27 @@ public class GridTraversal
         var unitVectors = GetUnitVectors(direction, directionFacing);
         var traverseTiles = unitVectors.Select(vec => (startPosition.Item1 + vec.Item1, startPosition.Item2 + vec.Item2)).ToList();
         var maxDistance = MaxDistance < 0 || MaxDistance > grid.X * grid.Y ? grid.X * grid.Y : MaxDistance;
-        if (curDistance <= maxDistance)
+        if (curDistance > maxDistance) yield break;
+        for (var i = 0; i < traverseTiles.Count; i++)
         {
-            for (int i = 0; i < traverseTiles.Count; i++)
-            {
-                var position = traverseTiles[i];
-                if (position == startPosition) continue;
+            var position = traverseTiles[i];
+            if (position == startPosition) continue;
                 
-                // If tile is invalid or collided with entity, do not check further
-                if (!grid.IsValidPosition(position)) continue;
-                Entity entity;
-                if ((entity = grid.GetEntity(position)) != null && IsColliding(entity, sourceEntity)) continue;
-                //if (collideMask != null && (entity = grid.GetEntity(tile)) != null && collideMask(entity)) continue;
-                
-                yield return new Step(position, curDistance + 1, Linear ? (DirectionType)i : direction);
-                
-                if (DeltaWidth > 0 && DeltaWidthDistanceOffset < curDistance)
-                {
-                    var curWidth = DeltaWidth * (curDistance - DeltaWidthDistanceOffset) / DeltaWidthStep;
-                    var widthTiles = GetWidthTiles(grid, curWidth, position, unitVectors);
-                    foreach (var widthTile in widthTiles)
-                    {
-                        yield return new Step(widthTile, curDistance + 1, Linear ? (DirectionType)i : direction);
-                    }
-                }
-                
-            }
+            // If tile is invalid or collided with entity, do not check further
+            if (!grid.IsValidPosition(position)) continue;
+            Entity entity;
+            if ((entity = grid.GetEntity(position)) != null && IsColliding(entity, sourceEntity)) continue;
+            //if (collideMask != null && (entity = grid.GetEntity(tile)) != null && collideMask(entity)) continue;
+            
+            yield return new Step(position, curDistance + 1, Linear ? (DirectionType)i : direction);
+
+            if (DeltaWidth <= 0 || DeltaWidthDistanceOffset >= curDistance) continue;
+            var curWidth = DeltaWidth * (curDistance - DeltaWidthDistanceOffset) / DeltaWidthStep;
+            var widthTiles = GetWidthTiles(grid, curWidth, position, unitVectors);
+            foreach (var widthTile in widthTiles)
+                yield return new Step(widthTile, curDistance + 1, Linear ? (DirectionType)i : direction);
         }
     }
-        
     
     private bool IsColliding(Entity targetEntity, Entity? sourceEntity=null)
     {

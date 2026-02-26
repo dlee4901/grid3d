@@ -1,11 +1,5 @@
 using System.Collections.Generic;
 
-public class IntRange
-{
-    public int Start { get; set; }
-    public int End { get; set; }
-}
-
 public class PositionConfig
 {
     public List<int> PositionValues { get; set; } = new();
