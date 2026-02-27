@@ -367,7 +367,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.services.multiplayer": {
-      "version": "2.1.1",
+      "version": "2.1.2",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -424,7 +424,7 @@
       }
     },
     "com.unity.splines": {
-      "version": "2.8.2",
+      "version": "2.8.3",
       "depth": 1,
       "source": "registry",
       "dependencies": {
