@@ -1,4 +1,4 @@
-public sealed class ControlComponent
+public class ControlComponent : IComponent
 {
     public int PlayerId { get; private set; }
     

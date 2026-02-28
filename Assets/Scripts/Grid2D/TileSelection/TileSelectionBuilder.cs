@@ -1,7 +1,7 @@
 #nullable enable
 using System.Collections.Generic;
 
-public struct RangePattern
+public struct RangePatternStruct
 {
     public int Start { get; set; }
     public int Span { get; set; }
@@ -14,7 +14,7 @@ public class TileSelectionBuilder
     public int MinDistance { get; set; } = 0;
     public int MaxDistance { get; set; } = 0;
     public List<(int, int)> ExcludedDistanceRanges { get; set; } = new();
-    public RangePattern? RangePattern { get; set; }
+    public RangePatternStruct? RangePattern { get; set; }
     public PredicateConfig? EntityAllowlist { get; set; }
     public PredicateConfig? EntityDenylist { get; set; }
     
@@ -49,7 +49,7 @@ public class TileSelectionBuilder
         ExcludedDistanceRanges.AddRange(ranges);
     }
     
-    public void AddExcludedDistanceRangePattern(RangePattern rangePattern)
+    public void AddExcludedDistanceRangePattern(RangePatternStruct rangePattern)
     {
         for (var i = rangePattern.Start; i <= MaxDistance; i += rangePattern.Span + rangePattern.Gap + 1)
         {

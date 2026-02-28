@@ -1,4 +1,4 @@
-public sealed class HealthComponent
+public class HealthComponent : IComponent
 {
     public int Starting { get; }
     public int Current { get; private set; }

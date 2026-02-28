@@ -1,4 +1,4 @@
-public sealed class SkillComponent
+public class SkillComponent : IComponent
 {
         
 }

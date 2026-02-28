@@ -3,12 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
 
-public class IntRange
-{
-    public int Start { get; set; }
-    public int End { get; set; }
-}
-
 public static class ConfigLoader
 {
     public static List<T> LoadFolder<T>(string folderPath, bool searchSubfolders=false) where T : INameId

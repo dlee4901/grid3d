@@ -12,7 +12,6 @@ public class Entity : INameId
     public SkillComponent? Skills { get; }
     public HealthComponent? Health { get; }
     public ControlComponent? Control { get; }
-    public MoveComponent? Move { get; }
     
     static Entity()
     {
@@ -20,14 +19,13 @@ public class Entity : INameId
         AccessorRegistry<Entity>.Register<int>("Cost", e => e.Cost);
     }
     
-    private Entity(string id, int cost, SkillComponent? skills, HealthComponent? health, ControlComponent? control, MoveComponent? move)
+    private Entity(string id, int cost, SkillComponent? skills, HealthComponent? health, ControlComponent? control)
     {
         Id = id;
         Cost = cost;
         Skills = skills;
         Health = health;
         Control = control;
-        Move = move;
     }
     
     public static Entity Create(EntityConfig config)
@@ -37,8 +35,7 @@ public class Entity : INameId
             cost: config.Cost,
             health: config.Health > 0 ? new HealthComponent(config.Health) : null,
             skills: null,
-            control: null,
-            move: null
+            control: null
         );
     }
     

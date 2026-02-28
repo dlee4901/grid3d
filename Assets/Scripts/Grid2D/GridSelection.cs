@@ -1,18 +1,45 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 
 public class GridSelection
 {
     public List<GridTraversal> Traversals { get; set; }
     
+    public int MinDistance { get; set; } = 0;
+    public int MaxDistance { get; set; } = 0;
     public List<IntRange> ExcludedDistanceRanges { get; set; } = new();
-    public RangePattern? RangePattern { get; set; }
+    public IntRangePattern ExcludedDistRangePattern { get; set; }
     
     public PredicateConfig EntityAllowlist { get; set; }
     public PredicateConfig EntityDenylist { get; set; }
     
-    public List<Step> GetSteps(Grid2D grid, (int, int) startPosition, Entity? sourceEntity=null)
+    public HashSet<(int, int)> GetSelection(Grid2D grid, (int, int) startPosition, Entity? sourceEntity=null)
+    {
+        var selection = new HashSet<(int, int)>();
+        var steps = GetSteps(grid, startPosition, sourceEntity);
+        var excludedDistances = GetExcludedDistances();
+        foreach (var step in steps)
+        {
+            if (step.Distance < MinDistance || step.Distance > MaxDistance || excludedDistances.Contains(step.Distance) || selection.Contains(step.Position)) continue;
+            Entity entity;
+            if (EntityAllowlist != null && (entity = grid.GetEntity(step.Position)) != null)
+            {
+                var predicate = PredicateFactory<Entity>.Create(EntityAllowlist);
+                if (!predicate(entity)) continue;
+            }
+            if (EntityDenylist != null && (entity = grid.GetEntity(step.Position)) != null)
+            {
+                var predicate = PredicateFactory<Entity>.Create(EntityDenylist);
+                if (predicate(entity)) continue;
+            }
+            selection.Add(step.Position);
+        }
+        return selection;
+    }
+    
+    private List<Step> GetSteps(Grid2D grid, (int, int) startPosition, Entity? sourceEntity=null)
     {
         var steps = new HashSet<Step>();
         foreach (var traversal in Traversals)
@@ -20,64 +47,15 @@ public class GridSelection
         return steps.ToList();
     }
     
-    public void AddExcludedDistanceRangePattern()
+    private HashSet<int> GetExcludedDistances()
     {
-        if (RangePattern == null || RangePattern?.Span == 0 || RangePattern?.Gap == 0) return;
-        var maxDistance = Traversals.Select(traversals => traversals.MaxDistance).Prepend(0).Max();
-        for (var i = RangePattern?.Start; i <= maxDistance; i += RangePattern?.Span + RangePattern?.Gap + 1)
-        {
-            //ExcludedDistanceRanges.Add((i.Value, i + RangePattern?.Span - 1));
-        }
+        var excludedDistances = new HashSet<int>();
+        var intRanges = new List<IntRange>();
+        intRanges.AddRange(ExcludedDistanceRanges);
+        if (ExcludedDistRangePattern != null)
+            intRanges.AddRange(ExcludedDistRangePattern.GetIntRanges(MaxDistance));
+        foreach (var range in intRanges)
+            excludedDistances.AddRange(range.GetValues());
+        return excludedDistances;
     }
-    
-    // public Dictionary<int, int> GetTileDistances(Grid2D grid, int startPosition, Entity? sourceEntity=null)
-    // {
-    //     var tileSelection = new TileSelection(grid);
-    //     foreach (var tileSelector in TileSelectors)
-    //     {
-    //         var selection = tileSelector.GetTileSelection(grid, startPosition, sourceEntity);
-    //         tileSelection.Merge(selection);
-    //     }
-    //     if (MinDistance > 0) ExcludedDistanceRanges.Add((0, MinDistance));
-    //     
-    //     return GetTileDistancesNotInRanges(ExcludedDistanceRanges, false, true, MaxDistance, EntityAllowlist, EntityDenylist);
-    // }
-    //
-    // public Dictionary<int, int> GetTileDistancesNotInRanges(List<(int, int)> ranges, bool includeLower=true, bool includeUpper=true, int maxDistance=0, PredicateConfig entityAllowList=null, PredicateConfig entityDenyList=null)
-    // {
-    //     var result = new Dictionary<int, int>();
-    //     foreach (var (tile, distance) in _tileDistances)
-    //     {
-    //         if (distance == -1) continue;
-    //         if (maxDistance > 0 && distance > maxDistance) continue;
-    //         foreach (var (min, max) in ranges)
-    //         {
-    //             if ((includeLower ? distance > min : distance >= min) &&
-    //                 (includeUpper ? distance < max : distance <= max)) continue;
-    //             // if (excludeQuery != null)
-    //             // {
-    //             //     var entity = _grid.GetEntity(tile);
-    //             //     var query = excludeQuery.Build();
-    //             //     if (entity != null && query(entity))
-    //             //     {
-    //             //         continue;
-    //             //     }
-    //             // }
-    //             Entity entity;
-    //             if (entityAllowList != null && (entity = _grid.GetEntity(tile)) != null)
-    //             {
-    //                 var predicate = PredicateFactory<Entity>.Create(entityAllowList);
-    //                 if (!predicate(entity)) continue;
-    //             }
-    //             if (entityDenyList != null && (entity = _grid.GetEntity(tile)) != null)
-    //             {
-    //                 var predicate = PredicateFactory<Entity>.Create(entityAllowList);
-    //                 if (predicate(entity)) continue;
-    //             }
-    //             result[_grid.ToPosition1D(tile)] = distance;
-    //             break;
-    //         }
-    //     }
-    //     return result;
-    // }
 }

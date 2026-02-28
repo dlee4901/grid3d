@@ -31,7 +31,7 @@ public struct Step : IEquatable<Step>
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(Position, Distance, (int)Direction);
+        return HashCode.Combine(Position, (int)Direction);
     }
 }
 
@@ -41,7 +41,7 @@ public class GridTraversal
 
     public int MaxDistance { get; set; } = 0; // -1: inf
     public bool AbsoluteDirection { get; set; } = false;
-    public bool Linear { get; set; } = false;
+    public bool Linear { get; set; } = true;
 
     public int StartWidth { get; set; } = 0;
     public int DeltaWidth { get; set; } = 0;
@@ -51,7 +51,7 @@ public class GridTraversal
     public EntityPassthrough Passthrough { get; set; } = EntityPassthrough.None;
     public PredicateConfig? PassthroughQuery { get; set; }
 
-    public GridTraversalConfig? Chain { get; set; }
+    public GridTraversal? Chain { get; set; }
     public int ChainOffset { get; set; } = 0; // IF (n > 0) n ~ distance ELSE maxDistReached + n ~ maxDistReached
     
     public List<Step> GetSteps(Grid2D grid, (int, int) startPosition, Entity? sourceEntity=null)
@@ -78,7 +78,9 @@ public class GridTraversal
     {
         var steps = new HashSet<Step>();
         var queue = new Queue<Step>();
-        queue.Enqueue(new Step(startPosition, 0, Direction));
+        var initialStep = new Step(startPosition, 0, Direction);
+        steps.Add(initialStep);
+        queue.Enqueue(initialStep);
         while (queue.Count > 0)
         {
             var currentStep = queue.Dequeue();
@@ -93,11 +95,13 @@ public class GridTraversal
     
     private IEnumerable<Step> Expand(Grid2D grid, (int, int) startPosition, Entity? sourceEntity, int curDistance, DirectionType direction)
     {
+        var maxDistance = MaxDistance < 0 || MaxDistance > grid.X * grid.Y ? grid.X * grid.Y : MaxDistance;
+        if (curDistance > maxDistance) yield break;
+        
         var directionFacing = sourceEntity?.Facing ?? DirectionFacing.North;
         var unitVectors = GetUnitVectors(direction, directionFacing);
         var traverseTiles = unitVectors.Select(vec => (startPosition.Item1 + vec.Item1, startPosition.Item2 + vec.Item2)).ToList();
-        var maxDistance = MaxDistance < 0 || MaxDistance > grid.X * grid.Y ? grid.X * grid.Y : MaxDistance;
-        if (curDistance > maxDistance) yield break;
+        
         for (var i = 0; i < traverseTiles.Count; i++)
         {
             var position = traverseTiles[i];
@@ -109,13 +113,17 @@ public class GridTraversal
             if ((entity = grid.GetEntity(position)) != null && IsColliding(entity, sourceEntity)) continue;
             //if (collideMask != null && (entity = grid.GetEntity(tile)) != null && collideMask(entity)) continue;
             
-            yield return new Step(position, curDistance + 1, Linear ? (DirectionType)i : direction);
+            yield return new Step(position, curDistance, Linear ? (DirectionType)i : direction);
 
-            if (DeltaWidth <= 0 || DeltaWidthDistanceOffset >= curDistance) continue;
-            var curWidth = DeltaWidth * (curDistance - DeltaWidthDistanceOffset) / DeltaWidthStep;
+            if ((StartWidth <= 0 && DeltaWidth <= 0) || DeltaWidthDistanceOffset >= curDistance) continue;
+            var curWidth = StartWidth + DeltaWidth * (curDistance - DeltaWidthDistanceOffset) / DeltaWidthStep;
             var widthTiles = GetWidthTiles(grid, curWidth, position, unitVectors);
             foreach (var widthTile in widthTiles)
-                yield return new Step(widthTile, curDistance + 1, Linear ? (DirectionType)i : direction);
+                yield return new Step(widthTile, curDistance, Linear ? (DirectionType)i : direction);
+                
+            if (Chain == null || curDistance < ChainOffset) continue;
+            foreach (var step in Chain.Expand(grid, position, sourceEntity, curDistance, Chain.Direction))
+                yield return step;
         }
     }
     
