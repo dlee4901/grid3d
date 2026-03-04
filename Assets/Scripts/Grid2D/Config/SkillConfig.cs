@@ -10,6 +10,7 @@ public class SkillConfig : INameId
     public int CastTime { get; set; } = 0;
     public int Duration { get; set; } = 0;
     public int Cooldown { get; set; } = 1;
+    public bool Locked { get; set; } = false;
 }
 
 public class SelectionConfig

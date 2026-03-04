@@ -1,6 +1,6 @@
 #nullable enable
 
-using Newtonsoft.Json;
+using System.Collections.Generic;
 
 public class Entity : INameId
 {
@@ -9,7 +9,7 @@ public class Entity : INameId
     
     public DirectionFacing Facing { get; private set; } = DirectionFacing.North;
     
-    public SkillComponent? Skills { get; }
+    public List<Skill> Skills { get; }
     public HealthComponent? Health { get; }
     public ControlComponent? Control { get; }
     
@@ -19,23 +19,17 @@ public class Entity : INameId
         AccessorRegistry<Entity>.Register<int>("Cost", e => e.Cost);
     }
     
-    private Entity(string id, int cost, SkillComponent? skills, HealthComponent? health, ControlComponent? control)
+    private Entity(string id, int cost)
     {
         Id = id;
         Cost = cost;
-        Skills = skills;
-        Health = health;
-        Control = control;
     }
     
     public static Entity Create(EntityConfig config)
     {
         return new Entity(
             id: config.Id,
-            cost: config.Cost,
-            health: config.Health > 0 ? new HealthComponent(config.Health) : null,
-            skills: null,
-            control: null
+            cost: config.Cost
         );
     }
     
