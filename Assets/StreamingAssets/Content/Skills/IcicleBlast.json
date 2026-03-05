@@ -1,0 +1,11 @@
+{
+  "Id": "IcicleBlast",
+  "Cost": 1,
+  "Cooldown": 1,
+  "Selection": {
+    "GridSelections": [
+      {
+      }
+    ]
+  }
+}

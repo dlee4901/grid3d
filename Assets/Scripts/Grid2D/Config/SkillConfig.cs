@@ -1,7 +1,5 @@
 using System.Collections.Generic;
 
-public enum Trigger { OnTurnStart, OnDeath, OnKill, OnHealthDown, OnMove }
-
 public class SkillConfig : INameId
 {
     public string Id { get; set; }
@@ -9,8 +7,11 @@ public class SkillConfig : INameId
     public int InitialCooldown { get; set; } = 0;
     public int CastTime { get; set; } = 0;
     public int Duration { get; set; } = 0;
-    public int Cooldown { get; set; } = 1;
+    public int Cooldown { get; set; } = 0;
     public bool Locked { get; set; } = false;
+    public List<SkillTrigger> Triggers { get; set; }
+    public List<SkillEffect> Effects { get; set; }
+    public Dictionary<SkillTrigger, SkillEffect> TriggerEffectMap { get; set; }
 }
 
 public class SelectionConfig
@@ -22,9 +23,4 @@ public class SelectionConfig
     public bool EffectEntireSelection { get; set; } = false;
     public GridSelection EffectArea { get; set; }
     public PredicateConfig EffectFilter { get; set; }
-}
-
-public class EffectConfig
-{
-    public List<Effect> Effects { get; set; }
 }

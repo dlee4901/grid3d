@@ -1,4 +1,6 @@
-public abstract class Effect
+public enum SkillEffectType { ReplaceSkill, AddSkill, Damage, InflictStatus, GainShield }
+
+public class SkillEffect
 {
     //public abstract void Apply(Grid2D grid);
 }

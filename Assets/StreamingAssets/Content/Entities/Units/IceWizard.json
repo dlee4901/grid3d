@@ -6,6 +6,8 @@
   "Skills": ["Fireball"],
   "Passives": ["ExplosiveCurse"],
   "Move": {
+    GridTraversal: {
     
+    }
   }
 }

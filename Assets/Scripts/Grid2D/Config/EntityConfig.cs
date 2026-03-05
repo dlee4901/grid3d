@@ -6,5 +6,6 @@ public class EntityConfig : INameId
     public int Cost { get; set; } = 0;
     public int Health { get; set; } = 0;
     
+    public List<MoveSkillConfig> MoveSkills { get; set; }
     public List<SkillConfig> Skills { get; set; }
 }
