@@ -182,10 +182,10 @@ public class GridTraversal
     {
         var unitVectors = new (int, int)[8];
         var absoluteDirections = GetAbsoluteDirections(direction, directionFacing);
-        for (int i = 0; i < 8; i++)
+        for (var i = 0; i < 8; i++)
         {
-            int xOffset = 0;
-            int yOffset = 0;
+            var xOffset = 0;
+            var yOffset = 0;
             if (absoluteDirections[i])
             {
                 if (i > 4)               xOffset = -1;
@@ -204,13 +204,13 @@ public class GridTraversal
         switch (direction)
         {
             case DirectionType.Line:
-                for (int i = 0; i < 8; i++) absoluteDirections[i] = true;
+                for (var i = 0; i < 8; i++) absoluteDirections[i] = true;
                 break;
             case DirectionType.Diagonal:
-                for (int i = 1; i < 8; i += 2) absoluteDirections[i] = true;
+                for (var i = 1; i < 8; i += 2) absoluteDirections[i] = true;
                 break;
             case DirectionType.Straight:
-                for (int i = 0; i < 8; i += 2) absoluteDirections[i] = true;
+                for (var i = 0; i < 8; i += 2) absoluteDirections[i] = true;
                 break;
             case DirectionType.Horizontal:
                 absoluteDirections[2] = true;
@@ -247,7 +247,7 @@ public class GridTraversal
             default:
                 return absoluteDirections;
         }
-        int shift = 0;
+        var shift = 0;
         switch (directionFacing)
         {
             case DirectionFacing.East:

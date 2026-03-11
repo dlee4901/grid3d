@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Newtonsoft.Json;
 
 public static class ConfigLoader
@@ -10,14 +11,13 @@ public static class ConfigLoader
         if (!Directory.Exists(folderPath))
             throw new DirectoryNotFoundException(folderPath);
 
-        var objects = new List<T>();
+        // var objects = new List<T>();
+        // var filePaths = searchSubfolders ? Directory.GetFiles(folderPath, "*.json", SearchOption.AllDirectories) : Directory.GetFiles(folderPath, "*.json");
+        // foreach (var filePath in filePaths)
+        //     objects.Add(LoadFile<T>(filePath));
+        // return objects;
         var filePaths = searchSubfolders ? Directory.GetFiles(folderPath, "*.json", SearchOption.AllDirectories) : Directory.GetFiles(folderPath, "*.json");
-        foreach (var filePath in filePaths)
-        {
-            objects.Add(LoadFile<T>(filePath));
-        }
-        
-        return objects;
+        return filePaths.Select(LoadFile<T>).ToList();
     }
     
     private static T LoadFile<T>(string filePath) where T : INameId
