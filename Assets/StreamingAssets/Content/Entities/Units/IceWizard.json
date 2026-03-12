@@ -1,13 +1,21 @@
 {
   "Id": "IceWizard",
-  "Visual": "Mage",
   "Cost": 4,
   "Health": 6,
-  "Skills": ["Fireball"],
-  "Passives": ["ExplosiveCurse"],
-  "Move": {
-    GridTraversal: {
-    
+  "Skills": [ "IcicleBlast", "FrozenTomb" ],
+  "MoveSkills": [
+    {
+      "Id": "IceWizardMove1",
+      "Selection": { 
+        "Type": "SingleSkillSelection",
+        "SelectableAreas": [
+          {
+            "Traversals": [
+              { "Direction": "Straight", "MaxDistance": 3, "Linear": false }
+            ]
+          }
+        ]
+      }
     }
-  }
+  ]
 }

@@ -1,10 +1,8 @@
 {
   "Id": "FireWizard",
-  "Visual": "Mage",
   "Cost": 4,
   "Health": 6,
-  "Skills": ["Fireball"],
-  "Passives": ["ExplosiveCurse"],
+  "Skills": [ "Fireball", "ExplosiveCurse" ],
   "Move": {
     "TileSelectionBuilder": {
       "MinDistance": 3,

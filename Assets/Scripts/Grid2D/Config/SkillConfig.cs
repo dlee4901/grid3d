@@ -12,15 +12,5 @@ public class SkillConfig : INameId
     public List<SkillTrigger> Triggers { get; set; }
     public List<SkillEffect> Effects { get; set; }
     public Dictionary<SkillTrigger, SkillEffect> TriggerEffectMap { get; set; }
-}
-
-public class SelectionConfig
-{
-    public int SelectionAmount { get; set; } = 1;
-    public List<GridSelection> GridSelections { get; set; }
-    public PredicateConfig SelectionFilter { get; set; }
-    
-    public bool EffectEntireSelection { get; set; } = false;
-    public GridSelection EffectArea { get; set; }
-    public PredicateConfig EffectFilter { get; set; }
+    public SkillSelection Selection { get; set; }
 }

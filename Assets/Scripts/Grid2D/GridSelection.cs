@@ -18,11 +18,11 @@ public class GridSelection
     public HashSet<(int, int)> GetSelection(Grid2D grid, (int, int) startPosition, Entity? sourceEntity=null)
     {
         var selection = new HashSet<(int, int)>();
-        var steps = GetSteps(grid, startPosition, sourceEntity);
-        var excludedDistances = GetExcludedDistances();
+        var (steps, maxDistance) = GetSteps(grid, startPosition, sourceEntity);
+        var excludedDistances = GetExcludedDistances(maxDistance);
         foreach (var step in steps)
         {
-            if (step.Distance < MinDistance || step.Distance > MaxDistance || excludedDistances.Contains(step.Distance) || selection.Contains(step.Position)) continue;
+            if (step.Distance < MinDistance || step.Distance > maxDistance || excludedDistances.Contains(step.Distance) || selection.Contains(step.Position)) continue;
             Entity entity;
             if (EntityAllowlist != null && (entity = grid.GetEntity(step.Position)) != null)
             {
@@ -39,21 +39,25 @@ public class GridSelection
         return selection;
     }
     
-    private List<Step> GetSteps(Grid2D grid, (int, int) startPosition, Entity? sourceEntity=null)
+    private (List<Step> steps, int maxDistance) GetSteps(Grid2D grid, (int, int) startPosition, Entity? sourceEntity=null)
     {
         var steps = new HashSet<Step>();
+        var maxDistance = MaxDistance;
         foreach (var traversal in Traversals)
+        {
             steps.UnionWith(traversal.GetStepsSet(grid, startPosition, sourceEntity));
-        return steps.ToList();
+            if (MaxDistance <= 0) maxDistance = Math.Max(maxDistance, traversal.MaxDistance); 
+        }
+        return (steps.ToList(), maxDistance);
     }
     
-    private HashSet<int> GetExcludedDistances()
+    private HashSet<int> GetExcludedDistances(int maxDistance)
     {
         var excludedDistances = new HashSet<int>();
         var intRanges = new List<IntRange>();
         intRanges.AddRange(ExcludedDistanceRanges);
         if (ExcludedDistRangePattern != null)
-            intRanges.AddRange(ExcludedDistRangePattern.GetIntRanges(MaxDistance));
+            intRanges.AddRange(ExcludedDistRangePattern.GetIntRanges(maxDistance));
         foreach (var range in intRanges)
             excludedDistances.AddRange(range.GetValues());
         return excludedDistances;
