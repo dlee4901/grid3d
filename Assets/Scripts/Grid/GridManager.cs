@@ -90,18 +90,12 @@ public class GridManager : MonoBehaviour
     private void InitRegistries()
     {
         var mapsPath = Path.Combine(Application.streamingAssetsPath, "Content/Maps");
-        var mapConfigs = ConfigLoader.LoadFolder<MapConfig>(mapsPath);
-        var maps = mapConfigs.ToList();
-        ObjectRegistry<MapConfig>.Register(maps);
-        Debug.Log("maps " + ObjectRegistry<MapConfig>.GetCount());
+        RegistryManager.LoadAndRegister<MapConfig>(mapsPath);
         
         var entitiesPath = Path.Combine(Application.streamingAssetsPath, "Content/Entities");
-        var entityConfigs = ConfigLoader.LoadFolder<EntityConfig>(entitiesPath, true);
-        var entities = entityConfigs.Select(Entity.Create).ToList();
-        ObjectRegistry<Entity>.Register(entities);
-        Debug.Log("entities " + ObjectRegistry<Entity>.GetCount());
+        RegistryManager.LoadInstancesAndRegister<EntityConfig, Entity>(entitiesPath, Entity.Create, true);
         
-        ObjectRegistry<EntityAssets>.Register(_entityAssets);
+        RegistryManager.Register(_entityAssets);
     }
     
     private void CreateTestTeams()
@@ -122,7 +116,7 @@ public class GridManager : MonoBehaviour
     
     private void InitGrid()
     {
-        _grid2D = Grid2D.Create(ObjectRegistry<MapConfig>.Get("TestMap1"));
+        _grid2D = Grid2D.Create(InstanceRegistry<MapConfig>.Get("TestMap1"));
         
         // CreateTestTeams();
         // LoadTestTeams();

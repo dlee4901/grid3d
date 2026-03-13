@@ -26,7 +26,7 @@ public static class PredicateFactory<T>
         PredicateConfig config, TValue rhs)
         where TValue : IComparable<TValue>
     {
-        var accessor = AccessorRegistry<T>.Get<TValue>(config.Field!);
+        var accessor = MemberRegistry<T>.Get<TValue>(config.Field!);
 
         return config.Comparison switch
         {

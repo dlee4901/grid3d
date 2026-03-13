@@ -1,5 +1,5 @@
 #nullable enable
-
+using System;
 using System.Collections.Generic;
 
 public class Entity : INameId
@@ -7,16 +7,14 @@ public class Entity : INameId
     public string Id { get; }
     public int Cost { get; } // -1: map, 0: summons, 1~n: units
     
-    public DirectionFacing Facing { get; private set; } = DirectionFacing.North;
+    private Dictionary<Type, IEntityComponent> _components { get; } = new();
     
-    public List<Skill> Skills { get; }
-    public HealthComponent? Health { get; }
-    public ControlComponent? Control { get; }
+    public DirectionFacing Facing { get; private set; } = DirectionFacing.North;
     
     static Entity()
     {
-        AccessorRegistry<Entity>.Register<string>("Id", e => e.Id);
-        AccessorRegistry<Entity>.Register<int>("Cost", e => e.Cost);
+        MemberRegistry<Entity>.Register<string>("Id", e => e.Id);
+        MemberRegistry<Entity>.Register<int>("Cost", e => e.Cost);
     }
     
     private Entity(string id, int cost)
@@ -33,32 +31,14 @@ public class Entity : INameId
         );
     }
     
-    internal void SetFacing(DirectionFacing facing)
+    public void Add<T>(T component) where T : class, IEntityComponent => _components[typeof(T)] = component;
+    
+    public T Get<T>() where T : class, IEntityComponent => (T)_components[typeof(T)];
+    
+    public bool TryGet<T>(out T component) where T : class, IEntityComponent
     {
-        Facing = facing;
+        var success = _components.TryGetValue(typeof(T), out var value);
+        component = (T)value;
+        return success;
     }
-    
-    // private readonly List<IComponent> _components = new();
-    
-    // public void AddComponent(IComponent component) => _components.Add(component);
-    //
-    // public bool TryGetComponent<T>(out T component) where T : class, IComponent
-    // {
-    //     component = _components.OfType<T>().FirstOrDefault();
-    //     return component != null;
-    // }
-    //
-    // public IEnumerable<T> GetAllComponents<T>() where T : class, IComponent => _components.OfType<T>();
-
-
-    // public int Health;
-    // public List<StatusEffect> StatusEffects;
-    //
-    // public int PlayerController;
-    // public DirectionFacing DirectionFacing;
-    //
-    // public bool HasSameController(Entity entity)
-    // {
-    //     return PlayerController == entity.PlayerController;
-    // }
 }

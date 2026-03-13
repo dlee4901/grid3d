@@ -69,7 +69,7 @@ public class Grid2D : INameId
         {
             foreach (var config in entityStartPositions)
             {
-                var entity = ObjectRegistry<Entity>.Get(config.EntityId);
+                var entity = InstanceRegistry<Entity>.Get(config.EntityId);
                 if (entity == null) continue;
                 var positions = GetPositions(config.PositionValues, config.PositionRanges);
                 foreach (var position in positions)
@@ -96,7 +96,7 @@ public class Grid2D : INameId
         
         foreach (var (position, unit) in teamData.UnitStartPositions)
         {
-            if (PlayerStartPositions[position] == player) Entities[position] = ObjectRegistry<Entity>.Get(unit);
+            if (PlayerStartPositions[position] == player) Entities[position] = InstanceRegistry<Entity>.Get(unit);
         }
     }
     
@@ -105,7 +105,7 @@ public class Grid2D : INameId
         if (teamData.MapId != Id) return false;
         foreach (var (position, unit) in teamData.UnitStartPositions)
         {
-            if (!IsValidPosition(position) || PlayerStartPositions[position] == 0 || Entities[position] != null || ObjectRegistry<Entity>.Get(unit) == null) return false;
+            if (!IsValidPosition(position) || PlayerStartPositions[position] == 0 || Entities[position] != null || InstanceRegistry<Entity>.Get(unit) == null) return false;
         }
         return true;
     }

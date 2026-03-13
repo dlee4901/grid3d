@@ -5,6 +5,7 @@ using System.Linq;
 
 public enum DirectionType {North, NorthEast, East, SouthEast, South, SouthWest, West, NorthWest, Vertical, Horizontal, Diagonal, Straight, Line}
 public enum DirectionFacing {North, East, South, West}
+[Flags] public enum EntityPassthrough {None, Ally, Enemy, All=Ally|Enemy}
 
 public struct Step : IEquatable<Step>
 {
@@ -132,10 +133,11 @@ public class GridTraversal
         Func<Entity, bool>? predicate = null;
         if (PassthroughQuery != null) predicate = PredicateFactory<Entity>.Create(PassthroughQuery);
 
-        if (sourceEntity != null && targetEntity.Control != null)
+        if (sourceEntity != null && sourceEntity.TryGet<Control>(out var sourceControl) && targetEntity.TryGet<Control>(out var targetControl))
         {
-            if (!Passthrough.HasFlag(EntityPassthrough.Enemy) && !targetEntity.Control.HasSameController(sourceEntity)) return predicate?.Invoke(targetEntity) ?? true;
-            if (!Passthrough.HasFlag(EntityPassthrough.Ally) && targetEntity.Control.HasSameController(sourceEntity)) return predicate?.Invoke(targetEntity) ?? true;
+            if ((!Passthrough.HasFlag(EntityPassthrough.Enemy) && !sourceControl.IsAlly(targetControl)) 
+            || (!Passthrough.HasFlag(EntityPassthrough.Ally) && sourceControl.IsAlly(targetControl)))
+                return predicate?.Invoke(targetEntity) ?? true;
         }
         //if (!Passthrough.HasFlag(EntityPassthrough.Unit) && targetEntity.GetType() == typeof(Unit)) return true;
         //if (!Passthrough.HasFlag(EntityPassthrough.Obstacle) && targetEntity.GetType() != typeof(Unit)) return true;

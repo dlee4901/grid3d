@@ -6,7 +6,7 @@ public interface INameId
     string Id { get; }
 }
 
-public static class ObjectRegistry<T> where T : INameId
+public static class InstanceRegistry<T> where T : INameId
 {
     private static readonly Dictionary<string, T> _objects = new();
     

@@ -1,0 +1,13 @@
+{
+  "Id": "MoveStraight3NL",
+  "Selection": {
+    "Type": "SingleSkillSelection",
+    "SelectableAreas": [
+      {
+        "Traversals": [
+          { "Direction": "Straight", "MaxDistance": 3, "Linear": false }
+        ]
+      }
+    ]
+  }
+}

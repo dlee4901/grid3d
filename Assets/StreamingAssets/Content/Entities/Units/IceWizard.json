@@ -2,20 +2,5 @@
   "Id": "IceWizard",
   "Cost": 4,
   "Health": 6,
-  "Skills": [ "IcicleBlast", "FrozenTomb" ],
-  "MoveSkills": [
-    {
-      "Id": "IceWizardMove1",
-      "Selection": { 
-        "Type": "SingleSkillSelection",
-        "SelectableAreas": [
-          {
-            "Traversals": [
-              { "Direction": "Straight", "MaxDistance": 3, "Linear": false }
-            ]
-          }
-        ]
-      }
-    }
-  ]
+  "Skills": [ "MoveStraight3NL", "IcicleBlast", "FrozenTomb" ]
 }
