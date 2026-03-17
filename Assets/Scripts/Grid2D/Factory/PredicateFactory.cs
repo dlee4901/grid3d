@@ -22,9 +22,7 @@ public static class PredicateFactory<T>
             _ => throw new InvalidOperationException()
         };
 
-    private static Func<T, bool> Compare<TValue>(
-        PredicateConfig config, TValue rhs)
-        where TValue : IComparable<TValue>
+    private static Func<T, bool> Compare<TValue>(PredicateConfig config, TValue rhs) where TValue : IComparable<TValue>
     {
         var accessor = MemberRegistry<T>.Get<TValue>(config.Field!);
 

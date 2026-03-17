@@ -9,8 +9,12 @@ public class SkillConfig : INameId
     public int Duration { get; set; } = 0;
     public int Cooldown { get; set; } = 0;
     public bool Locked { get; set; } = false;
-    public List<SkillTrigger> Triggers { get; set; }
-    public List<SkillEffect> Effects { get; set; }
-    public Dictionary<SkillTrigger, SkillEffect> TriggerEffectMap { get; set; }
+    public List<SkillBindings> Bindings { get; set; }
     public SkillSelection Selection { get; set; }
+}
+
+public class SkillBindings
+{
+    List<SkillTrigger> Triggers { get; set; }
+    List<SkillEffect> Effects { get; set; }
 }

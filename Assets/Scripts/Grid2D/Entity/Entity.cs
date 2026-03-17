@@ -31,9 +31,11 @@ public class Entity : INameId
         );
     }
     
-    public void Add<T>(T component) where T : class, IEntityComponent => _components[typeof(T)] = component;
+    public void Add<T>(T component) where T : class, IEntityComponent
+        => _components[typeof(T)] = component;
     
-    public T Get<T>() where T : class, IEntityComponent => (T)_components[typeof(T)];
+    public T Get<T>() where T : class, IEntityComponent
+        => (T)_components[typeof(T)];
     
     public bool TryGet<T>(out T component) where T : class, IEntityComponent
     {
