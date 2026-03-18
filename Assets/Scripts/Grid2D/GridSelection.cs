@@ -18,7 +18,7 @@ public class GridSelection
     public HashSet<(int, int)> GetSelection(Grid2D grid, (int, int) startPosition, Entity? sourceEntity=null)
     {
         var selection = new HashSet<(int, int)>();
-        var (steps, maxDistance) = GetSteps(grid, startPosition, sourceEntity);
+        var (steps, maxDistance) = GetUnfilteredSteps(grid, startPosition, sourceEntity);
         var excludedDistances = GetExcludedDistances(maxDistance);
         foreach (var step in steps)
         {
@@ -39,7 +39,31 @@ public class GridSelection
         return selection;
     }
     
-    private (List<Step> steps, int maxDistance) GetSteps(Grid2D grid, (int, int) startPosition, Entity? sourceEntity=null)
+    public HashSet<Step> GetSteps(Grid2D grid, (int, int) startPosition, Entity? sourceEntity=null)
+    {
+        var filteredSteps = new HashSet<Step>();
+        var (steps, maxDistance) = GetUnfilteredSteps(grid, startPosition, sourceEntity);
+        var excludedDistances = GetExcludedDistances(maxDistance);
+        foreach (var step in steps)
+        {
+            if (step.Distance < MinDistance || step.Distance > maxDistance || excludedDistances.Contains(step.Distance) || filteredSteps.Contains(step)) continue;
+            Entity entity;
+            if (EntityAllowlist != null && (entity = grid.GetEntity(step.Position)) != null)
+            {
+                var predicate = PredicateFactory<Entity>.Create(EntityAllowlist);
+                if (!predicate(entity)) continue;
+            }
+            if (EntityDenylist != null && (entity = grid.GetEntity(step.Position)) != null)
+            {
+                var predicate = PredicateFactory<Entity>.Create(EntityDenylist);
+                if (predicate(entity)) continue;
+            }
+            filteredSteps.Add(step);
+        }
+        return filteredSteps;
+    }
+    
+    private (HashSet<Step> steps, int maxDistance) GetUnfilteredSteps(Grid2D grid, (int, int) startPosition, Entity? sourceEntity=null)
     {
         var steps = new HashSet<Step>();
         var maxDistance = MaxDistance;
@@ -48,7 +72,7 @@ public class GridSelection
             steps.UnionWith(traversal.GetStepsSet(grid, startPosition, sourceEntity));
             if (MaxDistance <= 0) maxDistance = Math.Max(maxDistance, traversal.MaxDistance); 
         }
-        return (steps.ToList(), maxDistance);
+        return (steps, maxDistance);
     }
     
     private HashSet<int> GetExcludedDistances(int maxDistance)

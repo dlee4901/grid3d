@@ -1,10 +1,15 @@
 {
   "Id": "IcicleBlast",
-  "Cost": 1,
   "Cooldown": 1,
   "Selection": {
-    "GridSelections": [
+    "Type": "ProjectileSkillSelection",
+    "SelectionAmount": 2,
+    "SplitSelectionDirections": true,
+    "SelectableAreas": [
       {
+        "Traversals": [
+          { "Direction": "Straight", "MaxDistance": 8 }
+        ]
       }
     ]
   }

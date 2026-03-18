@@ -7,7 +7,8 @@ public static class RegistryManager
 {
     static RegistryManager()
     {
-        RegisterTypes();
+        RegisterDerivedTypes<SkillSelection>();
+        RegisterDerivedTypes<IEntityComponent>();
     }
     
     public static void Register<T>(List<T> list) where T : INameId
@@ -26,12 +27,6 @@ public static class RegistryManager
         var configs = ConfigLoader.LoadFolder<TConfig>(loadPath, searchSubfolders);
         var instances = configs.Select(instanceCreation).ToList();
         InstanceRegistry<TInstance>.Register(instances);
-    }
-    
-    private static void RegisterTypes()
-    {
-        RegisterDerivedTypes<SkillSelection>();
-        RegisterDerivedTypes<IEntityComponent>();
     }
     
     // For Newtonsoft.JSON polymorphic serialization
