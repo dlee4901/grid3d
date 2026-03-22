@@ -3,6 +3,7 @@ using System.Collections.Generic;
 public abstract class SkillSelection
 {
     public List<GridSelection> SelectableAreas { get; set; }
+    public PredicateConfig Filter { get; set; }
     
     public List<HashSet<Step>> GetSelectableSteps(Grid2D grid, (int, int) startPosition, Entity sourceEntity)
     {
@@ -34,7 +35,7 @@ public class SingleSkillSelection : SkillSelection
 {
     public int SelectionAmount { get; set; } = 1;
     
-    public bool Evaluate(Grid2D grid, (int, int) startPosition, Entity sourceEntity, List<(int, int)> selectedPositions, out List<(int, int)> selectedAreas)
+    public bool Evaluate(out List<(int, int)> selectedAreas, Grid2D grid, (int, int) startPosition, Entity sourceEntity, List<(int, int)> selectedPositions)
     {
         selectedAreas = new List<(int, int)>();
         for (var i = 0; i < SelectionAmount; i++)
@@ -51,7 +52,7 @@ public class AreaSkillSelection : SkillSelection
 {
     public GridSelection EffectArea { get; set; }
     
-    public bool Evaluate(Grid2D grid, (int, int) startPosition, Entity sourceEntity, (int, int) selectedPosition, out HashSet<(int, int)> selectedAreas)
+    public bool Evaluate(out HashSet<(int, int)> selectedAreas, Grid2D grid, (int, int) startPosition, Entity sourceEntity, (int, int) selectedPosition)
     {
         selectedAreas = new HashSet<(int, int)>();
         if (!GetSelectableAreasCombined(grid, startPosition, sourceEntity).Contains(selectedPosition))
@@ -65,10 +66,22 @@ public class FillSkillSelection : SkillSelection
 {
     public bool CombineAreas { get; set; } = false;
     
-    public bool Evaluate(Grid2D grid, (int, int) startPosition, Entity sourceEntity, (int, int) selectedPosition, out HashSet<(int, int)> selectedAreas)
+    public bool Evaluate(out HashSet<(int, int)> selectedAreas, Grid2D grid, (int, int) startPosition, Entity sourceEntity, (int, int) selectedPosition, int selectedIndex=-1)
     {
-        //var selectableAreas = GetSelectableAreas(grid, startPosition, sourceEntity);
-        
+        selectedAreas = new HashSet<(int, int)>();
+        if (selectedIndex >= 0 && selectedIndex < SelectableAreas.Count)
+        {
+            selectedAreas = SelectableAreas[selectedIndex].GetSelection(grid, startPosition, sourceEntity);
+            return true;
+        }
+        foreach (var selectableArea in SelectableAreas)
+        {
+            var selection = selectableArea.GetSelection(grid, startPosition, sourceEntity);
+            if (!selection.Contains(selectedPosition)) continue;
+            selectedAreas = selection;
+            return true;
+        }
+        return false;
     }
 }
 
