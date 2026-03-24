@@ -5,11 +5,10 @@ using System.Collections.Generic;
 public class Entity : INameId
 {
     public string Id { get; }
-    public int Cost { get; } // -1: map, 0: summons, 1~n: units
-    
-    private Dictionary<Type, IEntityComponent> _components { get; } = new();
+    public int Cost { get; }
     
     public DirectionFacing Facing { get; private set; } = DirectionFacing.North;
+    private Dictionary<Type, IEntityComponent> _components { get; } = new();
     
     static Entity()
     {
@@ -23,21 +22,22 @@ public class Entity : INameId
         Cost = cost;
     }
     
-    public static Entity Create(EntityConfig config)
+    public static Entity Create(EntityConfig config, int playerController)
     {
-        return new Entity(
-            id: config.Id,
-            cost: config.Cost
-        );
+        var entity = new Entity(config.Id, config.Cost);
+        entity.AddComponent(new HealthComponent(config.Health));
+        entity.AddComponent(new SkillComponent(config.Skills));
+        entity.AddComponent(new ControlComponent(playerController));
+        return entity;
     }
     
-    public void Add<T>(T component) where T : class, IEntityComponent
+    public void AddComponent<T>(T component) where T : class, IEntityComponent
         => _components[typeof(T)] = component;
     
     public T Get<T>() where T : class, IEntityComponent
         => (T)_components[typeof(T)];
     
-    public bool TryGet<T>(out T component) where T : class, IEntityComponent
+    public bool TryGetComponent<T>(out T component) where T : class, IEntityComponent
     {
         var success = _components.TryGetValue(typeof(T), out var value);
         component = (T)value;

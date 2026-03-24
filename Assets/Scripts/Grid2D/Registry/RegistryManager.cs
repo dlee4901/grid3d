@@ -13,20 +13,20 @@ public static class RegistryManager
     
     public static void Register<T>(List<T> list) where T : INameId
     {
-        InstanceRegistry<T>.Register(list);
+        IdRegistry<T>.Register(list);
     }
     
     public static void LoadAndRegister<TConfig>(string loadPath, bool searchSubfolders=false) where TConfig : INameId
     {
         var configs = ConfigLoader.LoadFolder<TConfig>(loadPath, searchSubfolders);
-        InstanceRegistry<TConfig>.Register(configs);
+        IdRegistry<TConfig>.Register(configs);
     }
     
     public static void LoadInstancesAndRegister<TConfig, TInstance>(string loadPath, Func<TConfig, TInstance> instanceCreation, bool searchSubfolders=false) where TConfig : INameId where TInstance : INameId
     {
         var configs = ConfigLoader.LoadFolder<TConfig>(loadPath, searchSubfolders);
         var instances = configs.Select(instanceCreation).ToList();
-        InstanceRegistry<TInstance>.Register(instances);
+        IdRegistry<TInstance>.Register(instances);
     }
     
     // For Newtonsoft.JSON polymorphic serialization

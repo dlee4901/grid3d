@@ -69,12 +69,16 @@ public class Grid2D : INameId
         {
             foreach (var config in entityStartPositions)
             {
-                var entity = InstanceRegistry<Entity>.Get(config.EntityId);
-                if (entity == null) continue;
+                if (!IdRegistry<EntityConfig>.TryGet(config.EntityId, out var entityConfig)) continue;
                 var positions = GetPositions(config.PositionValues, config.PositionRanges);
                 foreach (var position in positions)
-                    if (IsTraversable(position) && !PlayerStartPositions.ContainsKey(position))
-                        Entities[position] = entity;
+                {
+                    if (!IsTraversable(position)) continue;
+                    var playerController = 0;
+                    if (PlayerStartPositions.TryGetValue(position, out var player))
+                        playerController = player;
+                    Entities[position] = Entity.Create(entityConfig, playerController);;
+                }
             }
         }
     }
@@ -96,7 +100,12 @@ public class Grid2D : INameId
         
         foreach (var (position, unit) in teamData.UnitStartPositions)
         {
-            if (PlayerStartPositions[position] == player) Entities[position] = InstanceRegistry<Entity>.Get(unit);
+            if (PlayerStartPositions[position] != player) continue;
+            if (!IdRegistry<EntityConfig>.TryGet(unit, out var entityConfig)) continue;
+            var entity = Entity.Create(entityConfig, player);
+            if (!entity.TryGetComponent<ControlComponent>(out var control)) continue;
+            control.PlayerController = player;
+            Entities[position] = entity;
         }
     }
     
@@ -104,9 +113,8 @@ public class Grid2D : INameId
     {
         if (teamData.MapId != Id) return false;
         foreach (var (position, unit) in teamData.UnitStartPositions)
-        {
-            if (!IsValidPosition(position) || PlayerStartPositions[position] == 0 || Entities[position] != null || InstanceRegistry<Entity>.Get(unit) == null) return false;
-        }
+            if (!IsValidPosition(position) || PlayerStartPositions[position] == 0 || Entities[position] != null || IdRegistry<EntityConfig>.TryGet(unit, out var entityConfig))
+                return false;
         return true;
     }
 
@@ -139,12 +147,8 @@ public class Grid2D : INameId
     {
         HashSet<int> indices = new();
         for (int i = 0; i < GetSize(); i++)
-        {
             if (Entities[i] != null)
-            {
                 indices.Add(i);
-            }
-        }
         return indices;
     }
 
@@ -172,8 +176,8 @@ public class Grid2D : INameId
     public bool PerformAction(int action, int sourceTile, int targetTile)
     {
         Entity entity = GetEntity(sourceTile);
-        if (entity == null) return false;
-        
+        if (entity == null)
+            return false;
         return true;
     }
     
@@ -185,9 +189,7 @@ public class Grid2D : INameId
     public bool MoveEntity(int startPosition, int targetPosition)
     {
         if (IsValidPosition(startPosition) && IsValidPosition(targetPosition))
-        {
             return SetEntity(targetPosition, GetEntity(startPosition)) && SetEntity(startPosition, null);
-        }
         return false;
     }
 
@@ -199,21 +201,22 @@ public class Grid2D : INameId
 
     public (int, int) ToPosition2D(int position)
     {
-        if (!IsValidPosition(position)) return (-1, -1);
-        return (position % X, position / X);
+        return !IsValidPosition(position) ? (-1, -1) : (position % X, position / X);
     }
 
     public int ToPosition1D(int x, int y)
     {
-        int position = y * X + x;
-        if (!IsValidPosition(position)) return -1;
+        var position = y * X + x;
+        if (!IsValidPosition(position))
+            return -1;
         return position;
     }
     
     public int ToPosition1D((int x, int y) position)
     {
-        int pos = position.y * X + position.x;
-        if (!IsValidPosition(pos)) return -1;
+        var pos = position.y * X + position.x;
+        if (!IsValidPosition(pos))
+            return -1;
         return pos;
     }
     
@@ -234,11 +237,9 @@ public class Grid2D : INameId
     
     public List<int> ToPositionList(List<(int, int)> xyList)
     {
-        List<int> positionList = new List<int>();
+        var positionList = new List<int>();
         foreach (var (x, y) in xyList)
-        {
             positionList.Add(ToPosition1D(x, y));
-        }
         return positionList;
     }
 
@@ -288,16 +289,12 @@ public class Grid2D : INameId
         
         grid += "START POSITIONS\n";
         foreach (var kvp in PlayerStartPositions)
-        {
             grid += "(" + kvp.Key + "-"+ kvp.Value + ") ";
-        }
         grid += "\n";
         
         grid += "TERRAIN\n";
         for (int i = 0; i < Terrain.Length; i++)
-        {
             grid += Terrain[i] + " ";
-        }
         grid += "\n";
         
         // grid += "TERRAIN + START POSITIONS\n";
@@ -315,12 +312,8 @@ public class Grid2D : INameId
         
         grid += "ENTITIES\n";
         for (var i = 0; i < GetSize(); i++)
-        {
             if (Entities[i] != null)
-            {
                 grid += "(" + i + " " + Entities[i].Id + ") ";
-            }
-        }
         grid += "\n";
         
         return grid;

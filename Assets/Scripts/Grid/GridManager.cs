@@ -92,16 +92,20 @@ public class GridManager : MonoBehaviour
         var mapsPath = Path.Combine(Application.streamingAssetsPath, "Content/Maps");
         RegistryManager.LoadAndRegister<MapConfig>(mapsPath);
         
+        var skillsPath = Path.Combine(Application.streamingAssetsPath, "Content/Skills");
+        RegistryManager.LoadAndRegister<SkillConfig>(skillsPath, true);
+        
         var entitiesPath = Path.Combine(Application.streamingAssetsPath, "Content/Entities");
-        RegistryManager.LoadInstancesAndRegister<EntityConfig, Entity>(entitiesPath, Entity.Create, true);
+        RegistryManager.LoadAndRegister<EntityConfig>(entitiesPath, true);
+        //RegistryManager.LoadInstancesAndRegister<EntityConfig, Entity>(entitiesPath, Entity.Create, true);
         
         RegistryManager.Register(_entityAssets);
     }
     
     private void CreateTestTeams()
     {
-        var team1 = new TeamData("TestTeam1", "TestMap1", new Dictionary<int, string>{ {0, "FireWizard"}, {1, "FireWizard"} });
-        var team2 = new TeamData("TestTeam2", "TestMap1", new Dictionary<int, string>{ {110, "FireWizard"}, {111, "FireWizard"} });
+        var team1 = new TeamData("TestTeam1", "TestMap1", new Dictionary<int, string>{ {0, "FireWizard"} });
+        var team2 = new TeamData("TestTeam2", "TestMap1", new Dictionary<int, string>{ {110, "IceWizard"} });
         JsonHandler.SaveData(team1);
         JsonHandler.SaveData(team2);
     }
@@ -116,7 +120,13 @@ public class GridManager : MonoBehaviour
     
     private void InitGrid()
     {
-        _grid2D = Grid2D.Create(InstanceRegistry<MapConfig>.Get("TestMap1"));
+        if (!IdRegistry<MapConfig>.TryGet("TestMap1", out var config))
+        {
+            Debug.LogError("TestMap1 not found");
+            return;
+        }
+        
+        _grid2D = Grid2D.Create(config);
         
         // CreateTestTeams();
         // LoadTestTeams();

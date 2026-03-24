@@ -6,9 +6,9 @@ public interface INameId
     string Id { get; }
 }
 
-public static class InstanceRegistry<T> where T : INameId
+public static class IdRegistry<T> where T : INameId
 {
-    private static readonly Dictionary<string, T> _objects = new();
+    private static readonly Dictionary<string, T> _items = new();
     
     public static void Register(List<T> items)
     {
@@ -19,21 +19,21 @@ public static class InstanceRegistry<T> where T : INameId
     }
     
     private static void Register(T item) 
-        => _objects.TryAdd(item.Id, item);
+        => _items.TryAdd(item.Id, item);
     
     public static void Clear() 
-        => _objects.Clear();
+        => _items.Clear();
 
-    public static T Get(string id)
-        => _objects.TryGetValue(id, out var item) ? item : throw new InvalidOperationException($"Item with id '{id}' not registered");
+    public static bool TryGet(string id, out T item)
+        => _items.TryGetValue(id, out item);
         
     public static int GetCount()
-        => _objects.Count;
+        => _items.Count;
     
     public static string PrintItems()
     {
         var output = "";
-        foreach (var kvp in _objects)
+        foreach (var kvp in _items)
         {
             output += $"{kvp.Key} ";
         }

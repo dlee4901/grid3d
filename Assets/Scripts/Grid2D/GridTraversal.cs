@@ -133,7 +133,7 @@ public class GridTraversal
         Func<Entity, bool>? predicate = null;
         if (PassthroughQuery != null) predicate = PredicateFactory<Entity>.Create(PassthroughQuery);
 
-        if (sourceEntity != null && sourceEntity.TryGet<Control>(out var sourceControl) && targetEntity.TryGet<Control>(out var targetControl))
+        if (sourceEntity != null && sourceEntity.TryGetComponent<ControlComponent>(out var sourceControl) && targetEntity.TryGetComponent<ControlComponent>(out var targetControl))
         {
             if ((!Passthrough.HasFlag(EntityPassthrough.Enemy) && !sourceControl.IsAlly(targetControl)) 
             || (!Passthrough.HasFlag(EntityPassthrough.Ally) && sourceControl.IsAlly(targetControl)))
