@@ -67,10 +67,24 @@ public class GridManager : MonoBehaviour
             _pressOutline.gameObject.SetActive(true);
             var worldPos = _grid.CellToWorld(gridPosition);
             _pressOutline.transform.position = new Vector3(worldPos.x, _gridGroundLevel + 0.05f, worldPos.z);
+            HandleEntityTest(gridPosition.x, gridPosition.y);
         }
         else
         {
             _pressOutline.gameObject.SetActive(false);
+        }
+    }
+    
+    private void HandleEntityTest(int x, int y)
+    {
+        var entity = _grid2D.GetEntity(x, y);
+        if (entity != null)
+        {
+            entity.TryGetComponent<SkillComponent>(out var skillComponent);
+            var skill = skillComponent.List[0];
+            //skill.Selection.GetRange(_grid2D, (x, y), entity);
+            var selectablePositions = skill.Selection.GetSelectablePositions(_grid2D, (x, y), entity);
+            ShowTiles(selectablePositions.areas.ToHashSet());
         }
     }
     
@@ -163,6 +177,14 @@ public class GridManager : MonoBehaviour
         foreach (var tile in tiles)
             if (_grid2D.IsValidPosition(tile))
                  _selectionSquares[tile].gameObject.SetActive(true);
+    }
+    
+    private void ShowTiles(HashSet<(int, int)> tiles)
+    {
+        var positions = new HashSet<int>();
+        foreach (var tile in tiles)
+            positions.Add(_grid2D.ToPosition1D(tile));
+        ShowTiles(positions);
     }
     
     private void RenderGrid()

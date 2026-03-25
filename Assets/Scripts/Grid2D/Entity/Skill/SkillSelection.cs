@@ -1,48 +1,49 @@
 using System.Collections.Generic;
+using System.Linq;
 
 public abstract class SkillSelection
 {
     public List<GridSelection> SelectableAreas { get; set; }
-    public PredicateConfig Filter { get; set; }
+    public int SelectionAmount { get; set; } = 1;
     
-    public List<HashSet<Step>> GetSelectableSteps(Grid2D grid, (int, int) startPosition, Entity sourceEntity)
-    {
-        var selectableSteps = new List<HashSet<Step>>();
-        foreach (var gridSelection in SelectableAreas)
-            selectableSteps.Add(gridSelection.GetSteps(grid, startPosition, sourceEntity));
-        return selectableSteps;
-    }
-    
-    public List<HashSet<(int, int)>> GetSelectableAreas(Grid2D grid, (int, int) startPosition, Entity sourceEntity)
-    {
-        var selectableSteps = new List<HashSet<(int, int)>>();
-        foreach (var gridSelection in SelectableAreas)
-            selectableSteps.Add(gridSelection.GetSelection(grid, startPosition, sourceEntity));
-        return selectableSteps;
-    }
-    
-    public HashSet<(int, int)> GetSelectableAreasCombined(Grid2D grid, (int, int) startPosition, Entity sourceEntity)
+    public HashSet<(int, int)> GetRange(Grid2D grid, (int, int) startPosition, Entity sourceEntity)
     {
         var selectableAreasCombined = new HashSet<(int, int)>();
         foreach (var gridSelection in SelectableAreas)
-            foreach (var step in gridSelection.GetSteps(grid, startPosition, sourceEntity))
+            foreach (var step in gridSelection.GetSteps(grid, startPosition, sourceEntity, false))
                 selectableAreasCombined.Add(step.Position);
         return selectableAreasCombined;
     }
+    
+    public (List<(int, int)> areas, List<int> splits) GetSelectablePositions(Grid2D grid, (int, int) startPosition, Entity sourceEntity)
+    {
+        var areas = new List<(int, int)>();
+        var splits = new List<int>();
+        foreach (var gridSelection in SelectableAreas)
+        {
+            var area = gridSelection.GetSelection(grid, startPosition, sourceEntity).ToList();
+            splits.Add(area.Count);
+            areas.AddRange(area);
+        }
+        return (areas, splits);
+    }
+    
+    public abstract bool TryGetEffectPositions(Grid2D grid, (int, int) startPosition, Entity sourceEntity, List<(int, int)> selectedPositions, out HashSet<(int, int)> effectPositions, List<int> splitAreaSelections=null);
 }
 
 public class SingleSkillSelection : SkillSelection
 {
-    public int SelectionAmount { get; set; } = 1;
-    
-    public bool Evaluate(out List<(int, int)> selectedAreas, Grid2D grid, (int, int) startPosition, Entity sourceEntity, List<(int, int)> selectedPositions)
+    public override bool TryGetEffectPositions(Grid2D grid, (int, int) startPosition, Entity sourceEntity, List<(int, int)> selectedPositions, out HashSet<(int, int)> effectPositions, List<int> splitAreaSelections=null)
     {
-        selectedAreas = new List<(int, int)>();
-        for (var i = 0; i < SelectionAmount; i++)
+        effectPositions = new HashSet<(int, int)>();
+        if (selectedPositions.Count != SelectionAmount)
+            return false;
+        var (areas, splits) = GetSelectablePositions(grid, startPosition, sourceEntity);
+        foreach (var position in selectedPositions)
         {
-            if (selectedPositions.Count < SelectionAmount || !GetSelectableAreasCombined(grid, startPosition, sourceEntity).Contains(selectedPositions[i]))
+            if (!areas.Contains(position))
                 return false;
-            selectedAreas.Add(selectedPositions[i]);
+            effectPositions.Add(position);
         }
         return true;
     }
@@ -52,12 +53,18 @@ public class AreaSkillSelection : SkillSelection
 {
     public GridSelection EffectArea { get; set; }
     
-    public bool Evaluate(out HashSet<(int, int)> selectedAreas, Grid2D grid, (int, int) startPosition, Entity sourceEntity, (int, int) selectedPosition)
+    public override bool TryGetEffectPositions(Grid2D grid, (int, int) startPosition, Entity sourceEntity, List<(int, int)> selectedPositions, out HashSet<(int, int)> effectPositions, List<int> splitAreaSelections=null)
     {
-        selectedAreas = new HashSet<(int, int)>();
-        if (!GetSelectableAreasCombined(grid, startPosition, sourceEntity).Contains(selectedPosition))
+        effectPositions = new HashSet<(int, int)>();
+        if (selectedPositions.Count != SelectionAmount)
             return false;
-        selectedAreas = EffectArea.GetSelection(grid, selectedPosition, sourceEntity);
+        var (areas, splits) = GetSelectablePositions(grid, startPosition, sourceEntity);
+        foreach (var position in selectedPositions)
+        {
+            if (!areas.Contains(position))
+                return false;
+            effectPositions.UnionWith(EffectArea.GetSelection(grid, position, sourceEntity));
+        }
         return true;
     }
 }
@@ -66,28 +73,44 @@ public class FillSkillSelection : SkillSelection
 {
     public bool CombineAreas { get; set; } = false;
     
-    public bool Evaluate(out HashSet<(int, int)> selectedAreas, Grid2D grid, (int, int) startPosition, Entity sourceEntity, (int, int) selectedPosition, int selectedIndex=-1)
+    public override bool TryGetEffectPositions(Grid2D grid, (int, int) startPosition, Entity sourceEntity, List<(int, int)> selectedPositions, out HashSet<(int, int)> effectPositions, List<int> splitAreaSelections=null)
     {
-        selectedAreas = new HashSet<(int, int)>();
-        if (selectedIndex >= 0 && selectedIndex < SelectableAreas.Count)
+        effectPositions = new HashSet<(int, int)>();
+        if (selectedPositions.Count != SelectionAmount)
+            return false;
+        if (!CombineAreas && (splitAreaSelections == null || splitAreaSelections.Count != SelectionAmount))
+            return false;
+        
+        var (areas, splits) = GetSelectablePositions(grid, startPosition, sourceEntity);
+        if (CombineAreas)
         {
-            selectedAreas = SelectableAreas[selectedIndex].GetSelection(grid, startPosition, sourceEntity);
+            if (!areas.Contains(selectedPositions[0]))
+                return false;
+            effectPositions.UnionWith(areas);
             return true;
         }
-        foreach (var selectableArea in SelectableAreas)
+        
+        var splitAreas = new List<List<(int, int)>>();
+        var index = 0;
+        foreach (var split in splits)
         {
-            var selection = selectableArea.GetSelection(grid, startPosition, sourceEntity);
-            if (!selection.Contains(selectedPosition)) continue;
-            selectedAreas = selection;
-            return true;
+            var range = areas.GetRange(index, split);
+            splitAreas.Add(range);
+            index += split;
         }
-        return false;
+        for (var i = 0; i < selectedPositions.Count; i++)
+        {
+            var areaIndex = splitAreaSelections[i];
+            if (!splitAreas[areaIndex].Contains(selectedPositions[i]))
+                return false;
+            effectPositions.UnionWith(splitAreas[i]);
+        }
+        return true;
     }
 }
 
-public class ProjectileSelection : SkillSelection
-{
-    public int SelectionAmount { get; set; } = 1;
-    public int ProjectileAmount { get; set; } = 1;
-    public bool SplitSelectionDirections { get; set; } = false;
-}
+// public class ProjectileSelection : SkillSelection
+// {
+//     public int ProjectileAmount { get; set; } = 1;
+//     public bool SplitSelectionDirections { get; set; } = false;
+// }

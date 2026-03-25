@@ -2,15 +2,15 @@ using System.Collections.Generic;
 
 public class Skill : INameId
 {
-    public string Id { get; set; }
-    public int Cost { get; set; }
-    public int Warmup { get; set; }
-    public int CastTime { get; set; }
-    public int Duration { get; set; }
-    public int Cooldown { get; set; }
-    public bool Locked { get; set; }
-    public List<SkillBindings> Bindings { get; set; }
-    public SkillSelection Selection { get; set; }
+    public string Id { get; }
+    public int Cost { get; }
+    public int Warmup { get; }
+    public int CastTime { get; }
+    public int Duration { get; }
+    public int Cooldown { get; }
+    public bool Locked { get; }
+    public SkillSelection Selection { get; }
+    public List<SkillBindings> Bindings { get; }
     
     static Skill()
     {
@@ -18,7 +18,7 @@ public class Skill : INameId
         MemberRegistry<Skill>.Register<int>("Cost", e => e.Cost);
     }
     
-    private Skill(string id, int cost, int warmup, int castTime, int duration, int cooldown, bool locked)
+    private Skill(string id, int cost, int warmup, int castTime, int duration, int cooldown, bool locked, SkillSelection selection)
     {
         Id = id;
         Cost = cost;
@@ -27,12 +27,12 @@ public class Skill : INameId
         Duration = duration;
         Cooldown = cooldown;
         Locked = locked;
-        Bindings = new List<SkillBindings>();
+        Selection = selection;
     }
     
     public static Skill Create(SkillConfig config)
     {
-        var skill = new Skill(config.Id, config.Cost, config.Warmup, config.CastTime, config.Duration, config.Cooldown, config.Locked);
+        var skill = new Skill(config.Id, config.Cost, config.Warmup, config.CastTime, config.Duration, config.Cooldown, config.Locked, config.Selection);
         return skill;
     }
 }
