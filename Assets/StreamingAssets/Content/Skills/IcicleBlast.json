@@ -2,13 +2,16 @@
   "Id": "IcicleBlast",
   "Cooldown": 1,
   "Selection": {
-    "Type": "ProjectileSkillSelection",
-    "SelectionAmount": 2,
-    "SplitSelectionDirections": true,
+    "Type": "FillSkillSelection",
     "SelectableAreas": [
       {
         "Traversals": [
-          { "Direction": "Straight", "MaxDistance": 8 }
+          { "Direction": "N", "MaxDistance": 8 }
+        ]
+      },
+      {
+        "Traversals": [
+          { "Direction": "S", "MaxDistance": 8 }
         ]
       }
     ]

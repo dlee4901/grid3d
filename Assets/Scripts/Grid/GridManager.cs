@@ -33,7 +33,7 @@ public class GridManager : MonoBehaviour
         _selectAction = InputSystem.actions.FindAction("Player/Select");
         _grid.gameObject.SetActive(true);
         
-        InitRegistries();
+        InitTest();
         InitGrid();
         
         InitCamera();
@@ -101,24 +101,39 @@ public class GridManager : MonoBehaviour
     // TESTING
     //
     
-    private void InitRegistries()
+    // private void InitRegistries()
+    // {
+    //     RegistryManager.RegisterDerivedTypes<SkillSelection>();
+    //     RegistryManager.RegisterDerivedTypes<IEntityComponent>();
+    //     
+    //     var mapsPath = Path.Combine(Application.streamingAssetsPath, "Content/Maps");
+    //     RegistryManager.LoadAndRegister<MapConfig>(mapsPath);
+    //     
+    //     var skillsPath = Path.Combine(Application.streamingAssetsPath, "Content/Skills");
+    //     RegistryManager.LoadAndRegister<SkillConfig>(skillsPath, true, true);
+    //     
+    //     var entitiesPath = Path.Combine(Application.streamingAssetsPath, "Content/Entities");
+    //     RegistryManager.LoadAndRegister<EntityConfig>(entitiesPath, true);
+    //     //RegistryManager.LoadInstancesAndRegister<EntityConfig, Entity>(entitiesPath, Entity.Create, true);
+    //     
+    //     RegistryManager.Register(_entityAssets);
+    // }
+    
+    private void InitTest()
     {
+        // RegistryManager.RegisterDerivedTypes<IEntityComponent>();
+        
+        IdRegistry<EntityConfig>.Register(UnitConfigs.IceWizard);
+        IdRegistry<SkillConfig>.Register(SkillConfigs.IcicleBlast);
+        IdRegistry<SkillConfig>.Register(SkillConfigs.MoveStraight3Step);
+        
         var mapsPath = Path.Combine(Application.streamingAssetsPath, "Content/Maps");
         RegistryManager.LoadAndRegister<MapConfig>(mapsPath);
-        
-        var skillsPath = Path.Combine(Application.streamingAssetsPath, "Content/Skills");
-        RegistryManager.LoadAndRegister<SkillConfig>(skillsPath, true);
-        
-        var entitiesPath = Path.Combine(Application.streamingAssetsPath, "Content/Entities");
-        RegistryManager.LoadAndRegister<EntityConfig>(entitiesPath, true);
-        //RegistryManager.LoadInstancesAndRegister<EntityConfig, Entity>(entitiesPath, Entity.Create, true);
-        
-        RegistryManager.Register(_entityAssets);
     }
     
     private void CreateTestTeams()
     {
-        var team1 = new TeamData("TestTeam1", "TestMap1", new Dictionary<int, string>{ {0, "FireWizard"} });
+        var team1 = new TeamData("TestTeam1", "TestMap1", new Dictionary<int, string>{ {2, "IceWizard"} });
         var team2 = new TeamData("TestTeam2", "TestMap1", new Dictionary<int, string>{ {110, "IceWizard"} });
         JsonHandler.SaveData(team1);
         JsonHandler.SaveData(team2);
@@ -142,8 +157,8 @@ public class GridManager : MonoBehaviour
         
         _grid2D = Grid2D.Create(config);
         
-        // CreateTestTeams();
-        // LoadTestTeams();
+        CreateTestTeams();
+        LoadTestTeams();
         
         Debug.Log(_grid2D.PrintGrid());
     }
@@ -161,7 +176,7 @@ public class GridManager : MonoBehaviour
         {
             for (var y = 0; y < _grid2D.Y; y++)
             {
-                _selectionSquares[_grid2D.ToPosition1D(x, y)] = Instantiate(_selectionSquare, _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, -0.1f, 0.5f),  Quaternion.identity);
+                _selectionSquares[_grid2D.ToPosition1D(x, y)] = Instantiate(_selectionSquare, _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel + 0.01f, 0.5f),  Quaternion.identity);
                 _squarePrefabs[_grid2D.ToPosition1D(x, y)] = Instantiate(_squarePrefab, _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel / 2.0f, 0.5f), Quaternion.identity);
             }
         }

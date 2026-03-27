@@ -6,7 +6,6 @@ using Unity.VisualScripting;
 public class GridSelection
 {
     public List<GridTraversal> Traversals { get; set; }
-    
     public int MinDistance { get; set; } = 0;
     public int MaxDistance { get; set; } = 0;
     public List<IntRange> ExcludedDistanceRanges { get; set; } = new();

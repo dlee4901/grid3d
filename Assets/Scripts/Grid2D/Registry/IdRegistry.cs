@@ -18,7 +18,7 @@ public static class IdRegistry<T> where T : INameId
         }
     }
     
-    private static void Register(T item) 
+    public static void Register(T item) 
         => _items.TryAdd(item.Id, item);
     
     public static void Clear() 

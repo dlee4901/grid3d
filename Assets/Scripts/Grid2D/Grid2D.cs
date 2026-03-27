@@ -97,13 +97,16 @@ public class Grid2D : INameId
     public void LoadPlayerTeam(int player, TeamData teamData)
     {
         if (!ValidatePlayerTeam(player, teamData)) return;
+        Debug.Log($"Loading player team {player}");
         
         foreach (var (position, unit) in teamData.UnitStartPositions)
         {
-            if (PlayerStartPositions[position] != player) continue;
+            Debug.Log(player + " 1");
             if (!IdRegistry<EntityConfig>.TryGet(unit, out var entityConfig)) continue;
+            Debug.Log(player + " 2");
             var entity = Entity.Create(entityConfig, player);
             if (!entity.TryGetComponent<ControlComponent>(out var control)) continue;
+            Debug.Log(player + " 3");
             control.PlayerController = player;
             Entities[position] = entity;
         }
@@ -111,9 +114,11 @@ public class Grid2D : INameId
     
     private bool ValidatePlayerTeam(int player, TeamData teamData)
     {
+        Debug.Log(player + " map1");
         if (teamData.MapId != Id) return false;
+        Debug.Log(player + " map2");
         foreach (var (position, unit) in teamData.UnitStartPositions)
-            if (!IsValidPosition(position) || PlayerStartPositions[position] == 0 || Entities[position] != null || IdRegistry<EntityConfig>.TryGet(unit, out var entityConfig))
+            if (!IsValidPosition(position) || PlayerStartPositions[position] != player || Entities[position] != null || !IdRegistry<EntityConfig>.TryGet(unit, out var entityConfig))
                 return false;
         return true;
     }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 public class SkillConfig : INameId
 {
@@ -10,6 +11,8 @@ public class SkillConfig : INameId
     public int Cooldown { get; set; } = 0;
     public bool Locked { get; set; } = false;
     public List<SkillBindings> Bindings { get; set; }
+    
+    [JsonConverter(typeof(SkillSelection))]
     public SkillSelection Selection { get; set; }
 }
 

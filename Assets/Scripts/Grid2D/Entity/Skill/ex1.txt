@@ -1,2 +1,17 @@
-1 move: step 3
-2 passi
+FULL SKILL PIPELINE
+
+Move:
+SingleSkillSelection 1 -> EffectLocation
+move self to EffectLocation
+
+Attack:
+Selection X -> EffectLocations
+- filter selectable targets
+deal damaage to EffectLocations
+
+========================================
+
+EFFECT PIPELINE
+- conditions: who does this work on
+
+Move <- EffectLocation

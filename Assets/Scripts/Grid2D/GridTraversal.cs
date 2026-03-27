@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 public enum DirectionType {North, NorthEast, East, SouthEast, South, SouthWest, West, NorthWest, Vertical, Horizontal, Diagonal, Straight, Line}
 public enum DirectionFacing {North, East, South, West}
@@ -57,12 +58,18 @@ public class GridTraversal
     
     public List<Step> GetSteps(Grid2D grid, (int, int) startPosition, Entity? sourceEntity=null)
     {
-        return Traverse(grid, startPosition, sourceEntity).Last().ToList();
+        var steps = new HashSet<Step>();
+        foreach (var iter in Traverse(grid, startPosition, sourceEntity))
+            steps = iter;
+        return steps.ToList();
     }
     
     public HashSet<Step> GetStepsSet(Grid2D grid, (int, int) startPosition, Entity? sourceEntity=null)
     {
-        return Traverse(grid, startPosition, sourceEntity).Last();
+        var steps = new HashSet<Step>();
+        foreach (var iter in Traverse(grid, startPosition, sourceEntity))
+            steps = iter;
+        return steps;
     }
     
     public List<Step> GetTraceSteps(Grid2D grid, (int, int) startPosition, Entity? sourceEntity=null)
