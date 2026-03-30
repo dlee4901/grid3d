@@ -76,5 +76,5 @@ crashlytics-build.properties
 .vscode
 .idea
 Assembly-CSharp.csproj.DotSettings
-/[Aa]ssets/[Vv]isuals/[Ii]mports/*
-/[Aa]ssets/[Vv]isuals/[Ii]mports.meta
+/Assets/Imports/*
+/Assets/Imports.meta

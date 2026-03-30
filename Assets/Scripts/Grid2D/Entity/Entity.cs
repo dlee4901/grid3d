@@ -34,9 +34,6 @@ public class Entity : INameId
     public void AddComponent<T>(T component) where T : class, IEntityComponent
         => _components[typeof(T)] = component;
     
-    public T Get<T>() where T : class, IEntityComponent
-        => (T)_components[typeof(T)];
-    
     public bool TryGetComponent<T>(out T component) where T : class, IEntityComponent
     {
         var success = _components.TryGetValue(typeof(T), out var value);
