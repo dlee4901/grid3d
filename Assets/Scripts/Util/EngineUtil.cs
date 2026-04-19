@@ -43,6 +43,22 @@ public static class EngineUtil
             error = true;
         }
     }
+    
+    public static T GetOrAddComponent<T>(GameObject gameObj) where T : UnityEngine.Component
+    {
+        if (!gameObj.TryGetComponent<T>(out T component))
+        {
+            Debug.Log("EngineUtil GetOrAddComponent unable to get component " + typeof(T) + ", adding component");
+            return gameObj.AddComponent<T>();
+        }
+        return component;
+    }
+    
+    public static void DestroyAllChildren(GameObject parent)
+    {
+        while (parent.transform.childCount > 0)
+            UnityEngine.Object.Destroy(parent.transform.GetChild(0).gameObject);
+    }
 
     public static Vector3 GetMousePosition(bool zeroed=true)
     {
@@ -121,16 +137,6 @@ public static class EngineUtil
             }
         }
         return list;
-    }
-
-    public static T GetOrAddComponent<T>(GameObject gameObj) where T : UnityEngine.Component
-    {
-        if (!gameObj.TryGetComponent<T>(out T component))
-        {
-            Debug.Log("EngineUtil GetOrAddComponent unable to get component " + typeof(T) + ", adding component");
-            return gameObj.AddComponent<T>();
-        }
-        return component;
     }
 
 
