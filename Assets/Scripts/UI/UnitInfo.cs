@@ -31,7 +31,9 @@ public class UnitInfo : MonoBehaviour
         var skillIcons = entityAssets.SkillIcons;
         foreach (var skill in skills.List)
         {
-            
+            var icon = Instantiate(_squareIconPrefab, _container.transform);
+            if (!icon.TryGetComponent<Image>(out var image))
+                return;
         }
     }
     
