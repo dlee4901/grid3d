@@ -14260,8 +14260,30 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 6022115116483854411, guid: ae3513fa7df7d4a39a0b59154c8b7fc1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4735061740780587197}
   m_SourcePrefab: {fileID: 100100000, guid: ae3513fa7df7d4a39a0b59154c8b7fc1, type: 3}
+--- !u!1 &4735061740780587196 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6022115116483854411, guid: ae3513fa7df7d4a39a0b59154c8b7fc1, type: 3}
+  m_PrefabInstance: {fileID: 4735061740780587195}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &4735061740780587197
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4735061740780587196}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c91c34a4f7542e2962a2b6e35f3adc4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::InteractableUI
+  _hoverTriggerTime: 1
+  _holdTriggerTime: 1
 --- !u!1 &5352742592443684558
 GameObject:
   m_ObjectHideFlags: 0
