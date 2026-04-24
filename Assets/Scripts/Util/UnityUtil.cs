@@ -5,7 +5,7 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public static class EngineUtil
+public static class UnityUtil
 {
     public static void SaveJsonData<T>(T data)
     { 
@@ -46,12 +46,10 @@ public static class EngineUtil
     
     public static T GetOrAddComponent<T>(GameObject gameObj) where T : UnityEngine.Component
     {
-        if (!gameObj.TryGetComponent<T>(out T component))
-        {
-            Debug.Log("EngineUtil GetOrAddComponent unable to get component " + typeof(T) + ", adding component");
-            return gameObj.AddComponent<T>();
-        }
-        return component;
+        if (gameObj.TryGetComponent<T>(out var component)) 
+            return component;
+        Debug.Log("EngineUtil GetOrAddComponent unable to get component " + typeof(T) + ", adding component");
+        return gameObj.AddComponent<T>();
     }
     
     public static void DestroyAllChildren(GameObject parent)

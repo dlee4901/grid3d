@@ -52,7 +52,7 @@ public class GridManager : MonoBehaviour
     
     private void HandleMousePosition()
     {
-        EngineUtil.GetMouseWorldPosition(_mainCamera, out var mouseWorldPosition, out var error);
+        UnityUtil.GetMouseWorldPosition(_mainCamera, out var mouseWorldPosition, out var error);
         if (error)
         {
             _pressOutline.gameObject.SetActive(false);

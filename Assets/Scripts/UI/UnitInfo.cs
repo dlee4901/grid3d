@@ -4,6 +4,7 @@ using UnityEngine.UI;
 public class UnitInfo : MonoBehaviour
 {
     [SerializeField] private VerticalLayoutGroup _container;
+    [SerializeField] private SkillIcon _skillIcon;
     [SerializeField] private GameObject _squareIconPrefab;
     [SerializeField] private GameObject _rectangleIconPrefab;
     
@@ -27,7 +28,7 @@ public class UnitInfo : MonoBehaviour
             return;
         if (!entity.TryGetComponent<SkillComponent>(out var skills))
             return;
-        EngineUtil.DestroyAllChildren(_container.gameObject);
+        UnityUtil.DestroyAllChildren(_container.gameObject);
         var skillIcons = entityAssets.SkillIcons;
         foreach (var skill in skills.List)
         {

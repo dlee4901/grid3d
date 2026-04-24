@@ -37,7 +37,7 @@ public class TeamEditor : MonoBehaviour
 
     private void InitPlayerData()
     {
-        _playerData = EngineUtil.LoadJsonData<PlayerData>();
+        _playerData = UnityUtil.LoadJsonData<PlayerData>();
         if (_playerData == null) return;
         // foreach (TeamData team in _playerData.GetTeams())
         // {

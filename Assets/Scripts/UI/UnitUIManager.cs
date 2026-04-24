@@ -10,7 +10,7 @@ public class UnitUIManager : MonoBehaviour
     public void Init(int id, Sprite sprite, Transform parent)
     {
         _id = id;
-        _image = EngineUtil.GetOrAddComponent<Image>(gameObject);
+        _image = UnityUtil.GetOrAddComponent<Image>(gameObject);
         _image.sprite = sprite;
         transform.SetParent(parent);
         //_selected = false;
