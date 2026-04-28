@@ -2,15 +2,18 @@ using System.Collections.Generic;
 
 public class Skill : INameId
 {
-    public string Id { get; }
-    public int Cost { get; }
-    public int Warmup { get; }
-    public int CastTime { get; }
-    public int Duration { get; }
-    public int Cooldown { get; }
-    public bool Locked { get; }
-    public SkillSelection Selection { get; }
-    public List<SkillBindings> Bindings { get; }
+    // Identifiers
+    public SkillConfig Config { get; }
+    
+    public string Id => Config.Id;
+    public int Cost => Config.Cost;
+    public List<SkillBindings> Bindings => Config.Bindings;
+    public SkillSelection Selection => Config.Selection;
+    
+    // State
+    public int Cooldown { get; private set; }
+    public int Delay { get; private set; }
+    public bool Locked { get; private set; }
     
     static Skill()
     {
@@ -18,21 +21,29 @@ public class Skill : INameId
         MemberRegistry<Skill>.Register<int>("Cost", e => e.Cost);
     }
     
-    private Skill(string id, int cost, int warmup, int castTime, int duration, int cooldown, bool locked, SkillSelection selection)
-    {
-        Id = id;
-        Cost = cost;
-        Warmup = warmup;
-        CastTime = castTime;
-        Duration = duration;
-        Cooldown = cooldown;
-        Locked = locked;
-        Selection = selection;
-    }
-    
     public static Skill Create(SkillConfig config)
     {
-        var skill = new Skill(config.Id, config.Cost, config.Warmup, config.CastTime, config.Duration, config.Cooldown, config.Locked, config.Selection);
-        return skill;
+        return new Skill(config);
+    }
+    
+    private Skill(SkillConfig config)
+    {
+        Config = config;
+        Cooldown = config.Warmup;
+        Delay = config.Delay;
+        Locked = config.Locked;
+    }
+    
+    public void Trigger()
+    {
+        if (Cooldown != 0)
+            return;
+        Cooldown = Config.Cooldown;
+    }
+    
+    public void TurnUpdate()
+    {
+        if (Cooldown != 0)
+            Cooldown--;
     }
 }

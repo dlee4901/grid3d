@@ -5,15 +5,13 @@ public class SkillConfig : INameId
 {
     public string Id { get; set; }
     public int Cost { get; set; } = 1;
-    public int Warmup { get; set; } = 0;
-    public int CastTime { get; set; } = 0;
-    public int Duration { get; set; } = 0;
-    public int Cooldown { get; set; } = 0;
-    public bool Locked { get; set; } = false;
     public List<SkillBindings> Bindings { get; set; }
+    [JsonConverter(typeof(SkillSelection))] public SkillSelection Selection { get; set; }
     
-    [JsonConverter(typeof(SkillSelection))]
-    public SkillSelection Selection { get; set; }
+    public int Warmup { get; set; } = 0;
+    public int Cooldown { get; set; } = 0;
+    public int Delay { get; set; } = 0;
+    public bool Locked { get; set; } = false;
 }
 
 public class SkillBindings
