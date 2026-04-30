@@ -7,6 +7,7 @@ public class Entity : INameId
     public string Id { get; }
     public int Cost { get; }
     
+    public int Position { get; private set; }
     public DirectionFacing Facing { get; private set; } = DirectionFacing.North;
     private Dictionary<Type, IEntityComponent> _components { get; } = new();
     
@@ -39,5 +40,10 @@ public class Entity : INameId
         var success = _components.TryGetValue(typeof(T), out var value);
         component = (T)value;
         return success;
+    }
+    
+    public void SetPosition(int position)
+    {
+        Position = position;
     }
 }
