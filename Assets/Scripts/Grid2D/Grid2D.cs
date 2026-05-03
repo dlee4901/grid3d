@@ -5,6 +5,10 @@ using UnityEngine;
 
 public enum TerrainType { Default, Void }
 
+public struct GridContext
+{
+}
+
 public class Grid2D : INameId
 {
     // Identifiers

@@ -5,8 +5,6 @@ public class UnitInfo : MonoBehaviour
 {
     [SerializeField] private VerticalLayoutGroup _container;
     [SerializeField] private SkillIcon _skillIcon;
-    [SerializeField] private GameObject _squareIconPrefab;
-    [SerializeField] private GameObject _rectangleIconPrefab;
     
     private void Start()
     {
@@ -22,7 +20,7 @@ public class UnitInfo : MonoBehaviour
     //         DisplayEntityInfo(entity);
     // }
     
-    public void DisplayEntityInfo(Entity entity)
+    public void DisplayEntityInfo(Grid2D grid, Entity entity)
     {
         if (IdRegistry<EntityAssets>.TryGet(entity.Id, out var entityAssets))
             return;
@@ -32,7 +30,7 @@ public class UnitInfo : MonoBehaviour
         var skillIcons = entityAssets.SkillIcons;
         foreach (var skill in skills.List)
         {
-            var icon = Instantiate(_squareIconPrefab, _container.transform);
+            var icon = Instantiate(_skillIcon, _container.transform);
             if (!icon.TryGetComponent<Image>(out var image))
                 return;
         }

@@ -11,7 +11,7 @@ public class InteractableUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     public event Action OnClickComplete;
     
     [Header("Trigger Times")]
-    [SerializeField] private float _hoverTriggerTime = 1f;
+    [SerializeField] private float _hoverTriggerTime = 0.1f;
     [SerializeField] private float _holdTriggerTime = 1f;
     
     [Header("Overlay Colors")]
