@@ -5,8 +5,22 @@ using UnityEngine;
 
 public enum TerrainType { Default, Void }
 
-public struct GridContext
+public struct CommandContext
 {
+    public Grid2D Grid;
+    public Entity SourceEntity;
+    public int StartPosition;
+}
+
+public interface IReadOnlyGrid2D
+{
+    string Id { get; }
+    int X { get; }
+    int Y { get; }
+    int MaxTeamCost { get; }
+    int PlayerCount { get; }
+    int GetSpawnPlayer(int spawn);
+    HashSet<int> GetPlayerSpawns(int player);
 }
 
 public class Grid2D : INameId
@@ -18,7 +32,9 @@ public class Grid2D : INameId
     
     public int MaxTeamCost { get; }
     public int PlayerCount { get; }
-    public Dictionary<int, int> PlayerStartPositions { get; private set; }
+    
+    private readonly Dictionary<int, int> _spawnPlayers = new();
+    private readonly Dictionary<int, HashSet<int>> _playerSpawns = new();
 
     // State
     public int Turn { get; private set; }
@@ -26,7 +42,6 @@ public class Grid2D : INameId
     private TerrainType[] _terrain;
     private Entity[] _entities;
     private List<Entity> _prioritizedEntities;
-    
 
     private Grid2D(string id, int x, int y, int maxTeamCost, int playerCount)
     {
@@ -47,7 +62,6 @@ public class Grid2D : INameId
     private void InitPositions(List<TerrainConfig> terrain, List<PositionConfig> playerStartPositions, List<EntityStartConfig> entityStartPositions)
     {
         _terrain = new TerrainType[GetSize()];
-        PlayerStartPositions = new Dictionary<int, int>();
         _entities = new Entity[GetSize()];
         if (terrain != null)
         {
@@ -68,7 +82,7 @@ public class Grid2D : INameId
                 var positions = GetPositions(playerStartPositions[i].PositionValues, playerStartPositions[i].PositionRanges);
                 foreach (var position in positions)
                     if (IsTraversable(position)) // TODO: add Terrain mask
-                        PlayerStartPositions.TryAdd(position, player);
+                        SetSpawnPlayer(position, player);
             }
         }
         if (entityStartPositions != null)
@@ -80,10 +94,7 @@ public class Grid2D : INameId
                 foreach (var position in positions)
                 {
                     if (!IsTraversable(position)) continue;
-                    var playerController = 0;
-                    if (PlayerStartPositions.TryGetValue(position, out var player))
-                        playerController = player;
-                    SetEntityPosition(position, Entity.Create(entityConfig, playerController));
+                    SetEntityPosition(position, Entity.Create(entityConfig, GetSpawnPlayer(position)));
                 }
             }
         }
@@ -124,7 +135,7 @@ public class Grid2D : INameId
         if (teamData.MapId != Id) return false;
         Debug.Log(player + " map2");
         foreach (var (position, unit) in teamData.UnitStartPositions)
-            if (!IsValidPosition(position) || PlayerStartPositions[position] != player || _entities[position] != null || !IdRegistry<EntityConfig>.TryGet(unit, out var entityConfig))
+            if (!IsValidPosition(position) || GetSpawnPlayer(position) != player || _entities[position] != null || !IdRegistry<EntityConfig>.TryGet(unit, out var entityConfig))
                 return false;
         return true;
     }
@@ -188,6 +199,31 @@ public class Grid2D : INameId
             if (_entities[i] != null)
                 indices.Add(i);
         return indices;
+    }
+    
+    public int GetSpawnPlayer(int spawn)
+    {
+        return _spawnPlayers.GetValueOrDefault(spawn, 0);
+    }
+    
+    public HashSet<int> GetPlayerSpawns(int player)
+    {
+        return _playerSpawns.GetValueOrDefault(player, null);
+    }
+    
+    public bool SetSpawnPlayer(int spawn, int player)
+    {
+        if (GetSpawnPlayer(spawn) != 0)
+            return false;
+        
+        _spawnPlayers[spawn] = player;
+        
+        if (GetPlayerSpawns(player) == null)
+            _playerSpawns.Add(player, new HashSet<int>{spawn});
+        else
+            _playerSpawns[player].Add(spawn);
+            
+        return true;
     }
 
     public bool SetTileTerrain(int position, TerrainType tileTerrain)
@@ -320,7 +356,7 @@ public class Grid2D : INameId
         var grid = "";
         
         grid += "START POSITIONS\n";
-        foreach (var kvp in PlayerStartPositions)
+        foreach (var kvp in _spawnPlayers)
             grid += "(" + kvp.Key + "-"+ kvp.Value + ") ";
         grid += "\n";
         
