@@ -20,7 +20,7 @@ public class UnitInfo : MonoBehaviour
     //         DisplayEntityInfo(entity);
     // }
     
-    public void DisplayEntityInfo(Grid2D grid, Entity entity)
+    public void DisplayEntityInfo(IReadOnlyGridState grid, Entity entity)
     {
         if (IdRegistry<EntityAssets>.TryGet(entity.Id, out var entityAssets))
             return;

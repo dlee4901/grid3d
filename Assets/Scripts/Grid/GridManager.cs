@@ -83,7 +83,8 @@ public class GridManager : MonoBehaviour
             entity.TryGetComponent<SkillComponent>(out var skillComponent);
             var skill = skillComponent.List[0];
             //skill.Selection.GetRange(_grid2D, (x, y), entity);
-            var selectablePositions = skill.Selection.GetSelectablePositions(_grid2D, (x, y), entity);
+            var ctx = new QueryContext(_grid2D.State, (x, y), entity);
+            var selectablePositions = skill.Selection.GetSelectablePositions(ctx);
             ShowTiles(selectablePositions.areas.ToHashSet());
         }
     }
@@ -128,7 +129,7 @@ public class GridManager : MonoBehaviour
         IdRegistry<SkillConfig>.Register(SkillConfigs.MoveStraight3Step);
         
         var mapsPath = Path.Combine(Application.streamingAssetsPath, "Content/Maps");
-        RegistryManager.LoadAndRegister<MapConfig>(mapsPath);
+        RegistryManager.LoadAndRegister<GridDefinition>(mapsPath);
     }
     
     private void CreateTestTeams()
@@ -149,13 +150,13 @@ public class GridManager : MonoBehaviour
     
     private void InitGrid()
     {
-        if (!IdRegistry<MapConfig>.TryGet("TestMap1", out var config))
+        if (!IdRegistry<GridDefinition>.TryGet("TestMap1", out var definition))
         {
             Debug.LogError("TestMap1 not found");
             return;
         }
-        
-        _grid2D = Grid2D.Create(config);
+
+        _grid2D = Grid2D.Create(definition);
         
         CreateTestTeams();
         LoadTestTeams();
