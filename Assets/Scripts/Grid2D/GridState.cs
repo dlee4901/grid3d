@@ -78,16 +78,16 @@ public sealed class GridState : IReadOnlyGridState
     public void LoadPlayerTeam(int player, TeamData teamData)
     {
         if (!ValidatePlayerTeam(player, teamData)) return;
-        Debug.Log($"Loading player team {player}");
+        //Debug.Log($"Loading player team {player}");
 
         foreach (var (position, unit) in teamData.UnitStartPositions)
         {
-            Debug.Log(player + " 1");
+            //Debug.Log(player + " 1");
             if (!IdRegistry<EntityConfig>.TryGet(unit, out var entityConfig)) continue;
-            Debug.Log(player + " 2");
+            //Debug.Log(player + " 2");
             var entity = Entity.Create(entityConfig, player);
             if (!entity.TryGetComponent<ControlComponent>(out var control)) continue;
-            Debug.Log(player + " 3");
+            //Debug.Log(player + " 3");
             control.PlayerController = player;
             SetEntityPosition(position, entity);
         }
@@ -95,9 +95,9 @@ public sealed class GridState : IReadOnlyGridState
 
     private bool ValidatePlayerTeam(int player, TeamData teamData)
     {
-        Debug.Log(player + " map1");
+        //Debug.Log(player + " map1");
         if (teamData.MapId != Definition.Id) return false;
-        Debug.Log(player + " map2");
+        //Debug.Log(player + " map2");
         foreach (var (position, unit) in teamData.UnitStartPositions)
             if (!Definition.IsValidPosition(position)
                 || Definition.GetSpawnPlayer(position) != player
@@ -215,11 +215,6 @@ public sealed class GridState : IReadOnlyGridState
         grid += "START POSITIONS\n";
         foreach (var kvp in Definition.SpawnPlayers)
             grid += "(" + kvp.Key + "-" + kvp.Value + ") ";
-        grid += "\n";
-
-        grid += "TERRAIN\n";
-        for (int i = 0; i < Definition.TerrainMap.Length; i++)
-            grid += Definition.TerrainMap[i] + " ";
         grid += "\n";
 
         grid += "ENTITIES\n";

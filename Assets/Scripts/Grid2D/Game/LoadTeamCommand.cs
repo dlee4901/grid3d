@@ -1,0 +1,17 @@
+public sealed class LoadTeamCommand : ICommand
+{
+    public int Player { get; }
+    public TeamData TeamData { get; }
+
+    public LoadTeamCommand(int player, TeamData teamData)
+    {
+        Player = player;
+        TeamData = teamData;
+    }
+
+    public bool ApplyTo(GridState state)
+    {
+        state.LoadPlayerTeam(Player, TeamData);
+        return true;
+    }
+}

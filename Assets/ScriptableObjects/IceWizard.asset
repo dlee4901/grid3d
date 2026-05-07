@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e8e8c085ecec47d19bf5cbcfc1e9124a, type: 3}
-  m_Name: FireWizard
+  m_Name: IceWizard
   m_EditorClassIdentifier: Assembly-CSharp::EntityAssets
-  <Id>k__BackingField: FireWizard
-  Model3D: {fileID: 919132149155446097, guid: ff499a13094967c44874120020513404, type: 3}
+  <Id>k__BackingField: IceWizard
+  Model3D: {fileID: 6769735443732236303, guid: 27ff49a3e50e14f79989e456f85b39dc, type: 3}
   Model2D: {fileID: 0}
   SkillIcons:
   - {fileID: 21300000, guid: 29a1226f7b5e20240942612e151c3c4c, type: 3}
