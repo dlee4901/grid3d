@@ -23,11 +23,17 @@ public class GridManager : MonoBehaviour
     
     private TurnExecutor _executor;
     public IReadOnlyGridState State => _executor.State;
+    public GridInput Input { get; private set; }
     private float _gridGroundLevel;
     
     private MeshRenderer[] _selectionSquares;
     private GameObject[] _squarePrefabs;
     private GameObject[] _entityModels;
+
+    private void Awake()
+    {
+        Input = gameObject.AddComponent<GridInput>();
+    }
 
     void Start()
     {
@@ -42,58 +48,28 @@ public class GridManager : MonoBehaviour
         InitRendering();
         InstantiateEntityModels();
 
+        Input.Init(_grid, _mainCamera, State, _selectAction);
+        Input.OnSelectionChanged += OnInputChanged;
+
         State.PrintGrid();
     }
 
-    void Update()
+    private void OnInputChanged(QueryContext? ctx)
     {
-        if (_selectAction.triggered) HandleMousePosition();
+        if (!ctx.HasValue)
+        {
+            _pressOutline.gameObject.SetActive(false);
+            return;
+        }
+        var (x, y) = ctx.Value.SourcePosition;
+        var worldPos = _grid.CellToWorld(new Vector3Int(x, y, 0));
+        _pressOutline.transform.position = new Vector3(worldPos.x, _gridGroundLevel + 0.05f, worldPos.z);
+        _pressOutline.gameObject.SetActive(true);
     }
 
     public Vector2 GetSize()
     {
         return new Vector2(State.X, State.Y);
-    }
-    
-    private void HandleMousePosition()
-    {
-        UnityUtil.GetMouseWorldPosition(_mainCamera, out var mouseWorldPosition, out var error);
-        if (error)
-        {
-            _pressOutline.gameObject.SetActive(false);
-            return;
-        }
-        Vector3Int gridPosition = _grid.WorldToCell(mouseWorldPosition);
-        if (gridPosition.x >= 0 && gridPosition.x < State.X && gridPosition.y >= 0 && gridPosition.y < State.Y)
-        {
-            // ShowTiles(
-            //     _testTileSelector.GetTileSet(_state, (gridPosition.x, gridPosition.y))
-            //     );
-            _pressOutline.gameObject.SetActive(true);
-            var worldPos = _grid.CellToWorld(gridPosition);
-            _pressOutline.transform.position = new Vector3(worldPos.x, _gridGroundLevel + 0.05f, worldPos.z);
-            HandleEntityTest(gridPosition.x, gridPosition.y);
-        }
-        else
-        {
-            _pressOutline.gameObject.SetActive(false);
-        }
-    }
-    
-    private void HandleEntityTest(int x, int y)
-    {
-        var entity = State.GetEntity(x, y);
-        var ctx = new QueryContext(State, (x, y), entity);
-        SelectionController.Singleton.Select(ctx);
-
-        if (entity != null)
-        {
-            entity.TryGetComponent<SkillComponent>(out var skillComponent);
-            var skill = skillComponent.List[0];
-            //skill.Selection.GetRange(_state, (x, y), entity);
-            var selectablePositions = skill.Selection.GetSelectablePositions(ctx);
-            ShowTiles(selectablePositions.areas.ToHashSet());
-        }
     }
     
     private void InitCamera()
@@ -210,6 +186,23 @@ public class GridManager : MonoBehaviour
                 rotation = Quaternion.Euler(0, 180f, 0);
             _entityModels[position] = Instantiate(assets.Model3D, worldPos, rotation, gameObject.transform);
         }
+    }
+
+    public void ShowSkillPreview(Skill skill, QueryContext ctx)
+    {
+        var (areas, _) = skill.Selection.GetSelectablePositions(ctx);
+        ShowTiles(areas.ToHashSet());
+    }
+
+    public void ClearSkillPreview()
+    {
+        ShowTiles(new HashSet<int>());
+    }
+
+    public void BeginSkillActivation(Skill skill, QueryContext ctx)
+    {
+        Debug.Log($"BeginSkillActivation: {skill.Id} from {ctx.SourcePosition}");
+        Input.EnterMultiTargetMode(skill.Selection.SelectionAmount);
     }
 
     private void ShowTiles(HashSet<int> tiles)

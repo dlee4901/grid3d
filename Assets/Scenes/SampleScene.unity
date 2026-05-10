@@ -11439,6 +11439,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b3bcce2e7154990a4d1d07821fd193b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _gridManager: {fileID: 998935874}
   _container: {fileID: 868657740}
   _skillIcon: {fileID: 6105762451044393345, guid: ae3513fa7df7d4a39a0b59154c8b7fc1, type: 3}
 --- !u!224 &1747945930
