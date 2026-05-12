@@ -181,9 +181,9 @@ public class GridTraversal
                 leftTile = (-i, -i);
                 rightTile = (i, i);
             }
-            var newTile = Util.TupleArithmetic(startPosition, leftTile, Util.ArithmeticOperation.Add);
+            var newTile = GridUtil.TupleArithmetic(startPosition, leftTile, GridUtil.ArithmeticOperation.Add);
             if (newTile.HasValue && grid.IsValidPosition(newTile.Value)) widthTiles.Add(newTile.Value);
-            newTile = Util.TupleArithmetic(startPosition, rightTile, Util.ArithmeticOperation.Add);
+            newTile = GridUtil.TupleArithmetic(startPosition, rightTile, GridUtil.ArithmeticOperation.Add);
             if (newTile.HasValue && grid.IsValidPosition(newTile.Value)) widthTiles.Add(newTile.Value);
         }
         return widthTiles;

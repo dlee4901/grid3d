@@ -23,9 +23,11 @@ public class GridManager : MonoBehaviour
     
     private TurnExecutor _executor;
     public IReadOnlyGridState State => _executor.State;
+    public TurnExecutor Executor => _executor;
     public GridInput Input { get; private set; }
+    public PlayerInputController Player { get; private set; }
     private float _gridGroundLevel;
-    
+
     private MeshRenderer[] _selectionSquares;
     private GameObject[] _squarePrefabs;
     private GameObject[] _entityModels;
@@ -33,6 +35,7 @@ public class GridManager : MonoBehaviour
     private void Awake()
     {
         Input = gameObject.AddComponent<GridInput>();
+        Player = gameObject.AddComponent<PlayerInputController>();
     }
 
     void Start()
@@ -50,6 +53,7 @@ public class GridManager : MonoBehaviour
 
         Input.Init(_grid, _mainCamera, State, _selectAction);
         Input.OnSelectionChanged += OnInputChanged;
+        Player.Init(this, Input, _executor);
 
         State.PrintGrid();
     }
@@ -199,10 +203,14 @@ public class GridManager : MonoBehaviour
         ShowTiles(new HashSet<int>());
     }
 
-    public void BeginSkillActivation(Skill skill, QueryContext ctx)
+    public void HighlightTargets(IReadOnlyList<(int, int)> targets)
     {
-        Debug.Log($"BeginSkillActivation: {skill.Id} from {ctx.SourcePosition}");
-        Input.EnterMultiTargetMode(skill.Selection.SelectionAmount);
+        ShowTiles(targets.ToHashSet());
+    }
+
+    public void ClearTargetHighlight()
+    {
+        ShowTiles(new HashSet<int>());
     }
 
     private void ShowTiles(HashSet<int> tiles)

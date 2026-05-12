@@ -52,9 +52,9 @@ public class UnitInfo : MonoBehaviour
                 break;
             var icon = Instantiate(_skillIcon, _container.transform);
             icon.Init(skillIcons[i], skills.List[i], ctx);
-            icon.OnPreviewRequested  += _gridManager.ShowSkillPreview;
-            icon.OnPreviewCancelled  += _gridManager.ClearSkillPreview;
-            icon.OnActivateRequested += _gridManager.BeginSkillActivation;
+            icon.OnPreviewRequested  += _gridManager.Player.OnSkillPreview;
+            icon.OnPreviewCancelled  += _gridManager.Player.OnSkillCancelPreview;
+            icon.OnActivateRequested += _gridManager.Player.OnSkillActivate;
         }
         Debug.Log("DisplayEntityInfo end");
     }
