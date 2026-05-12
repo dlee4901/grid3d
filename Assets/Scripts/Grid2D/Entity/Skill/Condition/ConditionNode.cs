@@ -1,4 +1,4 @@
 public abstract class ConditionNode
 {
-    public abstract bool Evaluate(QueryContext ctx);
+    public abstract bool Evaluate(Grid2D grid);
 }

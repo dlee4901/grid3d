@@ -6,13 +6,9 @@ using UnityEngine.UI;
 
 public class InteractableUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler
 {
-    public event Action OnHoverTriggered;
-    public event Action OnHoverEnded;
-    
-    public event Action OnHoldTriggered;
-    public event Action OnHoldEnded;
-    
-    public event Action OnClickCompleted;
+    public event Action OnHoverComplete;
+    public event Action OnHoldComplete;
+    public event Action OnClickComplete;
     
     [Header("Trigger Times")]
     [SerializeField] private float _hoverTriggerTime = 0.1f;
@@ -54,7 +50,7 @@ public class InteractableUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
             {
                 Debug.Log("hover trigger for " + _hoverTriggerTime + " seconds");
                 StopHoverEvent();
-                OnHoverTriggered?.Invoke();
+                OnHoverComplete?.Invoke();
             }
         }
         if (_isHeld)
@@ -64,7 +60,7 @@ public class InteractableUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
             {
                 Debug.Log("hold trigger for " + _holdTriggerTime + " seconds");
                 StopHoldEvent(true);
-                OnHoldTriggered?.Invoke();
+                OnHoldComplete?.Invoke();
             }
         }
     }
@@ -102,7 +98,7 @@ public class InteractableUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     {
         _overlayImage.color = _pressOverlayColor;
         ChangeScale(_pressScale);
-        //StopHoverEvent();
+        StopHoverEvent();
         StartHoldEvent();
     }
     
@@ -123,7 +119,6 @@ public class InteractableUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     {
         _hoverDuration = 0f;
         _isHovering = false;
-        OnHoverEnded?.Invoke();
     }
     
     public void StartHoldEvent()
@@ -137,10 +132,9 @@ public class InteractableUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         if (!noClick && _holdDuration > 0f)
         {
             Debug.Log("click trigger");
-            OnClickCompleted?.Invoke();
+            OnClickComplete?.Invoke();
         }
         _holdDuration = 0f;
         _isHeld = false;
-        OnHoldEnded?.Invoke();
     }
 }
