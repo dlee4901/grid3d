@@ -13,7 +13,7 @@ public struct Step : IEquatable<Step>
     public (int x, int y) Position;
     public int Distance;
     public DirectionType Direction;
-
+    
     public Step((int x, int y) position, int distance, DirectionType direction)
     {
         Position = position;
@@ -55,44 +55,44 @@ public class GridTraversal
 
     public GridTraversal? Chain { get; set; }
     public int ChainOffset { get; set; } = 0; // IF (n > 0) n ~ distance ELSE maxDistReached + n ~ maxDistReached
-
-    public List<Step> GetSteps(QueryContext ctx)
+    
+    public List<Step> GetSteps(Grid2D grid, (int, int) startPosition, Entity? sourceEntity=null)
     {
         var steps = new HashSet<Step>();
-        foreach (var iter in Traverse(ctx))
+        foreach (var iter in Traverse(grid, startPosition, sourceEntity))
             steps = iter;
         return steps.ToList();
     }
-
-    public HashSet<Step> GetStepsSet(QueryContext ctx)
+    
+    public HashSet<Step> GetStepsSet(Grid2D grid, (int, int) startPosition, Entity? sourceEntity=null)
     {
         var steps = new HashSet<Step>();
-        foreach (var iter in Traverse(ctx))
+        foreach (var iter in Traverse(grid, startPosition, sourceEntity))
             steps = iter;
         return steps;
     }
-
-    public List<Step> GetTraceSteps(QueryContext ctx)
+    
+    public List<Step> GetTraceSteps(Grid2D grid, (int, int) startPosition, Entity? sourceEntity=null)
     {
-        return GetTraceSteps(ctx, new Step(ctx.SourcePosition, 0, Direction));
+        return GetTraceSteps(grid, new Step(startPosition, 0, Direction), sourceEntity);
     }
-
-    private List<Step> GetTraceSteps(QueryContext ctx, Step initialStep)
+    
+    private List<Step> GetTraceSteps(Grid2D grid, Step initialStep, Entity? sourceEntity=null)
     {
-        return Expand(ctx, initialStep.Position, initialStep.Distance, initialStep.Direction).ToList();
+        return Expand(grid, initialStep.Position, sourceEntity, initialStep.Distance, initialStep.Direction).ToList();
     }
-
-    private IEnumerable<HashSet<Step>> Traverse(QueryContext ctx)
+    
+    private IEnumerable<HashSet<Step>> Traverse(Grid2D grid, (int, int) startPosition, Entity? sourceEntity=null)
     {
         var steps = new HashSet<Step>();
         var queue = new Queue<Step>();
-        var initialStep = new Step(ctx.SourcePosition, 0, Direction);
+        var initialStep = new Step(startPosition, 0, Direction);
         steps.Add(initialStep);
         queue.Enqueue(initialStep);
         while (queue.Count > 0)
         {
             var currentStep = queue.Dequeue();
-            foreach (var nextStep in Expand(ctx, currentStep.Position, currentStep.Distance + 1, currentStep.Direction))
+            foreach (var nextStep in Expand(grid, currentStep.Position, sourceEntity, currentStep.Distance + 1, currentStep.Direction))
             {
                 if (!steps.Add(nextStep)) continue;
                 queue.Enqueue(nextStep);
@@ -100,50 +100,49 @@ public class GridTraversal
             }
         }
     }
-
-    private IEnumerable<Step> Expand(QueryContext ctx, (int, int) currentPosition, int curDistance, DirectionType direction)
+    
+    private IEnumerable<Step> Expand(Grid2D grid, (int, int) startPosition, Entity? sourceEntity, int curDistance, DirectionType direction)
     {
-        var grid = ctx.Grid;
         var maxDistance = MaxDistance < 0 || MaxDistance > grid.X * grid.Y ? grid.X * grid.Y : MaxDistance;
         if (curDistance > maxDistance) yield break;
-
-        var directionFacing = ctx.SourceEntity?.Facing ?? DirectionFacing.North;
+        
+        var directionFacing = sourceEntity?.Facing ?? DirectionFacing.North;
         var unitVectors = GetUnitVectors(direction, directionFacing);
-        var traverseTiles = unitVectors.Select(vec => (currentPosition.Item1 + vec.Item1, currentPosition.Item2 + vec.Item2)).ToList();
-
+        var traverseTiles = unitVectors.Select(vec => (startPosition.Item1 + vec.Item1, startPosition.Item2 + vec.Item2)).ToList();
+        
         for (var i = 0; i < traverseTiles.Count; i++)
         {
             var position = traverseTiles[i];
-            if (position == currentPosition) continue;
-
+            if (position == startPosition) continue;
+                
             // If tile is invalid or collided with entity, do not check further
             if (!grid.IsValidPosition(position)) continue;
             Entity entity;
-            if ((entity = grid.GetEntity(position)) != null && IsColliding(entity, ctx.SourceEntity)) continue;
+            if ((entity = grid.GetEntity(position)) != null && IsColliding(entity, sourceEntity)) continue;
             //if (collideMask != null && (entity = grid.GetEntity(tile)) != null && collideMask(entity)) continue;
-
+            
             yield return new Step(position, curDistance, Linear ? (DirectionType)i : direction);
 
             if ((StartWidth <= 0 && DeltaWidth <= 0) || DeltaWidthDistanceOffset >= curDistance) continue;
             var curWidth = StartWidth + DeltaWidth * (curDistance - DeltaWidthDistanceOffset) / DeltaWidthStep;
-            var widthTiles = GetWidthTiles(ctx, curWidth, position, unitVectors);
+            var widthTiles = GetWidthTiles(grid, curWidth, position, unitVectors);
             foreach (var widthTile in widthTiles)
                 yield return new Step(widthTile, curDistance, Linear ? (DirectionType)i : direction);
-
+                
             if (Chain == null || curDistance < ChainOffset) continue;
-            foreach (var step in Chain.Expand(ctx, position, curDistance, Chain.Direction))
+            foreach (var step in Chain.Expand(grid, position, sourceEntity, curDistance, Chain.Direction))
                 yield return step;
         }
     }
-
-    private bool IsColliding(Entity targetEntity, IReadOnlyEntity? sourceEntity=null)
+    
+    private bool IsColliding(Entity targetEntity, Entity? sourceEntity=null)
     {
         Func<Entity, bool>? predicate = null;
         if (PassthroughQuery != null) predicate = PredicateFactory<Entity>.Create(PassthroughQuery);
 
         if (sourceEntity != null && sourceEntity.TryGetComponent<ControlComponent>(out var sourceControl) && targetEntity.TryGetComponent<ControlComponent>(out var targetControl))
         {
-            if ((!Passthrough.HasFlag(EntityPassthrough.Enemy) && !sourceControl.IsAlly(targetControl))
+            if ((!Passthrough.HasFlag(EntityPassthrough.Enemy) && !sourceControl.IsAlly(targetControl)) 
             || (!Passthrough.HasFlag(EntityPassthrough.Ally) && sourceControl.IsAlly(targetControl)))
                 return predicate?.Invoke(targetEntity) ?? true;
         }
@@ -151,10 +150,9 @@ public class GridTraversal
         //if (!Passthrough.HasFlag(EntityPassthrough.Obstacle) && targetEntity.GetType() != typeof(Unit)) return true;
         return false;
     }
-
-    private List<(int, int)> GetWidthTiles(QueryContext ctx, int width, (int, int) startPosition, (int, int)[] unitVectors)
+    
+    private List<(int, int)> GetWidthTiles(Grid2D grid, int width, (int, int) startPosition, (int, int)[] unitVectors)
     {
-        var grid = ctx.Grid;
         List<(int, int)> widthTiles = new();
         var zeroTuple = (0, 0);
         var leftTile = zeroTuple;
@@ -181,9 +179,9 @@ public class GridTraversal
                 leftTile = (-i, -i);
                 rightTile = (i, i);
             }
-            var newTile = GridUtil.TupleArithmetic(startPosition, leftTile, GridUtil.ArithmeticOperation.Add);
+            var newTile = Util.TupleArithmetic(startPosition, leftTile, Util.ArithmeticOperation.Add);
             if (newTile.HasValue && grid.IsValidPosition(newTile.Value)) widthTiles.Add(newTile.Value);
-            newTile = GridUtil.TupleArithmetic(startPosition, rightTile, GridUtil.ArithmeticOperation.Add);
+            newTile = Util.TupleArithmetic(startPosition, rightTile, Util.ArithmeticOperation.Add);
             if (newTile.HasValue && grid.IsValidPosition(newTile.Value)) widthTiles.Add(newTile.Value);
         }
         return widthTiles;

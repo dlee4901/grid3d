@@ -54,9 +54,8 @@ public static class UnityUtil
     
     public static void DestroyAllChildren(GameObject parent)
     {
-        var t = parent.transform;
-        for (var i = t.childCount - 1; i >= 0; i--)
-            UnityEngine.Object.Destroy(t.GetChild(i).gameObject);
+        while (parent.transform.childCount > 0)
+            UnityEngine.Object.Destroy(parent.transform.GetChild(0).gameObject);
     }
 
     public static Vector3 GetMousePosition(bool zeroed=true)
