@@ -21,76 +21,64 @@ public class GridManager : MonoBehaviour
     private Camera _mainCamera;
     private InputAction _selectAction;
     
-    private Grid2D _grid2D;
+    private TurnExecutor _executor;
+    public IReadOnlyGridState State => _executor.State;
+    public TurnExecutor Executor => _executor;
+    public GridInput Input { get; private set; }
+    public PlayerInputController Player { get; private set; }
     private float _gridGroundLevel;
-    
+
     private MeshRenderer[] _selectionSquares;
     private GameObject[] _squarePrefabs;
-    
+    private GameObject[] _entityModels;
+
+    private void Awake()
+    {
+        Input = gameObject.AddComponent<GridInput>();
+        Player = gameObject.AddComponent<PlayerInputController>();
+    }
+
     void Start()
     {
         _mainCamera = Camera.main;
         _selectAction = InputSystem.actions.FindAction("Player/Select");
         _grid.gameObject.SetActive(true);
-        
-        InitTest();
+
+        InitTestRegistry();
         InitGrid();
-        
+
         InitCamera();
         InitRendering();
+        InstantiateEntityModels();
+
+        Input.Init(_grid, _mainCamera, State, _selectAction);
+        Input.OnSelectionChanged += OnInputChanged;
+        Player.Init(this, Input, _executor);
+
+        State.PrintGrid();
     }
 
-    void Update()
+    private void OnInputChanged(QueryContext? ctx)
     {
-        if (_selectAction.triggered) HandleMousePosition();
-    }
-
-    public Vector2 GetSize()
-    {
-        return new Vector2(_grid2D.X, _grid2D.Y);
-    }
-    
-    private void HandleMousePosition()
-    {
-        UnityUtil.GetMouseWorldPosition(_mainCamera, out var mouseWorldPosition, out var error);
-        if (error)
+        if (!ctx.HasValue)
         {
             _pressOutline.gameObject.SetActive(false);
             return;
         }
-        Vector3Int gridPosition = _grid.WorldToCell(mouseWorldPosition);
-        if (gridPosition.x >= 0 && gridPosition.x < _grid2D.X && gridPosition.y >= 0 && gridPosition.y < _grid2D.Y)
-        {
-            // ShowTiles(
-            //     _testTileSelector.GetTileSet(_grid2D, (gridPosition.x, gridPosition.y))
-            //     );
-            _pressOutline.gameObject.SetActive(true);
-            var worldPos = _grid.CellToWorld(gridPosition);
-            _pressOutline.transform.position = new Vector3(worldPos.x, _gridGroundLevel + 0.05f, worldPos.z);
-            HandleEntityTest(gridPosition.x, gridPosition.y);
-        }
-        else
-        {
-            _pressOutline.gameObject.SetActive(false);
-        }
+        var (x, y) = ctx.Value.SourcePosition;
+        var worldPos = _grid.CellToWorld(new Vector3Int(x, y, 0));
+        _pressOutline.transform.position = new Vector3(worldPos.x, _gridGroundLevel + 0.05f, worldPos.z);
+        _pressOutline.gameObject.SetActive(true);
     }
-    
-    private void HandleEntityTest(int x, int y)
+
+    public Vector2 GetSize()
     {
-        var entity = _grid2D.GetEntity(x, y);
-        if (entity != null)
-        {
-            entity.TryGetComponent<SkillComponent>(out var skillComponent);
-            var skill = skillComponent.List[0];
-            //skill.Selection.GetRange(_grid2D, (x, y), entity);
-            var selectablePositions = skill.Selection.GetSelectablePositions(_grid2D, (x, y), entity);
-            ShowTiles(selectablePositions.areas.ToHashSet());
-        }
+        return new Vector2(State.X, State.Y);
     }
     
     private void InitCamera()
     {
-        var targetScreenHeight = Math.Max(_grid2D.X / 2.0f, _grid2D.Y);
+        var targetScreenHeight = Math.Max(State.X / 2.0f, State.Y);
         if (_cinemachineCamera.Target.TrackingTarget.Equals(_gridLines.transform))
         {
             _cinemachineCamera.GetComponent<CinemachineFollow>().FollowOffset = new Vector3(0f, targetScreenHeight, 0f);
@@ -119,16 +107,17 @@ public class GridManager : MonoBehaviour
     //     RegistryManager.Register(_entityAssets);
     // }
     
-    private void InitTest()
+    private void InitTestRegistry()
     {
         // RegistryManager.RegisterDerivedTypes<IEntityComponent>();
         
         IdRegistry<EntityConfig>.Register(UnitConfigs.IceWizard);
         IdRegistry<SkillConfig>.Register(SkillConfigs.IcicleBlast);
         IdRegistry<SkillConfig>.Register(SkillConfigs.MoveStraight3Step);
-        
+        RegistryManager.Register(_entityAssets);
+
         var mapsPath = Path.Combine(Application.streamingAssetsPath, "Content/Maps");
-        RegistryManager.LoadAndRegister<MapConfig>(mapsPath);
+        RegistryManager.LoadAndRegister<GridDefinition>(mapsPath);
     }
     
     private void CreateTestTeams()
@@ -143,24 +132,24 @@ public class GridManager : MonoBehaviour
     {
         var team1 = JsonHandler.LoadData<TeamData>("TestTeam1");
         var team2 = JsonHandler.LoadData<TeamData>("TestTeam2");
-        _grid2D.LoadPlayerTeam(1, team1);
-        _grid2D.LoadPlayerTeam(2, team2);
+        _executor.Apply(new LoadTeamCommand(1, team1));
+        _executor.Apply(new LoadTeamCommand(2, team2));
     }
     
     private void InitGrid()
     {
-        if (!IdRegistry<MapConfig>.TryGet("TestMap1", out var config))
+        if (!IdRegistry<GridDefinition>.TryGet("TestMap1", out var definition))
         {
             Debug.LogError("TestMap1 not found");
             return;
         }
-        
-        _grid2D = Grid2D.Create(config);
+
+        _executor = TurnExecutor.ForDefinition(definition);
         
         CreateTestTeams();
         LoadTestTeams();
         
-        Debug.Log(_grid2D.PrintGrid());
+        Debug.Log(State.PrintGrid());
     }
     
     //
@@ -170,27 +159,66 @@ public class GridManager : MonoBehaviour
     private void InitRendering()
     {
         _gridGroundLevel = _squarePrefab.transform.localScale.y;
-        _selectionSquares = new MeshRenderer[_grid2D.GetSize()];
-        _squarePrefabs = new GameObject[_grid2D.GetSize()];
-        for (var x = 0; x < _grid2D.X; x++)
+        _selectionSquares = new MeshRenderer[State.Size];
+        _squarePrefabs = new GameObject[State.Size];
+        for (var x = 0; x < State.X; x++)
         {
-            for (var y = 0; y < _grid2D.Y; y++)
+            for (var y = 0; y < State.Y; y++)
             {
-                _selectionSquares[_grid2D.ToPosition1D(x, y)] = Instantiate(_selectionSquare, _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel + 0.01f, 0.5f),  Quaternion.identity);
-                _squarePrefabs[_grid2D.ToPosition1D(x, y)] = Instantiate(_squarePrefab, _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel / 2.0f, 0.5f), Quaternion.identity);
+                _selectionSquares[State.ToPosition1D(x, y)] = Instantiate(_selectionSquare, _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel + 0.01f, 0.5f),  Quaternion.identity, gameObject.transform);
+                _squarePrefabs[State.ToPosition1D(x, y)] = Instantiate(_squarePrefab, _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel / 2.0f, 0.5f), Quaternion.identity, gameObject.transform);
             }
         }
         _gridLines.SetActive(true);
-        _gridLines.transform.position = new Vector3(_grid2D.X/2.0f, _gridGroundLevel + 0.01f, _grid2D.Y/2.0f);
-        _gridLines.transform.localScale = new Vector3(_grid2D.X/10f, 1, _grid2D.Y/10f);
+        _gridLines.transform.position = new Vector3(State.X/2.0f, _gridGroundLevel + 0.01f, State.Y/2.0f);
+        _gridLines.transform.localScale = new Vector3(State.X/10f, 1, State.Y/10f);
     }
-    
+
+    private void InstantiateEntityModels()
+    {
+        _entityModels = new GameObject[State.Size];
+        foreach (var position in State.GetOccupiedTilesPositionSet())
+        {
+            var entity = State.GetEntity(position);
+            if (!IdRegistry<EntityAssets>.TryGet(entity.Id, out var assets)) continue;
+            if (assets.Model3D == null) continue;
+
+            var (x, y) = State.ToPosition2D(position);
+            var worldPos = _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel, 0.5f);
+            var rotation = Quaternion.identity;
+            if (entity.TryGetComponent<ControlComponent>(out var control) && control.PlayerController == 2)
+                rotation = Quaternion.Euler(0, 180f, 0);
+            _entityModels[position] = Instantiate(assets.Model3D, worldPos, rotation, gameObject.transform);
+        }
+    }
+
+    public void ShowSkillPreview(Skill skill, QueryContext ctx)
+    {
+        var (areas, _) = skill.Selection.GetSelectablePositions(ctx);
+        ShowTiles(areas.ToHashSet());
+    }
+
+    public void ClearSkillPreview()
+    {
+        ShowTiles(new HashSet<int>());
+    }
+
+    public void HighlightTargets(IReadOnlyList<(int, int)> targets)
+    {
+        ShowTiles(targets.ToHashSet());
+    }
+
+    public void ClearTargetHighlight()
+    {
+        ShowTiles(new HashSet<int>());
+    }
+
     private void ShowTiles(HashSet<int> tiles)
     {
         for (int i = 0; i < _selectionSquares.Length; i++) 
             _selectionSquares[i].gameObject.SetActive(false);
         foreach (var tile in tiles)
-            if (_grid2D.IsValidPosition(tile))
+            if (State.IsValidPosition(tile))
                  _selectionSquares[tile].gameObject.SetActive(true);
     }
     
@@ -198,17 +226,17 @@ public class GridManager : MonoBehaviour
     {
         var positions = new HashSet<int>();
         foreach (var tile in tiles)
-            positions.Add(_grid2D.ToPosition1D(tile));
+            positions.Add(State.ToPosition1D(tile));
         ShowTiles(positions);
     }
     
     private void RenderGrid()
     {
-        for (var i = 0; i < _grid2D.X; i++)
+        for (var i = 0; i < State.X; i++)
         {
-            for (var j = 0; j < _grid2D.Y; j++)
+            for (var j = 0; j < State.Y; j++)
             {
-                // var tileTerrain = (int)_grid2D.TileTerrain[_grid2D.ToPosition1D(i, j)];
+                // var tileTerrain = (int)State.TileTerrain[State.ToPosition1D(i, j)];
                 // if (tileTerrain < 0 || tileTerrain > _testTileTerrainVisuals.GameObjects.Count - 1)
                 // {
                 //     Debug.LogError("GridManager: TestTileTerrainVisuals does not have all valid TileTerrain options");
