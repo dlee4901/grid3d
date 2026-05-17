@@ -3,12 +3,25 @@ using UnityEngine.UI;
 
 public class UnitInfo : MonoBehaviour
 {
+    [SerializeField] private GridManager _gridManager;
     [SerializeField] private VerticalLayoutGroup _container;
     [SerializeField] private SkillIcon _skillIcon;
-    
+
     private void Start()
     {
-        //EventManager.Singleton.OnSelectUnit += EventManager_OnSelectUnit;
+        _gridManager.Input.OnSelectionChanged += OnInputChanged;
+    }
+
+    private void OnDestroy()
+    {
+        if (_gridManager != null && _gridManager.Input != null)
+            _gridManager.Input.OnSelectionChanged -= OnInputChanged;
+    }
+
+    private void OnInputChanged(QueryContext? ctx)
+    {
+        ClearMenu();
+        if (ctx.HasValue) DisplayEntityInfo(ctx.Value);
     }
     
     // public void DisplayPositionInfo(Grid2D grid, int position)
@@ -20,20 +33,35 @@ public class UnitInfo : MonoBehaviour
     //         DisplayEntityInfo(entity);
     // }
     
-    public void DisplayEntityInfo(Grid2D grid, Entity entity)
+    private void DisplayEntityInfo(QueryContext ctx)
     {
-        if (IdRegistry<EntityAssets>.TryGet(entity.Id, out var entityAssets))
+        var entity = ctx.SourceEntity;
+        if (entity == null) 
             return;
+        Debug.Log("DisplayEntityInfo1");
+        if (!IdRegistry<EntityAssets>.TryGet(entity.Id, out var entityAssets))
+            return;
+        Debug.Log("DisplayEntityInfo2");
         if (!entity.TryGetComponent<SkillComponent>(out var skills))
             return;
-        UnityUtil.DestroyAllChildren(_container.gameObject);
+        Debug.Log("DisplayEntityInfo skills.List.Count " + skills.List.Count);
         var skillIcons = entityAssets.SkillIcons;
-        foreach (var skill in skills.List)
+        for (var i = 0; i < skills.List.Count; i++)
         {
+            if (skillIcons.Count <= i)
+                break;
             var icon = Instantiate(_skillIcon, _container.transform);
-            if (!icon.TryGetComponent<Image>(out var image))
-                return;
+            icon.Init(skillIcons[i], skills.List[i], ctx);
+            icon.OnPreviewRequested  += _gridManager.Player.OnSkillPreview;
+            icon.OnPreviewCancelled  += _gridManager.Player.OnSkillCancelPreview;
+            icon.OnActivateRequested += _gridManager.Player.OnSkillActivate;
         }
+        Debug.Log("DisplayEntityInfo end");
+    }
+    
+    private void ClearMenu()
+    {
+        UnityUtil.DestroyAllChildren(_container.gameObject);
     }
     
     // private void EventManager_OnSelectUnit(object sender, EventManager.OnSelectUnitEventArgs e)

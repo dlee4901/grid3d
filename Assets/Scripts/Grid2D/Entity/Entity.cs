@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-public class Entity : INameId
+public class Entity : INameId, IReadOnlyEntity
 {
     public string Id { get; }
     public int Cost { get; }

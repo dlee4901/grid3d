@@ -35,7 +35,7 @@ public class TestMultiplayer : MonoBehaviour
             ToggleUI(TestMultiplayerPage.Client);
         });
         _startGameButton.onClick.AddListener(() => {
-            EventManager.Singleton.StartGame();
+            //EventManager.Singleton.StartGame();
             gameObject.SetActive(false);
         });
         _joinGameButton.onClick.AddListener(() => {

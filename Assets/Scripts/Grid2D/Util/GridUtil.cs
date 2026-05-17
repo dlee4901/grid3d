@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public static class Util
+public static class GridUtil
 {
     public enum ArithmeticOperation { Add, Subtract, Multiply, Divide }
 
