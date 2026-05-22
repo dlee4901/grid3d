@@ -5,12 +5,14 @@ public static class SkillConfigs
     public static readonly SkillConfig MoveStraight3Step = new()
     {
         Id = "MoveStraight3Step",
+        Type = "Move",
         Selection = new SingleSkillSelection()
         {
             SelectableAreas = new List<GridSelection>()
             {
                 new GridSelection()
                 {
+                    MinDistance = 1,
                     Traversals = new List<GridTraversal>()
                     {
                         new GridTraversal()

@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
-public class GridInput : MonoBehaviour
+public class GridInput : LoggableBehaviour
 {
     private Grid _grid;
     private Camera _camera;
@@ -14,8 +14,6 @@ public class GridInput : MonoBehaviour
     private QueryContext? _hovered;
     private QueryContext? _selected;
     private bool _isLocked;
-
-    [SerializeField] private bool _debug;
 
     public QueryContext? Hovered => _hovered;
     public QueryContext? Selected => _selected;
@@ -129,13 +127,6 @@ public class GridInput : MonoBehaviour
         if (!a.HasValue && !b.HasValue) return true;
         if (a.HasValue != b.HasValue) return false;
         return ContextEquals(a.Value, b.Value);
-    }
-
-    // ---- Debug
-    private void Log(string message)
-    {
-        if (!_debug) return;
-        Debug.Log($"[GridInput] {message}");
     }
 
     private static string Describe(QueryContext? ctx)

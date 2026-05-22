@@ -1,8 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using UnityEngine;
 
 public static class RegistryManager
 {
@@ -38,7 +36,7 @@ public static class RegistryManager
         foreach (var type in types)
         {
             TypeRegistry.Register(type);
-            Debug.Log(type);
+            GridLog.Info(type.ToString());
         }
             
     }

@@ -4,7 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class TestMultiplayer : MonoBehaviour
+public class TestMultiplayer : LoggableBehaviour
 {
     [SerializeField] private SessionManager _sessionManager;
     
@@ -47,7 +47,7 @@ public class TestMultiplayer : MonoBehaviour
     private void SessionManager_OnCreateJoinCode(object sender, SessionManager.OnCreateJoinCodeArgs e)
     {
         _codeText.text = e.JoinCode;
-        Debug.Log("test");
+        Log("test");
         ToggleUI(TestMultiplayerPage.Host);
     }
     

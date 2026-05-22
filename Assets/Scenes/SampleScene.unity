@@ -14833,6 +14833,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c91c34a4f7542e2962a2b6e35f3adc4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InteractableUI
+  _debug: 0
   _hoverTriggerTime: 1
   _holdTriggerTime: 1
   _defaultOverlayColor:

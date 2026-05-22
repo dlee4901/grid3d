@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-public class UnitInfo : MonoBehaviour
+public class UnitInfo : LoggableBehaviour
 {
     [SerializeField] private GridManager _gridManager;
     [SerializeField] private VerticalLayoutGroup _container;
@@ -38,13 +38,13 @@ public class UnitInfo : MonoBehaviour
         var entity = ctx.SourceEntity;
         if (entity == null) 
             return;
-        Debug.Log("DisplayEntityInfo1");
+        Log("DisplayEntityInfo1");
         if (!IdRegistry<EntityAssets>.TryGet(entity.Id, out var entityAssets))
             return;
-        Debug.Log("DisplayEntityInfo2");
+        Log("DisplayEntityInfo2");
         if (!entity.TryGetComponent<SkillComponent>(out var skills))
             return;
-        Debug.Log("DisplayEntityInfo skills.List.Count " + skills.List.Count);
+        Log("DisplayEntityInfo skills.List.Count " + skills.List.Count);
         var skillIcons = entityAssets.SkillIcons;
         for (var i = 0; i < skills.List.Count; i++)
         {
@@ -56,7 +56,7 @@ public class UnitInfo : MonoBehaviour
             icon.OnPreviewCancelled  += _gridManager.Player.OnSkillCancelPreview;
             icon.OnActivateRequested += _gridManager.Player.OnSkillActivate;
         }
-        Debug.Log("DisplayEntityInfo end");
+        Log("DisplayEntityInfo end");
     }
     
     private void ClearMenu()

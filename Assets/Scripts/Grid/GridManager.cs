@@ -6,7 +6,7 @@ using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class GridManager : MonoBehaviour
+public class GridManager : LoggableBehaviour
 {
     [SerializeField] private CinemachineCamera _cinemachineCamera;
     
@@ -34,6 +34,10 @@ public class GridManager : MonoBehaviour
 
     private void Awake()
     {
+        GridLog.Info    = Debug.Log;
+        GridLog.Warning = Debug.LogWarning;
+        GridLog.Error   = Debug.LogError;
+
         Input = gameObject.AddComponent<GridInput>();
         Player = gameObject.AddComponent<PlayerInputController>();
     }
@@ -140,7 +144,7 @@ public class GridManager : MonoBehaviour
     {
         if (!IdRegistry<GridDefinition>.TryGet("TestMap1", out var definition))
         {
-            Debug.LogError("TestMap1 not found");
+            LogError("TestMap1 not found");
             return;
         }
 
@@ -149,7 +153,7 @@ public class GridManager : MonoBehaviour
         CreateTestTeams();
         LoadTestTeams();
         
-        Debug.Log(State.PrintGrid());
+        Log(State.PrintGrid());
     }
     
     //
@@ -211,6 +215,43 @@ public class GridManager : MonoBehaviour
     public void ClearTargetHighlight()
     {
         ShowTiles(new HashSet<int>());
+    }
+
+    public void RefreshEntityModelPositions()
+    {
+        var entityToModel = new Dictionary<Entity, GameObject>();
+        for (var i = 0; i < _entityModels.Length; i++)
+        {
+            if (_entityModels[i] == null) continue;
+            var entity = State.GetEntity(i);
+            if (entity == null)
+            {
+                Destroy(_entityModels[i]);
+                _entityModels[i] = null;
+                continue;
+            }
+            entityToModel[entity] = _entityModels[i];
+            _entityModels[i] = null;
+        }
+        foreach (var (entity, model) in entityToModel)
+        {
+            var (x, y) = State.ToPosition2D(entity.Position);
+            model.transform.position = _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel, 0.5f);
+            _entityModels[entity.Position] = model;
+        }
+        foreach (var pos in State.GetOccupiedTilesPositionSet())
+        {
+            if (_entityModels[pos] != null) continue;
+            var entity = State.GetEntity(pos);
+            if (!IdRegistry<EntityAssets>.TryGet(entity.Id, out var assets)) continue;
+            if (assets.Model3D == null) continue;
+            var (x, y) = State.ToPosition2D(pos);
+            var worldPos = _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel, 0.5f);
+            var rotation = Quaternion.identity;
+            if (entity.TryGetComponent<ControlComponent>(out var control) && control.PlayerController == 2)
+                rotation = Quaternion.Euler(0, 180f, 0);
+            _entityModels[pos] = Instantiate(assets.Model3D, worldPos, rotation, gameObject.transform);
+        }
     }
 
     private void ShowTiles(HashSet<int> tiles)

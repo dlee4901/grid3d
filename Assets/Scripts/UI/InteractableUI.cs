@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class InteractableUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler
+public class InteractableUI : LoggableBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler
 {
     public event Action OnHoverTriggered;
     public event Action OnHoverEnded;
@@ -27,7 +27,7 @@ public class InteractableUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     [SerializeField] private float _hoverScale = 1.02f;
     [SerializeField] private float _pressScale = 0.98f;
     [SerializeField] private List<GameObject> _scaleTargets;
-    
+
     private float _hoverDuration;
     private float _holdDuration;
     private bool _isHovering;
@@ -52,7 +52,7 @@ public class InteractableUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
             _hoverDuration += Time.deltaTime;
             if (_hoverDuration >= _hoverTriggerTime)
             {
-                Debug.Log("hover trigger for " + _hoverTriggerTime + " seconds");
+                Log($"HoverTriggered ({_hoverTriggerTime}s)");
                 StopHoverEvent();
                 OnHoverTriggered?.Invoke();
             }
@@ -62,7 +62,7 @@ public class InteractableUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
             _holdDuration += Time.deltaTime;
             if (_holdDuration >= _holdTriggerTime)
             {
-                Debug.Log("hold trigger for " + _holdTriggerTime + " seconds");
+                Log($"HoldTriggered ({_holdTriggerTime}s)");
                 StopHoldEvent(true);
                 OnHoldTriggered?.Invoke();
             }
@@ -86,28 +86,32 @@ public class InteractableUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     
     public void OnPointerEnter(PointerEventData eventData)
     {
+        Log("PointerEnter");
         _overlayImage.color = _hoverOverlayColor;
         ChangeScale(_hoverScale);
         StartHoverEvent();
     }
-    
+
     public void OnPointerExit(PointerEventData eventData)
     {
+        Log("PointerExit");
         _overlayImage.color = _defaultOverlayColor;
         ChangeScale();
         StopHoverEvent();
     }
-    
+
     public void OnPointerDown(PointerEventData eventData)
     {
+        Log("PointerDown");
         _overlayImage.color = _pressOverlayColor;
         ChangeScale(_pressScale);
         //StopHoverEvent();
         StartHoldEvent();
     }
-    
+
     public void OnPointerUp(PointerEventData eventData)
     {
+        Log("PointerUp");
         _overlayImage.color = _defaultOverlayColor;
         ChangeScale();
         StopHoldEvent();
@@ -123,6 +127,7 @@ public class InteractableUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     {
         _hoverDuration = 0f;
         _isHovering = false;
+        Log("HoverEnded");
         OnHoverEnded?.Invoke();
     }
     
@@ -136,11 +141,12 @@ public class InteractableUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     {
         if (!noClick && _holdDuration > 0f)
         {
-            Debug.Log("click trigger");
+            Log("ClickCompleted");
             OnClickCompleted?.Invoke();
         }
         _holdDuration = 0f;
         _isHeld = false;
+        Log("HoldEnded");
         OnHoldEnded?.Invoke();
     }
 }

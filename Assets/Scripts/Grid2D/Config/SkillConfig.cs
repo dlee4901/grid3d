@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 public class SkillConfig : INameId
 {
     public string Id { get; set; }
+    public string Type { get; set; } = "Default";
     public int Cost { get; set; } = 1;
     public List<SkillBindings> Bindings { get; set; }
     [JsonConverter(typeof(SkillSelection))] public SkillSelection Selection { get; set; }

@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using UnityEngine;
 
 public interface IReadOnlyGridState
 {
@@ -171,6 +170,16 @@ public sealed class GridState : IReadOnlyGridState
         entity.SetPosition(position);
         return true;
     }
+    
+    public bool ChangeEntityPosition(int startPosition, int targetPosition)
+    {
+        if (!Definition.IsValidPosition(startPosition) || !Definition.IsValidPosition(targetPosition) || !TryGetEntity(startPosition, out var entity)) 
+            return false;
+        _entities[targetPosition] = entity;
+        _entities[startPosition] = null;
+        entity.SetPosition(targetPosition);
+        return true;
+    }
 
     // -1 = passive, 0 = move, 1~n = skill
     public bool PerformAction(int action, int sourceTile, int targetTile)
@@ -183,13 +192,6 @@ public sealed class GridState : IReadOnlyGridState
 
     public bool PerformAction(int action, int sourceTile, List<int> targetTiles)
     {
-        return false;
-    }
-
-    public bool MoveEntity(int startPosition, int targetPosition)
-    {
-        if (Definition.IsValidPosition(startPosition) && Definition.IsValidPosition(targetPosition))
-            return SetEntityPosition(targetPosition, GetEntity(startPosition)) && SetEntityPosition(startPosition, null);
         return false;
     }
 

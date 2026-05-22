@@ -11,7 +11,7 @@ using Unity.Services.Relay.Models;
 //namespace Unity.Networking.Transport.Samples
 //{
     /// <summary>Component responsible for sending pings to the server.</summary>
-    public class PingClientBehaviour : MonoBehaviour
+    public class PingClientBehaviour : LoggableBehaviour
     {
         /// <summary>UI component to get the join code and update statistics.</summay>
         public PingUIBehaviour PingUI;
@@ -61,7 +61,7 @@ using Unity.Services.Relay.Models;
 
             if (joinTask.IsFaulted)
             {
-                Debug.LogError("Failed to join the Relay allocation.");
+                LogError("Failed to join the Relay allocation.");
                 yield break;
             }
 
@@ -87,7 +87,7 @@ using Unity.Services.Relay.Models;
                 var result = Driver.BeginSend(Connection, out var writer);
                 if (result < 0)
                 {
-                    Debug.LogError($"Couldn't send ping (error code {result}).");
+                    LogError($"Couldn't send ping (error code {result}).");
                     return;
                 }
 
@@ -98,7 +98,7 @@ using Unity.Services.Relay.Models;
                 result = Driver.EndSend(writer);
                 if (result < 0)
                 {
-                    Debug.LogError($"Couldn't send ping (error code {result}).");
+                    LogError($"Couldn't send ping (error code {result}).");
                     return;
                 }
             }
@@ -123,12 +123,12 @@ using Unity.Services.Relay.Models;
                     {
                         // Connect event means the connection has been established.
                         case NetworkEvent.Type.Connect:
-                            Debug.Log("Connected to server.");
+                            Log("Connected to server.");
                             break;
 
                         // Disconnect event means the connection was closed (server exited).
                         case NetworkEvent.Type.Disconnect:
-                            Debug.Log("Got disconnected from server.");
+                            Log("Got disconnected from server.");
 
                             // Storing a default value as the connection will make the Update method
                             // retry to connect when it next executes.

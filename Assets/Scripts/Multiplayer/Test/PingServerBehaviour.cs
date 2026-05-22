@@ -11,7 +11,7 @@ using Unity.Services.Relay.Models;
 //namespace Unity.Networking.Transport.Samples
 //{
     /// <summary>Component that will listen for ping connections and answer pings.</summary>
-    public class PingServerBehaviour : MonoBehaviour
+    public class PingServerBehaviour : LoggableBehaviour
     {
         /// <summary>UI component on which to set the join code.</summay>
         public PingUIBehaviour PingUI;
@@ -50,7 +50,7 @@ using Unity.Services.Relay.Models;
 
             if (allocationTask.IsFaulted)
             {
-                Debug.LogError("Failed to create Relay allocation.");
+                LogError("Failed to create Relay allocation.");
                 yield break;
             }
 
@@ -62,7 +62,7 @@ using Unity.Services.Relay.Models;
 
             if (joinCodeTask.IsFaulted)
             {
-                Debug.LogError("Failed to request join code for allocation.");
+                LogError("Failed to request join code for allocation.");
                 yield break;
             }
 
@@ -78,17 +78,17 @@ using Unity.Services.Relay.Models;
             // for Relay it really doesn't matter what we bound to. AnyIpv4 is as good as any.
             if (m_ServerDriver.Bind(NetworkEndpoint.AnyIpv4) < 0)
             {
-                Debug.LogError("Failed to bind the NetworkDriver.");
+                LogError("Failed to bind the NetworkDriver.");
                 yield break;
             }
 
             if (m_ServerDriver.Listen() < 0)
             {
-                Debug.LogError("Failed to start listening for connections.");
+                LogError("Failed to start listening for connections.");
                 yield break;
             }
 
-            Debug.Log("Server is now listening for connections.");
+            Log("Server is now listening for connections.");
         }
 
         // Job to clean up old connections and accept new ones.
@@ -151,7 +151,7 @@ using Unity.Services.Relay.Models;
                 var result = Driver.BeginSend(connection, out var writer);
                 if (result < 0)
                 {
-                    Debug.LogError($"Couldn't send ping answer (error code {result}).");
+                    LogError($"Couldn't send ping answer (error code {result}).");
                     return;
                 }
 
@@ -160,7 +160,7 @@ using Unity.Services.Relay.Models;
                 result = Driver.EndSend(writer);
                 if (result < 0)
                 {
-                    Debug.LogError($"Couldn't send ping answer (error code {result}).");
+                    LogError($"Couldn't send ping answer (error code {result}).");
                     return;
                 }
             }
