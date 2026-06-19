@@ -36,15 +36,13 @@ public class UnitInfo : LoggableBehaviour
     private void DisplayEntityInfo(QueryContext ctx)
     {
         var entity = ctx.SourceEntity;
-        if (entity == null) 
+        if (entity == null)
             return;
-        Log("DisplayEntityInfo1");
         if (!IdRegistry<EntityAssets>.TryGet(entity.Id, out var entityAssets))
             return;
-        Log("DisplayEntityInfo2");
         if (!entity.TryGetComponent<SkillComponent>(out var skills))
             return;
-        Log("DisplayEntityInfo skills.List.Count " + skills.List.Count);
+        Log($"Selection info: {entity.Id}, skills={skills.List.Count}");
         var skillIcons = entityAssets.SkillIcons;
         for (var i = 0; i < skills.List.Count; i++)
         {
@@ -56,7 +54,6 @@ public class UnitInfo : LoggableBehaviour
             icon.OnPreviewCancelled  += _gridManager.Player.OnSkillCancelPreview;
             icon.OnActivateRequested += _gridManager.Player.OnSkillActivate;
         }
-        Log("DisplayEntityInfo end");
     }
     
     private void ClearMenu()

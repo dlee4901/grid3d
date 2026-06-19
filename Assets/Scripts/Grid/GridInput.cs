@@ -17,13 +17,15 @@ public class GridInput : LoggableBehaviour
 
     public QueryContext? Hovered => _hovered;
     public QueryContext? Selected => _selected;
-    public bool IsLocked => _isLocked;
     public bool HasSelection => _selected.HasValue;
-
-    public event Action<QueryContext?> OnHoverChanged;
+    
+    public event Action<QueryContext> OnPositionSelected;
+    public event Action OnCancelClicked;
     public event Action<QueryContext?> OnSelectionChanged;
-    public event Action<bool> OnLockChanged;
-    public event Action<QueryContext> OnTileClicked;
+    
+    // public event Action<QueryContext?> OnHoverChanged;
+    // public event Action<bool> OnLockChanged;
+    // public bool IsLocked => _isLocked;
 
     public void Init(Grid grid, Camera camera, IReadOnlyGridState state, InputAction selectAction)
     {
@@ -57,9 +59,13 @@ public class GridInput : LoggableBehaviour
 
     private void HandleClick()
     {
-        if (!_hovered.HasValue) return;
+        if (!_hovered.HasValue)
+        {
+            OnCancelClicked?.Invoke();
+            return;
+        }
         Log($"Click: {Describe(_hovered)}");
-        OnTileClicked?.Invoke(_hovered.Value);
+        OnPositionSelected?.Invoke(_hovered.Value);
     }
 
     // ---- Hover (transient, never blocked by lock)
@@ -68,15 +74,14 @@ public class GridInput : LoggableBehaviour
         if (NullableContextEquals(_hovered, ctx)) return;
         _hovered = ctx;
         Log($"Hover: {Describe(_hovered)}");
-        OnHoverChanged?.Invoke(_hovered);
+        //OnHoverChanged?.Invoke(_hovered);
     }
-
-    public void ClearHover() => SetHover(null);
-
-    // ---- Selection (committed, blocked by lock)
+    
+    // public void ClearHover() => SetHover(null);
+    
     public void Select(QueryContext ctx)
     {
-        if (_isLocked) return;
+        //if (_isLocked) return;
         if (_selected.HasValue && ContextEquals(_selected.Value, ctx)) return;
         _selected = ctx;
         Log($"Selected: {Describe(_selected)}");
@@ -85,7 +90,7 @@ public class GridInput : LoggableBehaviour
 
     public void ClearSelection()
     {
-        if (_isLocked) return;
+        //if (_isLocked) return;
         if (!_selected.HasValue) return;
         _selected = null;
         Log("Selection cleared");
@@ -93,21 +98,21 @@ public class GridInput : LoggableBehaviour
     }
 
     // ---- Lock (cross-turn, idempotent)
-    public void Lock()
-    {
-        if (_isLocked) return;
-        _isLocked = true;
-        Log("Locked");
-        OnLockChanged?.Invoke(true);
-    }
-
-    public void Unlock()
-    {
-        if (!_isLocked) return;
-        _isLocked = false;
-        Log("Unlocked");
-        OnLockChanged?.Invoke(false);
-    }
+    // public void Lock()
+    // {
+    //     if (_isLocked) return;
+    //     _isLocked = true;
+    //     Log("Locked");
+    //     OnLockChanged?.Invoke(true);
+    // }
+    //
+    // public void Unlock()
+    // {
+    //     if (!_isLocked) return;
+    //     _isLocked = false;
+    //     Log("Unlocked");
+    //     OnLockChanged?.Invoke(false);
+    // }
 
     // ---- Convenience predicates for UI binding
     public bool IsHovered((int, int) position)

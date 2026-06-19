@@ -2,10 +2,10 @@ public interface IPlayerInputState
 {
     void OnEnter();
     void OnExit();
-    void OnTileClicked(QueryContext clicked);
-    void OnSkillActivate(Skill skill, QueryContext ctx);
-    void OnGridSelectionChanged(QueryContext? ctx);
+    void OnPositionSelected(QueryContext clicked);
+    void OnSelectionChanged(QueryContext? ctx);
     void OnCancel();
+    void OnSkillActivate(Skill skill, QueryContext ctx);
 }
 
 public abstract class PlayerInputStateBase : IPlayerInputState
@@ -15,8 +15,8 @@ public abstract class PlayerInputStateBase : IPlayerInputState
 
     public virtual void OnEnter() {}
     public virtual void OnExit() {}
-    public virtual void OnTileClicked(QueryContext clicked) {}
-    public virtual void OnSkillActivate(Skill skill, QueryContext ctx) {}
-    public virtual void OnGridSelectionChanged(QueryContext? ctx) {}
+    public virtual void OnPositionSelected(QueryContext clicked) {}
+    public virtual void OnSelectionChanged(QueryContext? ctx) {}
     public virtual void OnCancel() {}
+    public virtual void OnSkillActivate(Skill skill, QueryContext ctx) {}
 }

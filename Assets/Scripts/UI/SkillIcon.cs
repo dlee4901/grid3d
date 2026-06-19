@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class SkillIcon : MonoBehaviour
+public class SkillIcon : LoggableBehaviour
 {
     [SerializeField] private GameObject _cooldown;
     [SerializeField] private Image _icon;
@@ -18,9 +18,9 @@ public class SkillIcon : MonoBehaviour
     private void Start()
     {
         _interactableUI = UnityUtil.GetOrAddComponent<InteractableUI>(gameObject);
-        _interactableUI.OnHoverTriggered += () => OnPreviewRequested?.Invoke(_skill, _ctx);
-        _interactableUI.OnHoverEnded     += () => OnPreviewCancelled?.Invoke();
-        _interactableUI.OnClickCompleted += () => OnActivateRequested?.Invoke(_skill, _ctx);
+        _interactableUI.OnHoverTriggered += () => { Log($"PreviewRequested: {_skill?.Id}"); OnPreviewRequested?.Invoke(_skill, _ctx); };
+        _interactableUI.OnHoverEnded     += () => { Log("PreviewCancelled"); OnPreviewCancelled?.Invoke(); };
+        _interactableUI.OnClickCompleted += () => { Log($"ActivateRequested: {_skill?.Id}"); OnActivateRequested?.Invoke(_skill, _ctx); };
     }
 
     public void Init(Sprite sprite, Skill skill, QueryContext ctx)

@@ -20,32 +20,41 @@ public class PlayerInputController : LoggableBehaviour
         _current = new IdleState(_ctx);
         _current.OnEnter();
 
-        input.OnTileClicked       += clicked => _current.OnTileClicked(clicked);
-        input.OnSelectionChanged  += ctx     => _current.OnGridSelectionChanged(ctx);
+        input.OnPositionSelected += clicked => _current.OnPositionSelected(clicked);
+        input.OnSelectionChanged += ctx => _current.OnSelectionChanged(ctx);
+        input.OnCancelClicked += () => _current.OnCancel();
     }
 
     private void Update()
     {
         if (_current == null) return;
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            Log("Cancel (ESC)");
             _current.OnCancel();
+        }
     }
 
     // ---- Skill icon intent handlers (called by UnitInfo from SkillIcon events)
     public void OnSkillPreview(Skill skill, QueryContext ctx)
     {
-        if (_current is AimingSkillState) return;
+        if (_current is TargetingState) return;
+        Log($"SkillPreview: {skill?.Id}");
         _ctx.GridManager.ShowSkillPreview(skill, ctx);
     }
 
     public void OnSkillCancelPreview()
     {
-        if (_current is AimingSkillState) return;
+        if (_current is TargetingState) return;
+        Log("SkillCancelPreview");
         _ctx.GridManager.ClearSkillPreview();
     }
 
     public void OnSkillActivate(Skill skill, QueryContext source)
-        => _current.OnSkillActivate(skill, source);
+    {
+        Log($"SkillActivate: {skill?.Id}");
+        _current.OnSkillActivate(skill, source);
+    }
 
     // ---- State transitions
     public void TransitionTo(IPlayerInputState next)
@@ -56,4 +65,7 @@ public class PlayerInputController : LoggableBehaviour
         _current = next;
         _current.OnEnter();
     }
+
+    // ---- Logging passthrough for the plain state classes (gated by this component's _debug)
+    public void LogState(string message) => Log(message);
 }

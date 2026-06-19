@@ -1,13 +1,13 @@
 public class IdleState : PlayerInputStateBase
 {
-    public IdleState(PlayerInputContext ctx) : base(ctx) { }
+    public IdleState(PlayerInputContext ctx) : base(ctx) {}
 
-    public override void OnTileClicked(QueryContext clicked)
+    public override void OnEnter()
+        => Ctx.Input.ClearSelection();
+
+    public override void OnPositionSelected(QueryContext clicked)
         => Ctx.Input.Select(clicked);
 
-    public override void OnGridSelectionChanged(QueryContext? ctx)
-    {
-        if (ctx.HasValue && ctx.Value.SourceEntity != null)
-            Ctx.Controller.TransitionTo(new EntitySelectedState(Ctx));
-    }
+    public override void OnSelectionChanged(QueryContext? ctx)
+        => Ctx.Controller.TransitionTo(new SelectedState(Ctx));
 }
