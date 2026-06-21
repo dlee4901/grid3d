@@ -4,4 +4,5 @@ public class PlayerInputContext
     public GridInput Input;
     public GridManager GridManager;
     public TurnExecutor Executor;
+    public CommandDispatcher Dispatcher;
 }

@@ -27,7 +27,7 @@ public class Entity : INameId, IReadOnlyEntity
     {
         var entity = new Entity(config.Id, config.Cost);
         entity.AddComponent(new HealthComponent(config.Health));
-        entity.AddComponent(new SkillComponent(config.Skills));
+        entity.AddComponent(new AbilityComponent(config.Abilities));
         entity.AddComponent(new ControlComponent(playerController));
         return entity;
     }

@@ -5,7 +5,7 @@ public class UnitInfo : LoggableBehaviour
 {
     [SerializeField] private GridManager _gridManager;
     [SerializeField] private VerticalLayoutGroup _container;
-    [SerializeField] private SkillIcon _skillIcon;
+    [SerializeField] private AbilityIcon _abilityIcon;
 
     private void Start()
     {
@@ -40,19 +40,19 @@ public class UnitInfo : LoggableBehaviour
             return;
         if (!IdRegistry<EntityAssets>.TryGet(entity.Id, out var entityAssets))
             return;
-        if (!entity.TryGetComponent<SkillComponent>(out var skills))
+        if (!entity.TryGetComponent<AbilityComponent>(out var abilities))
             return;
-        Log($"Selection info: {entity.Id}, skills={skills.List.Count}");
-        var skillIcons = entityAssets.SkillIcons;
-        for (var i = 0; i < skills.List.Count; i++)
+        Log($"Selection info: {entity.Id}, abilities={abilities.List.Count}");
+        var abilityIcons = entityAssets.AbilityIcons;
+        for (var i = 0; i < abilities.List.Count; i++)
         {
-            if (skillIcons.Count <= i)
+            if (abilityIcons.Count <= i)
                 break;
-            var icon = Instantiate(_skillIcon, _container.transform);
-            icon.Init(skillIcons[i], skills.List[i], ctx);
-            icon.OnPreviewRequested  += _gridManager.Player.OnSkillPreview;
-            icon.OnPreviewCancelled  += _gridManager.Player.OnSkillCancelPreview;
-            icon.OnActivateRequested += _gridManager.Player.OnSkillActivate;
+            var icon = Instantiate(_abilityIcon, _container.transform);
+            icon.Init(abilityIcons[i], abilities.List[i], ctx);
+            icon.OnPreviewRequested  += _gridManager.Player.OnAbilityPreview;
+            icon.OnPreviewCancelled  += _gridManager.Player.OnAbilityCancelPreview;
+            icon.OnActivateRequested += _gridManager.Player.OnAbilityActivate;
         }
     }
     

@@ -2,5 +2,5 @@
   "Id": "IceWizard",
   "Cost": 4,
   "Health": 6,
-  "Skills": [ "MoveStraight3NL", "IcicleBlast" ]
+  "Abilities": [ "MoveStraight3NL", "IcicleBlast" ]
 }

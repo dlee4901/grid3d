@@ -1,7 +1,7 @@
 FULL SKILL PIPELINE
 
 Move:
-SingleSkillSelection 1 -> EffectLocation
+SingleAbilitySelection 1 -> EffectLocation
 move self to EffectLocation
 
 Attack:

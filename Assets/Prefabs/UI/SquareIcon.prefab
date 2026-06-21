@@ -353,7 +353,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 34d988159c87402984e8fbf178aee107, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SkillIcon
+  m_EditorClassIdentifier: Assembly-CSharp::AbilityIcon
   _cooldown: {fileID: 8772616228393956254}
   _icon: {fileID: 3268705724542757669}
 --- !u!114 &6443197854200300309

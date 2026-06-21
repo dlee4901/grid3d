@@ -4,6 +4,9 @@ public interface IReadOnlyGridState
 {
     GridDefinition Definition { get; }
     int Turn { get; }
+    int ActivePlayer { get; }
+    bool CanPlayerAct(int player);
+    int GetMana(int player);
 
     // Spatial pass-throughs (Definition)
     int X { get; }
@@ -38,6 +41,48 @@ public sealed class GridState : IReadOnlyGridState
 {
     public GridDefinition Definition { get; }
     public int Turn { get; private set; }
+    public int ActivePlayer { get; private set; } = 1;            // 1..PlayerCount
+    public bool CanPlayerAct(int player) => ActivePlayer == player;
+
+    // Mutated ONLY by EndTurnCommand.ApplyTo — keeps peers deterministic.
+    public void AdvanceTurn()
+    {
+        ActivePlayer = ActivePlayer % Definition.PlayerCount + 1; // cycle 1..PlayerCount
+        if (ActivePlayer == 1) Turn++;                            // full round elapsed
+        RefillMana(ActivePlayer);                          // fresh mana at the start of their turn
+        TickAbilityCooldowns(ActivePlayer);                         // their abilities cool down once per own turn
+    }
+
+    // Decrement cooldowns for the player's entities at the start of their turn.
+    // Iterates _entities in index order (deterministic) — only commands call this.
+    private void TickAbilityCooldowns(int player)
+    {
+        for (var i = 0; i < _entities.Length; i++)
+        {
+            var entity = _entities[i];
+            if (entity == null) continue;
+            if (!entity.TryGetComponent<ControlComponent>(out var control)
+                || control.PlayerController != player) continue;
+            if (!entity.TryGetComponent<AbilityComponent>(out var abilities)) continue;
+            foreach (var ability in abilities.List)
+                ability.TurnUpdate();
+        }
+    }
+
+    // Per-player mana pool (index 1..PlayerCount). Read-only outward; spent only via commands.
+    public int GetMana(int player)
+        => (player >= 1 && player <= Definition.PlayerCount) ? _mana[player] : 0;
+
+    public bool HasMana(int player, int cost) => GetMana(player) >= cost;
+
+    public bool SpendMana(int player, int cost)
+    {
+        if (!HasMana(player, cost)) return false;
+        _mana[player] -= cost;
+        return true;
+    }
+
+    private void RefillMana(int player) => _mana[player] = Definition.ManaPerTurn;
 
     public int X => Definition.X;
     public int Y => Definition.Y;
@@ -51,12 +96,15 @@ public sealed class GridState : IReadOnlyGridState
     public int GetSpawnPlayer(int spawn) => Definition.GetSpawnPlayer(spawn);
 
     private readonly Entity[] _entities;
+    private readonly int[] _mana;
     private List<Entity> _prioritizedEntities;
 
     public GridState(GridDefinition definition)
     {
         Definition = definition;
         _entities = new Entity[definition.Size];
+        _mana = new int[definition.PlayerCount + 1];   // index 1..PlayerCount
+        RefillMana(ActivePlayer);                      // player 1 starts with a full pool
         SeedStartingEntities();
     }
 
@@ -181,7 +229,7 @@ public sealed class GridState : IReadOnlyGridState
         return true;
     }
 
-    // -1 = passive, 0 = move, 1~n = skill
+    // -1 = passive, 0 = move, 1~n = ability
     public bool PerformAction(int action, int sourceTile, int targetTile)
     {
         Entity entity = GetEntity(sourceTile);

@@ -2,7 +2,7 @@
   "Id": "IcicleBlast",
   "Cooldown": 1,
   "Selection": {
-    "Type": "FillSkillSelection",
+    "Type": "FillAbilitySelection",
     "SelectableAreas": [
       {
         "Traversals": [

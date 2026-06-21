@@ -5,7 +5,7 @@ public interface IPlayerInputState
     void OnPositionSelected(QueryContext clicked);
     void OnSelectionChanged(QueryContext? ctx);
     void OnCancel();
-    void OnSkillActivate(Skill skill, QueryContext ctx);
+    void OnAbilityActivate(Ability ability, QueryContext ctx);
 }
 
 public abstract class PlayerInputStateBase : IPlayerInputState
@@ -18,5 +18,5 @@ public abstract class PlayerInputStateBase : IPlayerInputState
     public virtual void OnPositionSelected(QueryContext clicked) {}
     public virtual void OnSelectionChanged(QueryContext? ctx) {}
     public virtual void OnCancel() {}
-    public virtual void OnSkillActivate(Skill skill, QueryContext ctx) {}
+    public virtual void OnAbilityActivate(Ability ability, QueryContext ctx) {}
 }

@@ -7,6 +7,6 @@ public static class UnitConfigs
         Id = "IceWizard",
         Cost = 4,
         Health = 5,
-        Skills = new List<string> {"MoveStraight3Step", "IcicleBlast"}
+        Abilities = new List<string> {"MoveStraight3Step", "IcicleBlast"}
     };
 }

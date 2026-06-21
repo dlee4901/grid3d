@@ -15,7 +15,7 @@ MonoBehaviour:
   <Id>k__BackingField: IceWizard
   Model3D: {fileID: 6769735443732236303, guid: 27ff49a3e50e14f79989e456f85b39dc, type: 3}
   Model2D: {fileID: 0}
-  SkillIcons:
+  AbilityIcons:
   - {fileID: 21300000, guid: 29a1226f7b5e20240942612e151c3c4c, type: 3}
   - {fileID: 21300000, guid: 8f6d58fd471ba8a45a4b681953e29c26, type: 3}
   - {fileID: 21300000, guid: ea55e0ae186d59d41a0b270559045dd7, type: 3}

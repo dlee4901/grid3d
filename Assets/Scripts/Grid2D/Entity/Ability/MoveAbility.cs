@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 
-public class MoveSkill : Skill
+public class MoveAbility : Ability
 {
-    public MoveSkill(SkillConfig config) : base(config) { }
+    public MoveAbility(AbilityConfig config) : base(config) { }
 
     public override bool Execute(GridState state, int sourcePosition, IReadOnlyList<int> targets)
     {

@@ -3,26 +3,26 @@ using System.Linq;
 
 public class TargetingState : PlayerInputStateBase
 {
-    private readonly Skill _skill;
+    private readonly Ability _ability;
     private readonly QueryContext _source;
     private readonly List<(int, int)> _targets = new();
 
-    public TargetingState(PlayerInputContext ctx, Skill skill, QueryContext source) : base(ctx)
+    public TargetingState(PlayerInputContext ctx, Ability ability, QueryContext source) : base(ctx)
     {
-        _skill = skill;
+        _ability = ability;
         _source = source;
     }
 
     public override void OnEnter()
     {
         //Ctx.Input.Lock();
-        Ctx.GridManager.ShowSkillPreview(_skill, _source);
+        Ctx.GridManager.ShowAbilityPreview(_ability, _source);
     }
 
     public override void OnExit()
     {
         //Ctx.Input.Unlock();
-        Ctx.GridManager.ClearSkillPreview();
+        Ctx.GridManager.ClearAbilityPreview();
         Ctx.GridManager.ClearTargetHighlight();
     }
 
@@ -34,9 +34,9 @@ public class TargetingState : PlayerInputStateBase
             return;
         }
         _targets.Add(clicked.SourcePosition);
-        Ctx.Controller.LogState($"Target added: {clicked.SourcePosition} ({_targets.Count}/{_skill.Selection.SelectionAmount})");
+        Ctx.Controller.LogState($"Target added: {clicked.SourcePosition} ({_targets.Count}/{_ability.Selection.SelectionAmount})");
         Ctx.GridManager.HighlightTargets(_targets);
-        if (_targets.Count >= _skill.Selection.SelectionAmount) Confirm();
+        if (_targets.Count >= _ability.Selection.SelectionAmount) Confirm();
     }
     
     public override void OnSelectionChanged(QueryContext? ctx)
@@ -54,7 +54,7 @@ public class TargetingState : PlayerInputStateBase
 
     private bool IsValidTarget((int, int) pos)
     {
-        var (areas, _) = _skill.Selection.GetSelectablePositions(_source);
+        var (areas, _) = _ability.Selection.GetSelectablePositions(_source);
         return areas.Contains(pos);
     }
 
@@ -62,8 +62,14 @@ public class TargetingState : PlayerInputStateBase
     {
         var sourcePos1D = _source.Grid.ToPosition1D(_source.SourcePosition);
         var targets1D = _targets.Select(t => _source.Grid.ToPosition1D(t)).ToArray();
-        var ok = Ctx.Executor.Apply(new SkillCommand(_skill.Id, sourcePos1D, targets1D));
-        Ctx.Controller.LogState($"SkillCommand: {_skill.Id} ok={ok}");
+        // Local placeholder for the issuer; the dispatcher seam will stamp it from the
+        // authenticated local seat once networking is wired in.
+        int issuer = 0;
+        if (_source.SourceEntity != null
+            && _source.SourceEntity.TryGetComponent<ControlComponent>(out var ctrl))
+            issuer = ctrl.PlayerController;
+        var ok = Ctx.Dispatcher.Submit(new AbilityCommand(issuer, _ability.Id, sourcePos1D, targets1D));
+        Ctx.Controller.LogState($"AbilityCommand: {_ability.Id} ok={ok}");
         if (ok) Ctx.GridManager.RefreshEntityModelPositions();
         // var next = Ctx.Input.HasSelection
         //     ? (IPlayerInputState)new EntitySelectedState(Ctx)

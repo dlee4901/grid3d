@@ -6,7 +6,7 @@ public static class RegistryManager
 {
     static RegistryManager()
     {
-        // RegisterDerivedTypes<SkillSelection>();
+        // RegisterDerivedTypes<AbilitySelection>();
         // RegisterDerivedTypes<IEntityComponent>();
     }
     

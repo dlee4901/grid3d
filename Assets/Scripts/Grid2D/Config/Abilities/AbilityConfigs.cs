@@ -1,12 +1,12 @@
 using System.Collections.Generic;
 
-public static class SkillConfigs
+public static class AbilityConfigs
 {
-    public static readonly SkillConfig MoveStraight3Step = new()
+    public static readonly AbilityConfig MoveStraight3Step = new()
     {
         Id = "MoveStraight3Step",
         Type = "Move",
-        Selection = new SingleSkillSelection()
+        Selection = new SingleAbilitySelection()
         {
             SelectableAreas = new List<GridSelection>()
             {
@@ -27,10 +27,10 @@ public static class SkillConfigs
         }
     };
     
-    public static readonly SkillConfig IcicleBlast = new()
+    public static readonly AbilityConfig IcicleBlast = new()
     {
         Id = "IcicleBlast",
-        Selection = new FillSkillSelection()
+        Selection = new FillAbilitySelection()
         {
             SelectableAreas = new List<GridSelection>()
             {

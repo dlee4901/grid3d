@@ -39,6 +39,10 @@ public class InteractableUI : LoggableBehaviour, IPointerEnterHandler, IPointerE
     private void Start()
     {
         var child = new GameObject("Overlay").AddComponent<Image>();
+        child.rectTransform.anchorMin = new Vector2(0, 0);
+        child.rectTransform.anchorMax = new Vector2(1, 1);
+        child.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, 0);
+        child.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, 0);
         child.transform.SetParent(transform, false);
         _overlayImage = child.GetComponent<Image>();
         _overlayImage.color = _defaultOverlayColor;

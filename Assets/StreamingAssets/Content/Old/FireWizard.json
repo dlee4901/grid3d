@@ -2,7 +2,7 @@
   "Id": "FireWizard",
   "Cost": 4,
   "Health": 6,
-  "Skills": [ "Fireball", "ExplosiveCurse" ],
+  "Abilities": [ "Fireball", "ExplosiveCurse" ],
   "Move": {
     "TileSelectionBuilder": {
       "MinDistance": 3,

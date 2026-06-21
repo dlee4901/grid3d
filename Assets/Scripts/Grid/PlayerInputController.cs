@@ -7,14 +7,15 @@ public class PlayerInputController : LoggableBehaviour
 
     public IPlayerInputState State => _current;
 
-    public void Init(GridManager gridManager, GridInput input, TurnExecutor executor)
+    public void Init(GridManager gridManager, GridInput input, TurnExecutor executor, CommandDispatcher dispatcher)
     {
         _ctx = new PlayerInputContext
         {
             Controller = this,
             Input = input,
             GridManager = gridManager,
-            Executor = executor
+            Executor = executor,
+            Dispatcher = dispatcher
         };
 
         _current = new IdleState(_ctx);
@@ -35,25 +36,25 @@ public class PlayerInputController : LoggableBehaviour
         }
     }
 
-    // ---- Skill icon intent handlers (called by UnitInfo from SkillIcon events)
-    public void OnSkillPreview(Skill skill, QueryContext ctx)
+    // ---- Ability icon intent handlers (called by UnitInfo from AbilityIcon events)
+    public void OnAbilityPreview(Ability ability, QueryContext ctx)
     {
         if (_current is TargetingState) return;
-        Log($"SkillPreview: {skill?.Id}");
-        _ctx.GridManager.ShowSkillPreview(skill, ctx);
+        Log($"AbilityPreview: {ability?.Id}");
+        _ctx.GridManager.ShowAbilityPreview(ability, ctx);
     }
 
-    public void OnSkillCancelPreview()
+    public void OnAbilityCancelPreview()
     {
         if (_current is TargetingState) return;
-        Log("SkillCancelPreview");
-        _ctx.GridManager.ClearSkillPreview();
+        Log("AbilityCancelPreview");
+        _ctx.GridManager.ClearAbilityPreview();
     }
 
-    public void OnSkillActivate(Skill skill, QueryContext source)
+    public void OnAbilityActivate(Ability ability, QueryContext source)
     {
-        Log($"SkillActivate: {skill?.Id}");
-        _current.OnSkillActivate(skill, source);
+        Log($"AbilityActivate: {ability?.Id}");
+        _current.OnAbilityActivate(ability, source);
     }
 
     // ---- State transitions

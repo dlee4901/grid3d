@@ -1,13 +1,13 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-public class SkillConfig : INameId
+public class AbilityConfig : INameId
 {
     public string Id { get; set; }
     public string Type { get; set; } = "Default";
     public int Cost { get; set; } = 1;
-    public List<SkillBindings> Bindings { get; set; }
-    [JsonConverter(typeof(SkillSelection))] public SkillSelection Selection { get; set; }
+    public List<AbilityBindings> Bindings { get; set; }
+    [JsonConverter(typeof(AbilitySelection))] public AbilitySelection Selection { get; set; }
     
     public int Warmup { get; set; } = 0;
     public int Cooldown { get; set; } = 0;
@@ -15,8 +15,8 @@ public class SkillConfig : INameId
     public bool Locked { get; set; } = false;
 }
 
-public class SkillBindings
+public class AbilityBindings
 {
-    List<SkillTrigger> Triggers { get; set; }
-    List<SkillEffect> Effects { get; set; }
+    List<AbilityTrigger> Triggers { get; set; }
+    List<AbilityEffect> Effects { get; set; }
 }

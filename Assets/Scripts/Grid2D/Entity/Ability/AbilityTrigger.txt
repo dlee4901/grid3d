@@ -2,6 +2,6 @@ default/null: OnSelect
 OnSelect, OnTurnStart
 OnDeath, OnKill, OnHealthDown
 - target: PredicateConfig
-- range: SkillSelection (default: everywhere)
+- range: AbilitySelection (default: everywhere)
 OnMove
 - distance: int

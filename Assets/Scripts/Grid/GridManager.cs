@@ -22,6 +22,7 @@ public class GridManager : LoggableBehaviour
     private InputAction _selectAction;
     
     private TurnExecutor _executor;
+    private CommandDispatcher _dispatcher;
     public IReadOnlyGridState State => _executor.State;
     public TurnExecutor Executor => _executor;
     public GridInput Input { get; private set; }
@@ -57,9 +58,20 @@ public class GridManager : LoggableBehaviour
 
         Input.Init(_grid, _mainCamera, State, _selectAction);
         Input.OnSelectionChanged += OnInputChanged;
-        Player.Init(this, Input, _executor);
+        Player.Init(this, Input, _executor, _dispatcher);
 
         State.PrintGrid();
+    }
+
+    private void Update()
+    {
+        // Debug-only end-turn trigger until a real end-turn UI exists.
+        if (_debug && _dispatcher != null
+            && Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
+        {
+            _dispatcher.Submit(new EndTurnCommand(State.ActivePlayer));
+            Log($"[debug] end turn -> active={State.ActivePlayer}, turn={State.Turn}, mana={State.GetMana(State.ActivePlayer)}");
+        }
     }
 
     private void OnInputChanged(QueryContext? ctx)
@@ -95,14 +107,14 @@ public class GridManager : LoggableBehaviour
     
     // private void InitRegistries()
     // {
-    //     RegistryManager.RegisterDerivedTypes<SkillSelection>();
+    //     RegistryManager.RegisterDerivedTypes<AbilitySelection>();
     //     RegistryManager.RegisterDerivedTypes<IEntityComponent>();
     //     
     //     var mapsPath = Path.Combine(Application.streamingAssetsPath, "Content/Maps");
     //     RegistryManager.LoadAndRegister<MapConfig>(mapsPath);
     //     
-    //     var skillsPath = Path.Combine(Application.streamingAssetsPath, "Content/Skills");
-    //     RegistryManager.LoadAndRegister<SkillConfig>(skillsPath, true, true);
+    //     var abilitiesPath = Path.Combine(Application.streamingAssetsPath, "Content/Abilities");
+    //     RegistryManager.LoadAndRegister<AbilityConfig>(abilitiesPath, true, true);
     //     
     //     var entitiesPath = Path.Combine(Application.streamingAssetsPath, "Content/Entities");
     //     RegistryManager.LoadAndRegister<EntityConfig>(entitiesPath, true);
@@ -116,8 +128,8 @@ public class GridManager : LoggableBehaviour
         // RegistryManager.RegisterDerivedTypes<IEntityComponent>();
         
         IdRegistry<EntityConfig>.Register(UnitConfigs.IceWizard);
-        IdRegistry<SkillConfig>.Register(SkillConfigs.IcicleBlast);
-        IdRegistry<SkillConfig>.Register(SkillConfigs.MoveStraight3Step);
+        IdRegistry<AbilityConfig>.Register(AbilityConfigs.IcicleBlast);
+        IdRegistry<AbilityConfig>.Register(AbilityConfigs.MoveStraight3Step);
         RegistryManager.Register(_entityAssets);
 
         var mapsPath = Path.Combine(Application.streamingAssetsPath, "Content/Maps");
@@ -149,6 +161,7 @@ public class GridManager : LoggableBehaviour
         }
 
         _executor = TurnExecutor.ForDefinition(definition);
+        _dispatcher = new CommandDispatcher(_executor);
         
         CreateTestTeams();
         LoadTestTeams();
@@ -196,13 +209,13 @@ public class GridManager : LoggableBehaviour
         }
     }
 
-    public void ShowSkillPreview(Skill skill, QueryContext ctx)
+    public void ShowAbilityPreview(Ability ability, QueryContext ctx)
     {
-        var (areas, _) = skill.Selection.GetSelectablePositions(ctx);
+        var (areas, _) = ability.Selection.GetSelectablePositions(ctx);
         ShowTiles(areas.ToHashSet());
     }
 
-    public void ClearSkillPreview()
+    public void ClearAbilityPreview()
     {
         ShowTiles(new HashSet<int>());
     }

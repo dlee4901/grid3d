@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-public abstract class SkillSelection
+public abstract class AbilitySelection
 {
     public List<GridSelection> SelectableAreas { get; set; }
     public int SelectionAmount { get; set; } = 1;
@@ -31,7 +31,7 @@ public abstract class SkillSelection
     public abstract bool TryGetEffectPositions(QueryContext ctx, List<(int, int)> selectedPositions, out HashSet<(int, int)> effectPositions, List<int> splitAreaSelections=null);
 }
 
-public class SingleSkillSelection : SkillSelection
+public class SingleAbilitySelection : AbilitySelection
 {
     public override bool TryGetEffectPositions(QueryContext ctx, List<(int, int)> selectedPositions, out HashSet<(int, int)> effectPositions, List<int> splitAreaSelections=null)
     {
@@ -49,7 +49,7 @@ public class SingleSkillSelection : SkillSelection
     }
 }
 
-public class AreaSkillSelection : SkillSelection
+public class AreaAbilitySelection : AbilitySelection
 {
     public GridSelection EffectArea { get; set; }
 
@@ -69,7 +69,7 @@ public class AreaSkillSelection : SkillSelection
     }
 }
 
-public class FillSkillSelection : SkillSelection
+public class FillAbilitySelection : AbilitySelection
 {
     public bool CombineAreas { get; set; } = false;
 
@@ -109,7 +109,7 @@ public class FillSkillSelection : SkillSelection
     }
 }
 
-// public class ProjectileSelection : SkillSelection
+// public class ProjectileSelection : AbilitySelection
 // {
 //     public int ProjectileAmount { get; set; } = 1;
 //     public bool SplitSelectionDirections { get; set; } = false;

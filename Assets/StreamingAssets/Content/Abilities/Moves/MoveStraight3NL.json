@@ -1,7 +1,7 @@
 {
   "Id": "MoveStraight3NL",
   "Selection": {
-    "Type": "SingleSkillSelection",
+    "Type": "SingleAbilitySelection",
     "SelectableAreas": [
       {
         "Traversals": [
