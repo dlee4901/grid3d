@@ -41,14 +41,14 @@ public sealed class AbilityCommand : ICommand
             return false;
         }
         // mana cost — per-player pool, cost = ability.Cost
-        if (!state.HasMana(IssuingPlayer, ability.Cost))
+        if (!state.HasMana(IssuingPlayer, ability.ManaCost))
         {
             GridLog.Warning($"[AbilityCommand] player {IssuingPlayer} lacks mana for {AbilityId} " +
-                            $"(have {state.GetMana(IssuingPlayer)}, need {ability.Cost})");
+                            $"(have {state.GetMana(IssuingPlayer)}, need {ability.ManaCost})");
             return false;
         }
         if (!ability.Execute(state, SourcePosition, Targets)) return false;
-        state.SpendMana(IssuingPlayer, ability.Cost);   // deduct only on success
+        state.SpendMana(IssuingPlayer, ability.ManaCost);   // deduct only on success
         ability.Trigger();                                     // start the cooldown
         return true;
     }

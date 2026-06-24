@@ -5,7 +5,7 @@ public class AbilityConfig : INameId
 {
     public string Id { get; set; }
     public string Type { get; set; } = "Default";
-    public int Cost { get; set; } = 1;
+    public int ManaCost { get; set; } = 1;
     public List<AbilityBindings> Bindings { get; set; }
     [JsonConverter(typeof(AbilitySelection))] public AbilitySelection Selection { get; set; }
     

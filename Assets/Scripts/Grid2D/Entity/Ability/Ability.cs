@@ -5,7 +5,7 @@ public class Ability : INameId
     public AbilityConfig Config { get; }
 
     public string Id => Config.Id;
-    public int Cost => Config.Cost;
+    public int ManaCost => Config.ManaCost;
     public List<AbilityBindings> Bindings => Config.Bindings;
     public AbilitySelection Selection => Config.Selection;
 
@@ -16,7 +16,7 @@ public class Ability : INameId
     static Ability()
     {
         MemberRegistry<Ability>.Register<string>("Id", e => e.Id);
-        MemberRegistry<Ability>.Register<int>("Cost", e => e.Cost);
+        MemberRegistry<Ability>.Register<int>("Cost", e => e.ManaCost);
     }
 
     public static Ability Create(AbilityConfig config) => config.Type switch
@@ -47,6 +47,6 @@ public class Ability : INameId
 
     public void TurnUpdate()
     {
-        if (Cooldown != 0) Cooldown--;
+        if (Cooldown > 0) Cooldown--;
     }
 }
