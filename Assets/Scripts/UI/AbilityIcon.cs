@@ -5,13 +5,18 @@ using UnityEngine.UI;
 
 public class AbilityIcon : LoggableBehaviour
 {
+    private enum ManaCounterPosition { North, East, South, West }
+    
     [SerializeField] private Image _icon;
-    [SerializeField] private GameObject _manaCost;
     [SerializeField] private GameObject _cooldown;
+    [SerializeField] private ManaCounter _manaCounter;
+    [SerializeField] private ManaCounterPosition _manaCounterPosition = ManaCounterPosition.East;
+    [SerializeField] private float _manaCounterOffset = 136f;
 
     private InteractableUI _interactableUI;
     private TextMeshPro _cooldownText;
     private TextMeshPro _manaCostText;
+    private RectTransform _manaCounterTransform;
     
     private Ability _ability;
     private QueryContext _ctx;
@@ -24,9 +29,11 @@ public class AbilityIcon : LoggableBehaviour
     {
         _interactableUI = UnityUtil.GetOrAddComponent<InteractableUI>(gameObject);
         _cooldownText = _cooldown.GetComponentInChildren<TextMeshPro>();
-        _manaCostText = _manaCost.GetComponentInChildren<TextMeshPro>();
+        _manaCounterTransform = _manaCounter.GetComponent<RectTransform>();
+        SetManaCounterPosition();
+        
         _interactableUI.OnHoverTriggered += () => { Log($"PreviewRequested: {_ability?.Id}"); OnPreviewRequested?.Invoke(_ability, _ctx); };
-        _interactableUI.OnHoverEnded     += () => { Log("PreviewCancelled"); OnPreviewCancelled?.Invoke(); };
+        _interactableUI.OnHoverCompleted     += () => { Log("PreviewCancelled"); OnPreviewCancelled?.Invoke(); };
         _interactableUI.OnClickCompleted += () => { Log($"ActivateRequested: {_ability?.Id}"); OnActivateRequested?.Invoke(_ability, _ctx); };
     }
 
@@ -35,21 +42,44 @@ public class AbilityIcon : LoggableBehaviour
         _icon.sprite = sprite;
         _ability = ability;
         _ctx = ctx;
+        UpdateInfo();
     }
     
     public void UpdateInfo()
     {
         if (_ability.Cooldown > 0)
         {
-            _manaCost.SetActive(false);
             _cooldown.SetActive(true);
             _cooldownText.text = _ability.Cooldown.ToString();
+            _manaCounter.gameObject.SetActive(false);
         }
         else
         {
             _cooldown.SetActive(false);
-            _manaCost.SetActive(true);
-            _manaCostText.text = _ability.ManaCost.ToString();
+            _manaCounter.gameObject.SetActive(true);
+            _manaCounter.SetManaCount(_ability.ManaCost);
+        }
+    }
+    
+    private void SetManaCounterPosition()
+    {
+        switch (_manaCounterPosition)
+        {
+            case ManaCounterPosition.North:
+                UnityUtil.SetRectMargins(_manaCounterTransform, 0, 0, 0, _manaCounterOffset);
+                break;
+            case ManaCounterPosition.East:
+                UnityUtil.SetRectMargins(_manaCounterTransform, _manaCounterOffset, 0, 0, 0);
+                break;
+            case ManaCounterPosition.West:
+                UnityUtil.SetRectMargins(_manaCounterTransform, 0, 0, _manaCounterOffset, 0);
+                break;
+            case ManaCounterPosition.South:
+                UnityUtil.SetRectMargins(_manaCounterTransform, 0, _manaCounterOffset, 0, 0);
+                break;
+            default:
+                UnityUtil.SetRectMargins(_manaCounterTransform, _manaCounterOffset, 0, 0, 0);
+                break;
         }
     }
 }

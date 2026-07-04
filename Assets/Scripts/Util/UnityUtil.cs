@@ -58,6 +58,12 @@ public static class UnityUtil
         for (var i = t.childCount - 1; i >= 0; i--)
             UnityEngine.Object.Destroy(t.GetChild(i).gameObject);
     }
+    
+    public static void SetRectMargins(RectTransform rectTransform, float left, float top, float right, float bottom)
+    {
+        rectTransform.offsetMin = new Vector2(left, bottom);
+        rectTransform.offsetMax = new Vector2(-right, -top);
+    }
 
     public static Vector3 GetMousePosition(bool zeroed=true)
     {

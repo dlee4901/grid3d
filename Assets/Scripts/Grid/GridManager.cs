@@ -266,7 +266,7 @@ public class GridManager : LoggableBehaviour
             _entityModels[pos] = Instantiate(assets.Model3D, worldPos, rotation, gameObject.transform);
         }
     }
-
+    
     private void ShowTiles(HashSet<int> tiles)
     {
         for (int i = 0; i < _selectionSquares.Length; i++) 
