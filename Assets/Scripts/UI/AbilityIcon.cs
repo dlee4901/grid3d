@@ -34,6 +34,10 @@ public class AbilityIcon : LoggableBehaviour
         
         _interactableUI.OnHoverTriggered += () => { Log($"PreviewRequested: {_ability?.Id}"); OnPreviewRequested?.Invoke(_ability, _ctx); };
         _interactableUI.OnHoverCompleted     += () => { Log("PreviewCancelled"); OnPreviewCancelled?.Invoke(); };
+        
+        _interactableUI.OnHoldTriggered += () => { Log($"PreviewRequested: {_ability?.Id}"); OnPreviewRequested?.Invoke(_ability, _ctx); };
+        _interactableUI.OnHoldCompleted     += () => { Log("PreviewCancelled"); OnPreviewCancelled?.Invoke(); };
+        
         _interactableUI.OnClickCompleted += () => { Log($"ActivateRequested: {_ability?.Id}"); OnActivateRequested?.Invoke(_ability, _ctx); };
     }
 
