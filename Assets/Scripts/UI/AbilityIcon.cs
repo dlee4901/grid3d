@@ -9,6 +9,7 @@ public class AbilityIcon : LoggableBehaviour
     
     [SerializeField] private Image _icon;
     [SerializeField] private GameObject _cooldown;
+    [SerializeField] private GameObject _activeHighlight;
     [SerializeField] private ManaCounter _manaCounter;
     [SerializeField] private ManaCounterPosition _manaCounterPosition = ManaCounterPosition.East;
     [SerializeField] private float _manaCounterOffset = 136f;
@@ -16,10 +17,12 @@ public class AbilityIcon : LoggableBehaviour
     private InteractableUI _interactableUI;
     private TextMeshPro _cooldownText;
     private TextMeshPro _manaCostText;
-    private RectTransform _manaCounterTransform;
+    // private RectTransform _manaCounterTransform;
     
     private Ability _ability;
     private QueryContext _ctx;
+
+    public string AbilityId => _ability?.Id;
 
     public event Action<Ability, QueryContext> OnPreviewRequested;
     public event Action OnPreviewCancelled;
@@ -29,8 +32,8 @@ public class AbilityIcon : LoggableBehaviour
     {
         _interactableUI = UnityUtil.GetOrAddComponent<InteractableUI>(gameObject);
         _cooldownText = _cooldown.GetComponentInChildren<TextMeshPro>();
-        _manaCounterTransform = _manaCounter.GetComponent<RectTransform>();
-        SetManaCounterPosition();
+        //_manaCounterTransform = _manaCounter.GetComponent<RectTransform>();
+        //SetManaCounterPosition();
         
         _interactableUI.OnHoverTriggered += () => { Log($"PreviewRequested: {_ability?.Id}"); OnPreviewRequested?.Invoke(_ability, _ctx); };
         _interactableUI.OnHoverCompleted     += () => { Log("PreviewCancelled"); OnPreviewCancelled?.Invoke(); };
@@ -48,9 +51,15 @@ public class AbilityIcon : LoggableBehaviour
         _ctx = ctx;
         UpdateInfo();
     }
+
+    public void SetActiveVisual(bool active)
+    {
+        if (_activeHighlight != null) _activeHighlight.SetActive(active);
+    }
     
     public void UpdateInfo()
     {
+        _manaCounter.ToggleOutline(false);
         if (_ability.Cooldown > 0)
         {
             _cooldown.SetActive(true);
@@ -65,25 +74,25 @@ public class AbilityIcon : LoggableBehaviour
         }
     }
     
-    private void SetManaCounterPosition()
-    {
-        switch (_manaCounterPosition)
-        {
-            case ManaCounterPosition.North:
-                UnityUtil.SetRectMargins(_manaCounterTransform, 0, 0, 0, _manaCounterOffset);
-                break;
-            case ManaCounterPosition.East:
-                UnityUtil.SetRectMargins(_manaCounterTransform, _manaCounterOffset, 0, 0, 0);
-                break;
-            case ManaCounterPosition.West:
-                UnityUtil.SetRectMargins(_manaCounterTransform, 0, 0, _manaCounterOffset, 0);
-                break;
-            case ManaCounterPosition.South:
-                UnityUtil.SetRectMargins(_manaCounterTransform, 0, _manaCounterOffset, 0, 0);
-                break;
-            default:
-                UnityUtil.SetRectMargins(_manaCounterTransform, _manaCounterOffset, 0, 0, 0);
-                break;
-        }
-    }
+    // private void SetManaCounterPosition()
+    // {
+    //     switch (_manaCounterPosition)
+    //     {
+    //         case ManaCounterPosition.North:
+    //             UnityUtil.SetRectMargins(_manaCounterTransform, 0, 0, 0, _manaCounterOffset);
+    //             break;
+    //         case ManaCounterPosition.East:
+    //             UnityUtil.SetRectMargins(_manaCounterTransform, _manaCounterOffset, 0, 0, 0);
+    //             break;
+    //         case ManaCounterPosition.West:
+    //             UnityUtil.SetRectMargins(_manaCounterTransform, 0, 0, _manaCounterOffset, 0);
+    //             break;
+    //         case ManaCounterPosition.South:
+    //             UnityUtil.SetRectMargins(_manaCounterTransform, 0, _manaCounterOffset, 0, 0);
+    //             break;
+    //         default:
+    //             UnityUtil.SetRectMargins(_manaCounterTransform, _manaCounterOffset, 0, 0, 0);
+    //             break;
+    //     }
+    // }
 }

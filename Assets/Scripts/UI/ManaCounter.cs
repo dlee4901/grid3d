@@ -6,6 +6,7 @@ public class ManaCounter : MonoBehaviour
 {
     [SerializeField] private Image _manaIcon;
     [SerializeField] private TMP_Text _counterText;
+    [SerializeField] private Outline _outline;
     
     private RectTransform _manaIconTransform;
     private RectTransform _counterTextTransform;
@@ -26,5 +27,10 @@ public class ManaCounter : MonoBehaviour
         _manaIconTransform.sizeDelta = new Vector2(size, size);
         _counterTextTransform.sizeDelta = new Vector2(size, size);
         _counterText.fontSize = textSize;
+    }
+    
+    public void ToggleOutline(bool on)
+    {
+        _outline.gameObject.SetActive(on);
     }
 }

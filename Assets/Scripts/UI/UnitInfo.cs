@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -7,15 +8,26 @@ public class UnitInfo : LoggableBehaviour
     [SerializeField] private VerticalLayoutGroup _container;
     [SerializeField] private AbilityIcon _abilityIcon;
 
+    private readonly List<AbilityIcon> _icons = new();
+
     private void Start()
     {
         _gridManager.Input.OnSelectionChanged += OnInputChanged;
+        _gridManager.Player.OnActiveAbilityChanged += OnActiveAbilityChanged;
     }
 
     private void OnDestroy()
     {
-        if (_gridManager != null && _gridManager.Input != null)
+        if (_gridManager == null) return;
+        if (_gridManager.Input != null)
             _gridManager.Input.OnSelectionChanged -= OnInputChanged;
+        if (_gridManager.Player != null)
+            _gridManager.Player.OnActiveAbilityChanged -= OnActiveAbilityChanged;
+    }
+
+    private void OnActiveAbilityChanged(string activeId)
+    {
+        foreach (var icon in _icons) icon.SetActiveVisual(icon.AbilityId == activeId);
     }
 
     private void OnInputChanged(QueryContext? ctx)
@@ -53,11 +65,15 @@ public class UnitInfo : LoggableBehaviour
             icon.OnPreviewRequested  += _gridManager.Player.OnAbilityPreview;
             icon.OnPreviewCancelled  += _gridManager.Player.OnAbilityCancelPreview;
             icon.OnActivateRequested += _gridManager.Player.OnAbilityActivate;
+            _icons.Add(icon);
         }
+        var activeId = _gridManager.Player.ActiveAbilityId;
+        foreach (var icon in _icons) icon.SetActiveVisual(icon.AbilityId == activeId);
     }
-    
+
     private void ClearMenu()
     {
+        _icons.Clear();
         UnityUtil.DestroyAllChildren(_container.gameObject);
     }
     

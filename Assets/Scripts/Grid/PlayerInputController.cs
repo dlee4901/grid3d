@@ -36,25 +36,28 @@ public class PlayerInputController : LoggableBehaviour
         }
     }
 
-    // ---- Ability icon intent handlers (called by UnitInfo from AbilityIcon events)
+    // ---- Ability icon intent handlers (called by UnitInfo from AbilityIcon events).
+    // Pure pass-throughs: the current state decides what each gesture means.
     public void OnAbilityPreview(Ability ability, QueryContext ctx)
-    {
-        if (_current is TargetingState) return;
-        Log($"AbilityPreview: {ability?.Id}");
-        _ctx.GridManager.ShowAbilityPreview(ability, ctx);
-    }
+        => _current.OnAbilityPreview(ability, ctx);
 
     public void OnAbilityCancelPreview()
-    {
-        if (_current is TargetingState) return;
-        Log("AbilityCancelPreview");
-        _ctx.GridManager.ClearAbilityPreview();
-    }
+        => _current.OnAbilityCancelPreview();
 
     public void OnAbilityActivate(Ability ability, QueryContext source)
+        => _current.OnAbilityActivate(ability, source);
+
+    // ---- Active ability (armed while in TargetingState) — single source of truth for icon visuals
+    private string _activeAbilityId;
+    public string ActiveAbilityId => _activeAbilityId;
+    public event System.Action<string> OnActiveAbilityChanged;
+
+    private void UpdateActiveAbility()
     {
-        Log($"AbilityActivate: {ability?.Id}");
-        _current.OnAbilityActivate(ability, source);
+        var id = (_current as TargetingState)?.AbilityId;
+        if (_activeAbilityId == id) return;
+        _activeAbilityId = id;
+        OnActiveAbilityChanged?.Invoke(id);
     }
 
     // ---- State transitions
@@ -65,6 +68,7 @@ public class PlayerInputController : LoggableBehaviour
         _current?.OnExit();
         _current = next;
         _current.OnEnter();
+        UpdateActiveAbility();
     }
 
     // ---- Logging passthrough for the plain state classes (gated by this component's _debug)

@@ -13,6 +13,8 @@ public class TargetingState : PlayerInputStateBase
         _source = source;
     }
 
+    public string AbilityId => _ability.Id;
+
     public override void OnEnter()
     {
         //Ctx.Input.Lock();
@@ -43,6 +45,19 @@ public class TargetingState : PlayerInputStateBase
     {
         OnCancel();
     }
+
+    // Clicking an ability icon while already aiming:
+    //   same ability  -> toggle off (OnCancel -> SelectedState, since a unit is still selected)
+    //   different one -> switch to aiming that ability from the same source
+    public override void OnAbilityActivate(Ability ability, QueryContext source)
+    {
+        if (ability.Id == _ability.Id) OnCancel();
+        else Ctx.Controller.TransitionTo(new TargetingState(Ctx, ability, source));
+    }
+
+    // Hovering another icon must NOT clobber the active aim preview.
+    public override void OnAbilityPreview(Ability ability, QueryContext ctx) {}
+    public override void OnAbilityCancelPreview() {}
 
     public override void OnCancel()
     {

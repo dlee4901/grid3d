@@ -6,6 +6,8 @@ public interface IPlayerInputState
     void OnSelectionChanged(QueryContext? ctx);
     void OnCancel();
     void OnAbilityActivate(Ability ability, QueryContext ctx);
+    void OnAbilityPreview(Ability ability, QueryContext ctx);
+    void OnAbilityCancelPreview();
 }
 
 public abstract class PlayerInputStateBase : IPlayerInputState
@@ -19,4 +21,6 @@ public abstract class PlayerInputStateBase : IPlayerInputState
     public virtual void OnSelectionChanged(QueryContext? ctx) {}
     public virtual void OnCancel() {}
     public virtual void OnAbilityActivate(Ability ability, QueryContext ctx) {}
+    public virtual void OnAbilityPreview(Ability ability, QueryContext ctx) {}
+    public virtual void OnAbilityCancelPreview() {}
 }
