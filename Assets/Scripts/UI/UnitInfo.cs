@@ -14,6 +14,7 @@ public class UnitInfo : LoggableBehaviour
     {
         _gridManager.Input.OnSelectionChanged += OnInputChanged;
         _gridManager.Player.OnActiveAbilityChanged += OnActiveAbilityChanged;
+        _gridManager.StateChanged += OnStateChanged;
     }
 
     private void OnDestroy()
@@ -23,7 +24,11 @@ public class UnitInfo : LoggableBehaviour
             _gridManager.Input.OnSelectionChanged -= OnInputChanged;
         if (_gridManager.Player != null)
             _gridManager.Player.OnActiveAbilityChanged -= OnActiveAbilityChanged;
+        _gridManager.StateChanged -= OnStateChanged;
     }
+
+    // After a command, rebuild the panel for the current selection so cooldowns/mana are live.
+    private void OnStateChanged() => OnInputChanged(_gridManager.Input.Selected);
 
     private void OnActiveAbilityChanged(string activeId)
     {

@@ -13,6 +13,10 @@ public sealed class TurnExecutor
 
     private int _sequence;   // canonical command ordinal — identical on every peer
 
+    // Raised after a command mutates state successfully. Frontend-only notification
+    // (grid/UI re-render) — handlers must NOT mutate state, so it stays lockstep-safe.
+    public event System.Action<ICommand> CommandApplied;
+
     public bool Apply(ICommand command)
     {
         // (1) turn gate — cross-cutting, identical verdict on every peer
@@ -27,8 +31,8 @@ public sealed class TurnExecutor
 
         // (3) networking seams (stubs now — divergence detection attaches here later)
         _sequence++;
-        // var hash = _state.ComputeHash();
-        // CommandApplied?.Invoke(_sequence, hash);
+        // divergence-detection seam (later): var hash = _state.ComputeHash(); StateHashed?.Invoke(_sequence, hash);
+        CommandApplied?.Invoke(command);
         return true;
     }
 }

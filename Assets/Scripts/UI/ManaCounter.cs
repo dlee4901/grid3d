@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -8,6 +9,13 @@ public class ManaCounter : MonoBehaviour
     [SerializeField] private TMP_Text _counterText;
     [SerializeField] private Outline _outline;
     
+    [SerializeField] private float _size = 64f;
+    
+    private float _linePosition;
+    private float _cornerPosition;
+    private float _lineLength;
+    private float _fontSize;
+    
     private RectTransform _manaIconTransform;
     private RectTransform _counterTextTransform;
     
@@ -15,18 +23,19 @@ public class ManaCounter : MonoBehaviour
     {
         _manaIconTransform = _manaIcon.gameObject.GetComponent<RectTransform>();
         _counterTextTransform = _counterText.GetComponent<RectTransform>();
+        _linePosition = (_size - 8f) / 4f;
+        _cornerPosition = _linePosition * 2f;
+        _lineLength = _cornerPosition * Mathf.Sqrt(2);
+        _fontSize = _size / 2f;
+        var rectTransform = GetComponent<RectTransform>();
+        rectTransform.sizeDelta = new Vector2(_size, _size);
+        _outline.SetTransformsDiamond(_linePosition, _cornerPosition, _lineLength);
+        _counterText.fontSize = _fontSize;
     }
     
     public void SetManaCount(int manaCount)
     {
         _counterText.text = manaCount.ToString();
-    }
-    
-    public void SetSize(float size, int textSize)
-    {
-        _manaIconTransform.sizeDelta = new Vector2(size, size);
-        _counterTextTransform.sizeDelta = new Vector2(size, size);
-        _counterText.fontSize = textSize;
     }
     
     public void ToggleOutline(bool on)

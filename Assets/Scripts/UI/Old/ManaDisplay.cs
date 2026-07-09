@@ -14,7 +14,6 @@ public class ManaDisplay : MonoBehaviour
     void Start()
     {
         _manaContainer.SetSize(_manaContainerSize);
-        _manaCounter.SetSize(_manaCounterSize, _manaCounterTextSize);
         _manaCounter.gameObject.SetActive(true);
     }
     

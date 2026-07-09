@@ -85,7 +85,7 @@ public class TargetingState : PlayerInputStateBase
             issuer = ctrl.PlayerController;
         var ok = Ctx.Dispatcher.Submit(new AbilityCommand(issuer, _ability.Id, sourcePos1D, targets1D));
         Ctx.Controller.LogState($"AbilityCommand: {_ability.Id} ok={ok}");
-        if (ok) Ctx.GridManager.RefreshEntityModelPositions();
+        // Grid/UI refresh is handled centrally by TurnExecutor.CommandApplied -> GridManager.
         // var next = Ctx.Input.HasSelection
         //     ? (IPlayerInputState)new EntitySelectedState(Ctx)
         //     : ;

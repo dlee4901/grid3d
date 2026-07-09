@@ -32,6 +32,9 @@ public class GridManager : LoggableBehaviour
     public PlayerInputController Player { get; private set; }
     private float _gridGroundLevel;
 
+    // Fired after any command re-renders the grid; UI panels refresh from current state.
+    public event Action StateChanged;
+
     //private MeshRenderer[] _selectionSquares;
     private SpriteRenderer[] _selectionSquares;
     private GameObject[] _squarePrefabs;
@@ -60,6 +63,9 @@ public class GridManager : LoggableBehaviour
         InitRendering();
         InstantiateEntityModels();
 
+        // Subscribe only after the initial render exists (LoadTeam setup commands ran in InitGrid).
+        _executor.CommandApplied += OnCommandApplied;
+
         Input.Init(_grid, _mainCamera, State, _selectAction);
         Input.OnSelectionChanged += OnInputChanged;
         Player.Init(this, Input, _executor, _dispatcher);
@@ -76,6 +82,13 @@ public class GridManager : LoggableBehaviour
             _dispatcher.Submit(new EndTurnCommand(State.ActivePlayer));
             Log($"[debug] end turn -> active={State.ActivePlayer}, turn={State.Turn}, mana={State.GetMana(State.ActivePlayer)}");
         }
+    }
+
+    // Every command routes through here: re-render the grid, then let the UI refresh from state.
+    private void OnCommandApplied(ICommand command)
+    {
+        RefreshEntityModelPositions();
+        StateChanged?.Invoke();
     }
 
     private void OnInputChanged(QueryContext? ctx)
