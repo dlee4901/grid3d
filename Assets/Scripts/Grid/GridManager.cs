@@ -35,6 +35,10 @@ public class GridManager : LoggableBehaviour
     // Fired after any command re-renders the grid; UI panels refresh from current state.
     public event Action StateChanged;
 
+    // Frontend entry point for UI-issued commands (end turn, timer timeouts). Routes through the
+    // dispatcher — the same seam networking will intercept.
+    public bool Submit(ICommand command) => _dispatcher.Submit(command);
+
     //private MeshRenderer[] _selectionSquares;
     private SpriteRenderer[] _selectionSquares;
     private GameObject[] _squarePrefabs;

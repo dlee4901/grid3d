@@ -29,6 +29,7 @@ public sealed class GridDefinition : INameId
     public int MaxTeamCost { get; set; }
     public int PlayerCount { get; set; } = 2;
     public int ManaPerTurn { get; set; } = 3;
+    public int PlayerStartingTimeSeconds { get; set; } = 600;
 
     public List<TerrainConfig> Terrain { get; set; }
     public List<PositionConfig> PlayerStartPositions { get; set; }

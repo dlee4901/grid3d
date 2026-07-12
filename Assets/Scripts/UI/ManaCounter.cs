@@ -23,14 +23,20 @@ public class ManaCounter : MonoBehaviour
     {
         _manaIconTransform = _manaIcon.gameObject.GetComponent<RectTransform>();
         _counterTextTransform = _counterText.GetComponent<RectTransform>();
+        var rectTransform = GetComponent<RectTransform>();
+        rectTransform.sizeDelta = new Vector2(_size, _size);
+        InitOutline();
+        
+        _counterText.fontSize = _fontSize;
+    }
+    
+    private void InitOutline()
+    {
         _linePosition = (_size - 8f) / 4f;
         _cornerPosition = _linePosition * 2f;
         _lineLength = _cornerPosition * Mathf.Sqrt(2);
         _fontSize = _size / 2f;
-        var rectTransform = GetComponent<RectTransform>();
-        rectTransform.sizeDelta = new Vector2(_size, _size);
         _outline.SetTransformsDiamond(_linePosition, _cornerPosition, _lineLength);
-        _counterText.fontSize = _fontSize;
     }
     
     public void SetManaCount(int manaCount)

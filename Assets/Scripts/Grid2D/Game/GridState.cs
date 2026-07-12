@@ -7,6 +7,7 @@ public interface IReadOnlyGridState
     int ActivePlayer { get; }
     bool CanPlayerAct(int player);
     int GetMana(int player);
+    int GetTimeMs(int player);
 
     // Spatial pass-throughs (Definition)
     int X { get; }
@@ -84,6 +85,20 @@ public sealed class GridState : IReadOnlyGridState
 
     private void RefillMana(int player) => _mana[player] = Definition.ManaPerTurn;
 
+    // Per-player time bank in milliseconds (index 1..PlayerCount). Integer + command-only so peers
+    // stay deterministic; the live countdown is a frontend concern (PlayerTimer), never in state.
+    public int GetTimeMs(int player)
+        => (player >= 1 && player <= Definition.PlayerCount) ? _timeMs[player] : 0;
+
+    // Deduct time used during a turn. Called ONLY by EndTurnCommand.ApplyTo. The elapsed value is
+    // carried in the command (a primitive), so every peer computes the same result. (Trust note:
+    // elapsedMs is currently self-reported by the issuing client — harden host-authoritatively for P2P.)
+    public void SpendTime(int player, int elapsedMs)
+    {
+        if (player < 1 || player > Definition.PlayerCount) return;
+        _timeMs[player] = System.Math.Max(0, _timeMs[player] - System.Math.Max(0, elapsedMs));
+    }
+
     public int X => Definition.X;
     public int Y => Definition.Y;
     public int Size => Definition.Size;
@@ -97,6 +112,7 @@ public sealed class GridState : IReadOnlyGridState
 
     private readonly Entity[] _entities;
     private readonly int[] _mana;
+    private readonly int[] _timeMs;
     private List<Entity> _prioritizedEntities;
 
     public GridState(GridDefinition definition)
@@ -105,6 +121,9 @@ public sealed class GridState : IReadOnlyGridState
         _entities = new Entity[definition.Size];
         _mana = new int[definition.PlayerCount + 1];   // index 1..PlayerCount
         RefillMana(ActivePlayer);                      // player 1 starts with a full pool
+        _timeMs = new int[definition.PlayerCount + 1];
+        for (var p = 1; p <= definition.PlayerCount; p++)
+            _timeMs[p] = definition.PlayerStartingTimeSeconds * 1000;
         SeedStartingEntities();
     }
 

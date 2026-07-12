@@ -2,33 +2,32 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class UnitInfo : LoggableBehaviour
+public class UnitView : StateView                  // _gridManager now inherited (protected)
 {
-    [SerializeField] private GridManager _gridManager;
     [SerializeField] private VerticalLayoutGroup _container;
     [SerializeField] private AbilityIcon _abilityIcon;
 
     private readonly List<AbilityIcon> _icons = new();
 
-    private void Start()
+    protected override void Start()
     {
+        base.Start();                              // wires StateChanged -> Refresh + initial paint
         _gridManager.Input.OnSelectionChanged += OnInputChanged;
         _gridManager.Player.OnActiveAbilityChanged += OnActiveAbilityChanged;
-        _gridManager.StateChanged += OnStateChanged;
     }
 
-    private void OnDestroy()
+    protected override void OnDestroy()
     {
+        base.OnDestroy();                          // tears down StateChanged
         if (_gridManager == null) return;
         if (_gridManager.Input != null)
             _gridManager.Input.OnSelectionChanged -= OnInputChanged;
         if (_gridManager.Player != null)
             _gridManager.Player.OnActiveAbilityChanged -= OnActiveAbilityChanged;
-        _gridManager.StateChanged -= OnStateChanged;
     }
 
-    // After a command, rebuild the panel for the current selection so cooldowns/mana are live.
-    private void OnStateChanged() => OnInputChanged(_gridManager.Input.Selected);
+    // StateView contract: rebuild the panel for the current selection after any command / on start.
+    protected override void Refresh() => OnInputChanged(_gridManager.Input.Selected);
 
     private void OnActiveAbilityChanged(string activeId)
     {
