@@ -10,14 +10,21 @@ public abstract class StateView : LoggableBehaviour
     protected virtual void Start()
     {
         _gridManager.StateChanged += Refresh;
-        Refresh();                                   // initial paint
+        _gridManager.GameStarted += OnGameStarted;
+        if (_gridManager.IsGameStarted) OnGameStarted();   // sticky: match already started → init now
     }
 
     protected virtual void OnDestroy()
     {
-        if (_gridManager != null) _gridManager.StateChanged -= Refresh;
+        if (_gridManager == null) return;
+        _gridManager.StateChanged -= Refresh;
+        _gridManager.GameStarted -= OnGameStarted;
     }
 
-    /// Re-render from current game state. Runs on Start and after every command.
+    // Runs once when the match starts (State guaranteed to exist). Subclasses that build State-dependent
+    // children (e.g. GameView's timers) override this; default just paints.
+    protected virtual void OnGameStarted() => Refresh();
+
+    /// Re-render from current game state. Runs after every command (and once at game start).
     protected abstract void Refresh();
 }

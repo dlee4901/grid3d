@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,6 +12,7 @@ public class GameView : StateView
 
     [SerializeField] private ManaCounter _manaCounter;
     [SerializeField] private InteractableUI _endTurn;
+    [SerializeField] private TMP_Text _endTurnText;
     [SerializeField] private VerticalLayoutGroup _container;
     [SerializeField] private PlayerTimer _playerTimerPrefab;
     [SerializeField] private TimerMode _timerMode = TimerMode.Local;
@@ -21,9 +23,14 @@ public class GameView : StateView
 
     protected override void Start()
     {
-        InitPlayerTimers();                              // build _timers before base.Start() runs Refresh()
-        base.Start();                                    // subscribes StateChanged + initial Refresh()
+        base.Start();                                    // subscribes StateChanged + GameStarted (runs OnGameStarted if already started)
         if (_endTurn != null) _endTurn.OnClickCompleted += EndActiveTurn;
+    }
+
+    protected override void OnGameStarted()
+    {
+        InitPlayerTimers();                              // needs State — only runs at/after game start
+        Refresh();
     }
 
     protected override void OnDestroy()
@@ -34,7 +41,8 @@ public class GameView : StateView
 
     protected override void Refresh()
     {
-        var state = _gridManager.State;
+        if (_timers == null) return;                     // game not started yet
+        var state = _gridManager.GridState;
         var players = state.Definition.PlayerCount;
 
         _manaCounter.SetManaCount(state.GetMana(state.ActivePlayer));
@@ -44,14 +52,17 @@ public class GameView : StateView
 
         for (var p = 1; p <= players; p++)
         {
-            var isActive = _timerMode != TimerMode.Off && p == state.ActivePlayer;
+            var isActivePlayer = p == state.ActivePlayer;
+            var isRunning = _timerMode != TimerMode.Off && isActivePlayer;
             // Snap idle timers to the authoritative bank, and snap everyone on a turn change (that's
             // when a bank actually moved). Never stomp a mid-turn running clock's local prediction.
             if (turnChanged || !_timers[p].IsRunning)
                 _timers[p].SetTimeMs(state.GetTimeMs(p));
-            _timers[p].SetRunning(isActive);
+            _timers[p].SetRunning(isRunning);
+            _timers[p].SetActiveVisual(isActivePlayer);        // dim the inactive timers
         }
 
+        _endTurnText.text = "END TURN " + state.Turn;
         // Only surface the end-turn button for a turn this client is allowed to end.
         if (_endTurn != null)
             _endTurn.gameObject.SetActive(CanEndTurnFor(state.ActivePlayer));
@@ -59,13 +70,13 @@ public class GameView : StateView
 
     private void InitPlayerTimers()
     {
-        var definition = _gridManager.State.Definition;
+        var definition = _gridManager.GridState.Definition;
         _timers = new PlayerTimer[definition.PlayerCount + 1];
         for (var p = 1; p <= definition.PlayerCount; p++)
         {
             var timer = Instantiate(_playerTimerPrefab, _container.transform, true);
             timer.SetLabel("Player " + p);
-            timer.SetTimeMs(_gridManager.State.GetTimeMs(p));
+            timer.SetTimeMs(_gridManager.GridState.GetTimeMs(p));
             var seat = p;                                // capture for the closure
             timer.Expired += () => OnTimerExpired(seat);
             _timers[p] = timer;
@@ -75,7 +86,7 @@ public class GameView : StateView
     // Manual end turn (end-turn button).
     private void EndActiveTurn()
     {
-        var active = _gridManager.State.ActivePlayer;
+        var active = _gridManager.GridState.ActivePlayer;
         if (CanEndTurnFor(active)) SubmitEndTurn(active);
     }
 
@@ -84,7 +95,7 @@ public class GameView : StateView
     {
         if (_timerMode == TimerMode.Off) return;
         if (!CanEndTurnFor(player)) return;                     // Networked: don't commit the opponent's timeout
-        if (_gridManager.State.ActivePlayer != player) return;  // stale (turn already advanced)
+        if (_gridManager.GridState.ActivePlayer != player) return;  // stale (turn already advanced)
         SubmitEndTurn(player);
     }
 

@@ -9,6 +9,8 @@ public class PlayerTimer : LoggableBehaviour
 {
     [SerializeField] private TMP_Text _playerText;
     [SerializeField] private TMP_Text _timeText;
+    [SerializeField] private Color _activeColor = Color.white;
+    [SerializeField] private Color _inactiveColor = new Color(1f, 1f, 1f, 0.4f);
 
     private int _bankMs;         // authoritative time when the current run started
     private int _remainingMs;    // currently displayed remaining time
@@ -39,6 +41,14 @@ public class PlayerTimer : LoggableBehaviour
     }
 
     public void SetLabel(string label) => _playerText.text = label;
+
+    /// Emphasize the active player's timer; dim the rest.
+    public void SetActiveVisual(bool active)
+    {
+        var color = active ? _activeColor : _inactiveColor;
+        _playerText.color = color;
+        _timeText.color = color;
+    }
 
     /// Snap the display to an authoritative value (from GridState) and reset the local run.
     public void SetTimeMs(int ms)

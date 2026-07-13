@@ -26,7 +26,7 @@ public class GridManager : LoggableBehaviour
     
     private TurnExecutor _executor;
     private CommandDispatcher _dispatcher;
-    public IReadOnlyGridState State => _executor.State;
+    public IReadOnlyGridState GridState => _executor.State;
     public TurnExecutor Executor => _executor;
     public GridInput Input { get; private set; }
     public PlayerInputController Player { get; private set; }
@@ -39,9 +39,15 @@ public class GridManager : LoggableBehaviour
     // dispatcher — the same seam networking will intercept.
     public bool Submit(ICommand command) => _dispatcher.Submit(command);
 
+    // Set false when a lobby/relay flow will call StartGame() itself once peers are ready.
+    [SerializeField] private bool _autoStartOnLoad = true;
+    public bool IsGameStarted { get; private set; }
+    public event Action GameStarted;
+
     //private MeshRenderer[] _selectionSquares;
     private SpriteRenderer[] _selectionSquares;
     private GameObject[] _squarePrefabs;
+    private GameObject[] _squareBorderPrefabs;
     private GameObject[] _entityModels;
 
     private void Awake()
@@ -56,6 +62,15 @@ public class GridManager : LoggableBehaviour
 
     void Start()
     {
+        if (_autoStartOnLoad) StartGame();
+    }
+
+    // Explicit "begin the match" entry point. State does not exist until this runs; the lobby/relay
+    // flow will call it once peers are ready (set _autoStartOnLoad = false to hand it that control).
+    public void StartGame()
+    {
+        if (IsGameStarted) return;
+
         _mainCamera = Camera.main;
         _selectAction = InputSystem.actions.FindAction("Player/Select");
         _grid.gameObject.SetActive(true);
@@ -70,11 +85,14 @@ public class GridManager : LoggableBehaviour
         // Subscribe only after the initial render exists (LoadTeam setup commands ran in InitGrid).
         _executor.CommandApplied += OnCommandApplied;
 
-        Input.Init(_grid, _mainCamera, State, _selectAction);
+        Input.Init(_grid, _mainCamera, GridState, _selectAction);
         Input.OnSelectionChanged += OnInputChanged;
         Player.Init(this, Input, _executor, _dispatcher);
 
-        State.PrintGrid();
+        GridState.PrintGrid();
+
+        IsGameStarted = true;
+        GameStarted?.Invoke();               // views build their State-dependent UI now
     }
 
     private void Update()
@@ -83,8 +101,8 @@ public class GridManager : LoggableBehaviour
         if (_debug && _dispatcher != null
             && Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
         {
-            _dispatcher.Submit(new EndTurnCommand(State.ActivePlayer));
-            Log($"[debug] end turn -> active={State.ActivePlayer}, turn={State.Turn}, mana={State.GetMana(State.ActivePlayer)}");
+            _dispatcher.Submit(new EndTurnCommand(GridState.ActivePlayer));
+            Log($"[debug] end turn -> active={GridState.ActivePlayer}, turn={GridState.Turn}, mana={GridState.GetMana(GridState.ActivePlayer)}");
         }
     }
 
@@ -110,12 +128,12 @@ public class GridManager : LoggableBehaviour
 
     public Vector2 GetSize()
     {
-        return new Vector2(State.X, State.Y);
+        return new Vector2(GridState.X, GridState.Y);
     }
     
     private void InitCamera()
     {
-        var targetScreenHeight = Math.Max(State.X / 2.0f, State.Y);
+        var targetScreenHeight = Math.Max(GridState.X / 2.0f, GridState.Y);
         if (_cinemachineCamera.Target.TrackingTarget.Equals(_gridLines.transform))
         {
             _cinemachineCamera.GetComponent<CinemachineFollow>().FollowOffset = new Vector3(0f, targetScreenHeight, 0f);
@@ -187,7 +205,7 @@ public class GridManager : LoggableBehaviour
         CreateTestTeams();
         LoadTestTeams();
         
-        Log(State.PrintGrid());
+        Log(GridState.PrintGrid());
     }
     
     //
@@ -197,31 +215,46 @@ public class GridManager : LoggableBehaviour
     private void InitRendering()
     {
         _gridGroundLevel = _cubePrefab.transform.localScale.y;
-        _selectionSquares = new SpriteRenderer[State.Size];
-        _squarePrefabs = new GameObject[State.Size];
-        for (var x = 0; x < State.X; x++)
+        _selectionSquares = new SpriteRenderer[GridState.Size];
+        _squarePrefabs = new GameObject[GridState.Size];
+        for (var x = 0; x < GridState.X; x++)
         {
-            for (var y = 0; y < State.Y; y++)
+            for (var y = 0; y < GridState.Y; y++)
             {
-                _selectionSquares[State.ToPosition1D(x, y)] = Instantiate(_selectionSquare, _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel + 0.01f, 0.5f), Quaternion.Euler(90f, 0f, 0f), gameObject.transform);
-                _squarePrefabs[State.ToPosition1D(x, y)] = Instantiate(_cubePrefab, _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel / 2.0f, 0.5f), Quaternion.identity, gameObject.transform);
+                _selectionSquares[GridState.ToPosition1D(x, y)] = Instantiate(_selectionSquare, _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel + 0.01f, 0.5f), Quaternion.Euler(90f, 0f, 0f), gameObject.transform);
+                _squarePrefabs[GridState.ToPosition1D(x, y)] = Instantiate(_cubePrefab, _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel / 2.0f, 0.5f), Quaternion.identity, gameObject.transform);
             }
         }
+        
+        // Border cubes
+        // for (var x = -1; x <= State.X; x++)
+        // {
+        //     Instantiate(_cubePrefab, _grid.CellToWorld(new Vector3Int(x, -1, 0)) + new Vector3(0.5f, _gridGroundLevel / 2.0f, 0.5f), Quaternion.identity, gameObject.transform);
+        //     Instantiate(_cubePrefab, _grid.CellToWorld(new Vector3Int(x, State.Y, 0)) + new Vector3(0.5f, _gridGroundLevel / 2.0f, 0.5f), Quaternion.identity, gameObject.transform);
+        // }
+        // for (var y = 0; y < State.Y; y++)
+        // {
+        //     Instantiate(_cubePrefab, _grid.CellToWorld(new Vector3Int(-1, y, 0)) + new Vector3(0.5f, _gridGroundLevel / 2.0f, 0.5f), Quaternion.identity, gameObject.transform);
+        //     Instantiate(_cubePrefab, _grid.CellToWorld(new Vector3Int(State.X, y, 0)) + new Vector3(0.5f, _gridGroundLevel / 2.0f, 0.5f), Quaternion.identity, gameObject.transform);
+        // }
+        
         _gridLines.SetActive(true);
-        _gridLines.transform.position = new Vector3(State.X/2.0f, _gridGroundLevel + 0.01f, State.Y/2.0f);
-        _gridLines.transform.localScale = new Vector3(State.X/10f, 1, State.Y/10f);
+        _gridLines.transform.position = new Vector3(GridState.X/2.0f, _gridGroundLevel + 0.01f, GridState.Y/2.0f);
+        _gridLines.transform.localScale = new Vector3(GridState.X/10f, 1, GridState.Y/10f);
+        var material = _gridLines.GetComponent<MeshRenderer>().material;
+        material.SetVector("_Size", new Vector2(GridState.X, GridState.Y));
     }
 
     private void InstantiateEntityModels()
     {
-        _entityModels = new GameObject[State.Size];
-        foreach (var position in State.GetOccupiedTilesPositionSet())
+        _entityModels = new GameObject[GridState.Size];
+        foreach (var position in GridState.GetOccupiedTilesPositionSet())
         {
-            var entity = State.GetEntity(position);
+            var entity = GridState.GetEntity(position);
             if (!IdRegistry<EntityAssets>.TryGet(entity.Id, out var assets)) continue;
             if (assets.Model3D == null) continue;
 
-            var (x, y) = State.ToPosition2D(position);
+            var (x, y) = GridState.ToPosition2D(position);
             var worldPos = _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel, 0.5f);
             var rotation = Quaternion.identity;
             if (entity.TryGetComponent<ControlComponent>(out var control) && control.PlayerController == 2)
@@ -257,7 +290,7 @@ public class GridManager : LoggableBehaviour
         for (var i = 0; i < _entityModels.Length; i++)
         {
             if (_entityModels[i] == null) continue;
-            var entity = State.GetEntity(i);
+            var entity = GridState.GetEntity(i);
             if (entity == null)
             {
                 Destroy(_entityModels[i]);
@@ -269,17 +302,17 @@ public class GridManager : LoggableBehaviour
         }
         foreach (var (entity, model) in entityToModel)
         {
-            var (x, y) = State.ToPosition2D(entity.Position);
+            var (x, y) = GridState.ToPosition2D(entity.Position);
             model.transform.position = _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel, 0.5f);
             _entityModels[entity.Position] = model;
         }
-        foreach (var pos in State.GetOccupiedTilesPositionSet())
+        foreach (var pos in GridState.GetOccupiedTilesPositionSet())
         {
             if (_entityModels[pos] != null) continue;
-            var entity = State.GetEntity(pos);
+            var entity = GridState.GetEntity(pos);
             if (!IdRegistry<EntityAssets>.TryGet(entity.Id, out var assets)) continue;
             if (assets.Model3D == null) continue;
-            var (x, y) = State.ToPosition2D(pos);
+            var (x, y) = GridState.ToPosition2D(pos);
             var worldPos = _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel, 0.5f);
             var rotation = Quaternion.identity;
             if (entity.TryGetComponent<ControlComponent>(out var control) && control.PlayerController == 2)
@@ -294,7 +327,7 @@ public class GridManager : LoggableBehaviour
             _selectionSquares[i].gameObject.SetActive(false);
         foreach (var tile in tiles)
         {
-            if (State.IsValidPosition(tile))
+            if (GridState.IsValidPosition(tile))
             {
                 //var square = _selectionSquares[tile];
                 _selectionSquares[tile].color = preview ? _selectionPreviewColor : _selectionActiveColor;
@@ -307,15 +340,15 @@ public class GridManager : LoggableBehaviour
     {
         var positions = new HashSet<int>();
         foreach (var tile in tiles)
-            positions.Add(State.ToPosition1D(tile));
+            positions.Add(GridState.ToPosition1D(tile));
         ShowTiles(positions, preview);
     }
     
     private void RenderGrid()
     {
-        for (var i = 0; i < State.X; i++)
+        for (var i = 0; i < GridState.X; i++)
         {
-            for (var j = 0; j < State.Y; j++)
+            for (var j = 0; j < GridState.Y; j++)
             {
                 // var tileTerrain = (int)State.TileTerrain[State.ToPosition1D(i, j)];
                 // if (tileTerrain < 0 || tileTerrain > _testTileTerrainVisuals.GameObjects.Count - 1)

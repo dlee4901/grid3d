@@ -41,7 +41,7 @@ public interface IReadOnlyGridState
 public sealed class GridState : IReadOnlyGridState
 {
     public GridDefinition Definition { get; }
-    public int Turn { get; private set; }
+    public int Turn { get; private set; } = 1;
     public int ActivePlayer { get; private set; } = 1;            // 1..PlayerCount
     public bool CanPlayerAct(int player) => ActivePlayer == player;
 
@@ -49,7 +49,7 @@ public sealed class GridState : IReadOnlyGridState
     public void AdvanceTurn()
     {
         ActivePlayer = ActivePlayer % Definition.PlayerCount + 1; // cycle 1..PlayerCount
-        if (ActivePlayer == 1) Turn++;                            // full round elapsed
+        Turn++;                                                   // per-player turn (increments every ply)
         RefillMana(ActivePlayer);                          // fresh mana at the start of their turn
         TickAbilityCooldowns(ActivePlayer);                         // their abilities cool down once per own turn
     }
