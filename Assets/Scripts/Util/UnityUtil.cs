@@ -7,6 +7,8 @@ using UnityEngine.InputSystem;
 
 public static class UnityUtil
 {
+    public static readonly int MaterialBaseColorId = Shader.PropertyToID("_BaseColor");
+    
     public static void SaveJsonData<T>(T data)
     { 
         string jsonData = JsonUtility.ToJson(data);

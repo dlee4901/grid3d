@@ -32,6 +32,8 @@ public interface IReadOnlyGridState
     bool IsTraversable(int position);
     bool IsTraversable(int x, int y);
     bool IsTraversable((int x, int y) position);
+    List<int> GetControllableEntities(bool available=false);
+    List<int> GetControllableEntities(int player, bool available=false);
     HashSet<int> GetOccupiedTilesPositionSet();
 
     // Debug
@@ -62,17 +64,15 @@ public sealed class GridState : IReadOnlyGridState
         {
             var entity = _entities[i];
             if (entity == null) continue;
-            if (!entity.TryGetComponent<ControlComponent>(out var control)
+            if (!entity.TryGetComponent<ControlComponent>(out var control) 
                 || control.PlayerController != player) continue;
             if (!entity.TryGetComponent<AbilityComponent>(out var abilities)) continue;
-            foreach (var ability in abilities.List)
-                ability.TurnUpdate();
+            foreach (var ability in abilities.List) ability.TurnUpdate();
         }
     }
 
     // Per-player mana pool (index 1..PlayerCount). Read-only outward; spent only via commands.
-    public int GetMana(int player)
-        => (player >= 1 && player <= Definition.PlayerCount) ? _mana[player] : 0;
+    public int GetMana(int player) => (player >= 1 && player <= Definition.PlayerCount) ? _mana[player] : 0;
 
     public bool HasMana(int player, int cost) => GetMana(player) >= cost;
 
@@ -87,8 +87,7 @@ public sealed class GridState : IReadOnlyGridState
 
     // Per-player time bank in milliseconds (index 1..PlayerCount). Integer + command-only so peers
     // stay deterministic; the live countdown is a frontend concern (PlayerTimer), never in state.
-    public int GetTimeMs(int player)
-        => (player >= 1 && player <= Definition.PlayerCount) ? _timeMs[player] : 0;
+    public int GetTimeMs(int player) => (player >= 1 && player <= Definition.PlayerCount) ? _timeMs[player] : 0;
 
     // Deduct time used during a turn. Called ONLY by EndTurnCommand.ApplyTo. The elapsed value is
     // carried in the command (a primitive), so every peer computes the same result. (Trust note:
@@ -122,8 +121,7 @@ public sealed class GridState : IReadOnlyGridState
         _mana = new int[definition.PlayerCount + 1];   // index 1..PlayerCount
         RefillMana(ActivePlayer);                      // player 1 starts with a full pool
         _timeMs = new int[definition.PlayerCount + 1];
-        for (var p = 1; p <= definition.PlayerCount; p++)
-            _timeMs[p] = definition.PlayerStartingTimeSeconds * 1000;
+        for (var p = 1; p <= definition.PlayerCount; p++) _timeMs[p] = definition.PlayerStartingTimeSeconds * 1000;
         SeedStartingEntities();
     }
 
@@ -168,8 +166,7 @@ public sealed class GridState : IReadOnlyGridState
             if (!Definition.IsValidPosition(position)
                 || Definition.GetSpawnPlayer(position) != player
                 || _entities[position] != null
-                || !IdRegistry<EntityConfig>.TryGet(unit, out _))
-                return false;
+                || !IdRegistry<EntityConfig>.TryGet(unit, out _)) return false;
         return true;
     }
 
@@ -190,7 +187,7 @@ public sealed class GridState : IReadOnlyGridState
 
     public bool TryGetEntity(int position, out Entity entity)
     {
-        if (!Definition.IsValidPosition(position))
+        if (!Definition.IsValidPosition(position) || _entities[position] == null)
         {
             entity = null;
             return false;
@@ -219,20 +216,34 @@ public sealed class GridState : IReadOnlyGridState
         terrainType = Definition.TerrainMap[position];
         return true;
     }
+    
+    public List<int> GetControllableEntities(bool available=false) => GetControllableEntities(ActivePlayer, available);
+    
+    public List<int> GetControllableEntities(int player, bool available=false)
+    {
+        var controllableEntities = new List<int>();
+        for (var i = 0; i < _entities.Length; i++)
+        {
+            if (TryGetEntity(i, out var entity) 
+                && entity.TryGetComponent<ControlComponent>(out var control)
+                && control.PlayerController == player) controllableEntities.Add(i);
+        }
+        return controllableEntities;
+    }
 
     public HashSet<int> GetOccupiedTilesPositionSet()
     {
         HashSet<int> indices = new();
-        for (int i = 0; i < Definition.Size; i++)
-            if (_entities[i] != null)
-                indices.Add(i);
+        for (var i = 0; i < Definition.Size; i++)
+        {
+            if (_entities[i] != null) indices.Add(i);
+        }
         return indices;
     }
 
     public bool SetEntityPosition(int position, Entity entity)
     {
-        if (!Definition.IsValidPosition(position) || entity == null)
-            return false;
+        if (!Definition.IsValidPosition(position) || entity == null) return false;
         _entities[position] = entity;
         entity.SetPosition(position);
         return true;
@@ -240,8 +251,9 @@ public sealed class GridState : IReadOnlyGridState
     
     public bool ChangeEntityPosition(int startPosition, int targetPosition)
     {
-        if (!Definition.IsValidPosition(startPosition) || !Definition.IsValidPosition(targetPosition) || !TryGetEntity(startPosition, out var entity)) 
-            return false;
+        if (!Definition.IsValidPosition(startPosition) 
+            || !Definition.IsValidPosition(targetPosition) 
+            || !TryGetEntity(startPosition, out var entity)) return false;
         _entities[targetPosition] = entity;
         _entities[startPosition] = null;
         entity.SetPosition(targetPosition);
@@ -252,9 +264,7 @@ public sealed class GridState : IReadOnlyGridState
     public bool PerformAction(int action, int sourceTile, int targetTile)
     {
         Entity entity = GetEntity(sourceTile);
-        if (entity == null)
-            return false;
-        return true;
+        return entity != null;
     }
 
     public bool PerformAction(int action, int sourceTile, List<int> targetTiles)

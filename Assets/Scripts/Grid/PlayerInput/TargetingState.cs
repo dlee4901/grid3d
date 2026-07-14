@@ -18,14 +18,7 @@ public class TargetingState : PlayerInputStateBase
     public override void OnEnter()
     {
         //Ctx.Input.Lock();
-        Ctx.GridManager.ShowAbilityPreview(_ability, _source);
-    }
-
-    public override void OnExit()
-    {
-        //Ctx.Input.Unlock();
-        Ctx.GridManager.ClearAbilityPreview();
-        Ctx.GridManager.ClearTargetHighlight();
+        Ctx.Renderer.HighlightSelectableTargets(_ability, _source);
     }
 
     public override void OnPositionSelected(QueryContext clicked)
@@ -37,7 +30,6 @@ public class TargetingState : PlayerInputStateBase
         }
         _targets.Add(clicked.SourcePosition);
         Ctx.Controller.LogState($"Target added: {clicked.SourcePosition} ({_targets.Count}/{_ability.Selection.SelectionAmount})");
-        Ctx.GridManager.HighlightTargets(_targets);
         if (_targets.Count >= _ability.Selection.SelectionAmount) Confirm();
     }
     

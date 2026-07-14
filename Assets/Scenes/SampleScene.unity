@@ -1794,8 +1794,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1fa68fef74464ccf8b4a579f34f74493, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GridLines
-  _lineMaterial: {fileID: 2100000, guid: 311448542d1e446ec8fbd2e0d4dc5732, type: 2}
-  _lineWidth: 0.05
 --- !u!4 &294227361
 Transform:
   m_ObjectHideFlags: 0
@@ -2155,7 +2153,7 @@ Transform:
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 5, y: 10, z: 5}
+  m_LocalPosition: {x: 0, y: 10, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3275,7 +3273,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 998935873}
+  m_Father: {fileID: 2142585461}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &506155938
 PrefabInstance:
@@ -3804,7 +3802,7 @@ Transform:
   m_GameObject: {fileID: 566683133}
   serializedVersion: 2
   m_LocalRotation: {x: 0.5257311, y: 0, z: 0, w: 0.85065085}
-  m_LocalPosition: {x: 5, y: 10, z: 0}
+  m_LocalPosition: {x: 0, y: 10, z: -5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4318,12 +4316,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 724471958}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 998935873}
+  m_Father: {fileID: 2142585461}
   m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
 --- !u!212 &724471960
 SpriteRenderer:
@@ -4351,7 +4349,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
+  - {fileID: 2100000, guid: 311448542d1e446ec8fbd2e0d4dc5732, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -4375,7 +4373,7 @@ SpriteRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.5019608}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -6018,7 +6016,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 998935873}
+  m_Father: {fileID: 2142585461}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &986445082
 GameObject:
@@ -6251,12 +6249,8 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 294227361}
-  - {fileID: 505637006}
-  - {fileID: 724471959}
   - {fileID: 1947471883}
-  - {fileID: 1936289546}
-  - {fileID: 947566298}
+  - {fileID: 294227361}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &998935874
@@ -6272,18 +6266,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _debug: 1
-  _cinemachineCamera: {fileID: 1006811931}
-  _grid: {fileID: 947566297}
-  _gridLines: {fileID: 1936289542}
-  _testGridLines: {fileID: 294227360}
-  _pressOutline: {fileID: 505637005}
-  _cubePrefab: {fileID: 5605170146761424364, guid: 4fb39e8c28a6243c195aee201830d8d5, type: 3}
-  _selectionSquare: {fileID: 724471960}
-  _selectionPreviewColor: {r: 1, g: 1, b: 1, a: 0.2509804}
-  _selectionActiveColor: {r: 1, g: 1, b: 1, a: 0.5019608}
-  _entityAssets:
-  - {fileID: 11400000, guid: 3ba3968f451e84546a1c6e6fe9751c06, type: 2}
-  _autoStartOnLoad: 1
+  _renderer: {fileID: 2142585460}
 --- !u!1 &1006811928
 GameObject:
   m_ObjectHideFlags: 0
@@ -6355,7 +6338,7 @@ Transform:
   m_GameObject: {fileID: 1006811928}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 5, y: 10, z: 5}
+  m_LocalPosition: {x: 0, y: 10, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -7345,7 +7328,7 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1098262815}
   m_CullTransparentMesh: 1
---- !u!1 &1107261186
+--- !u!1 &1104472037
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -7353,85 +7336,43 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1107261188}
-  - component: {fileID: 1107261187}
+  - component: {fileID: 1104472039}
+  - component: {fileID: 1104472038}
   m_Layer: 0
-  m_Name: Spline
+  m_Name: GameBootstrap
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1107261187
+--- !u!114 &1104472038
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1107261186}
+  m_GameObject: {fileID: 1104472037}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dab5c7d4c32e743048dfca98e2d5914f, type: 3}
+  m_Script: {fileID: 11500000, guid: db9c72936cfe447e8b72f24e43d27862, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Unity.Splines::UnityEngine.Splines.SplineContainer
-  m_Spline:
-    m_EditModeType: 1
-    m_Knots: []
-    m_MetaData: []
-    m_Closed: 0
-    m_IntData:
-      m_Data: []
-    m_FloatData:
-      m_Data: []
-    m_Float4Data:
-      m_Data: []
-    m_ObjectData:
-      m_Data: []
-  m_Splines:
-  - m_EditModeType: 1
-    m_Knots:
-    - Position:
-        x: 0
-        y: 0
-        z: 0
-      TangentIn:
-        x: -0
-        y: -0
-        z: -0
-      TangentOut:
-        x: 0
-        y: 0
-        z: 0
-      Rotation:
-        value:
-          x: 0
-          y: 0
-          z: 0
-          w: 1
-    m_MetaData:
-    - Mode: 0
-      Tension: 0.5
-    m_Closed: 0
-    m_IntData:
-      m_Data: []
-    m_FloatData:
-      m_Data: []
-    m_Float4Data:
-      m_Data: []
-    m_ObjectData:
-      m_Data: []
-  m_Knots:
-    m_KnotsLink: []
---- !u!4 &1107261188
+  m_EditorClassIdentifier: Assembly-CSharp::GameBootstrap
+  _debug: 0
+  _gridManager: {fileID: 998935874}
+  _entityAssets:
+  - {fileID: 11400000, guid: 3ba3968f451e84546a1c6e6fe9751c06, type: 2}
+  _autoStart: 1
+  _mapId: TestMap1
+--- !u!4 &1104472039
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1107261186}
+  m_GameObject: {fileID: 1104472037}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -3200.1182, y: 0, z: -779.1676}
+  m_LocalPosition: {x: 0.54839, y: 0, z: 0.82091}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -11764,11 +11705,11 @@ Transform:
   m_GameObject: {fileID: 1936289542}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 5, y: 0, z: 5}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 998935873}
+  m_Father: {fileID: 2142585461}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1936536817
 GameObject:
@@ -13000,6 +12941,65 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2133915879}
   m_CullTransparentMesh: 1
+--- !u!1 &2142585459
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2142585461}
+  - component: {fileID: 2142585460}
+  m_Layer: 0
+  m_Name: GridRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2142585460
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2142585459}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86210d78c008d4390968d5b2463eacdd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GridRenderer
+  _debug: 0
+  _gridManager: {fileID: 998935874}
+  _cinemachineCamera: {fileID: 1006811931}
+  _grid: {fileID: 947566297}
+  _gridLines: {fileID: 1936289542}
+  _pressOutline: {fileID: 505637005}
+  _cubePrefab: {fileID: 5605170146761424364, guid: 4fb39e8c28a6243c195aee201830d8d5, type: 3}
+  _highlightSquare: {fileID: 724471960}
+  _highlightAvailableEntities: {r: 0.2509804, g: 1, b: 0.2509804, a: 0.2509804}
+  _highlightAbilityRange: {r: 1, g: 1, b: 1, a: 0.2509804}
+  _highlightSelectableTargets: {r: 1, g: 0.2509804, b: 0.2509804, a: 0.2509804}
+--- !u!4 &2142585461
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2142585459}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 947566298}
+  - {fileID: 1936289546}
+  - {fileID: 505637006}
+  - {fileID: 724471959}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &181856809234637881
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -13144,6 +13144,7 @@ SceneRoots:
   - {fileID: 566683139}
   - {fileID: 410087041}
   - {fileID: 832575519}
+  - {fileID: 1104472039}
+  - {fileID: 2142585461}
   - {fileID: 998935873}
   - {fileID: 1741734587}
-  - {fileID: 1107261188}

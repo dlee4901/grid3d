@@ -7,15 +7,14 @@ public class PlayerInputController : LoggableBehaviour
 
     public IPlayerInputState State => _current;
 
-    public void Init(GridManager gridManager, GridInput input, TurnExecutor executor, CommandDispatcher dispatcher)
+    public void Init(GridInput input, CommandDispatcher dispatcher, IGridRenderer renderer)
     {
         _ctx = new PlayerInputContext
         {
             Controller = this,
             Input = input,
-            GridManager = gridManager,
-            Executor = executor,
-            Dispatcher = dispatcher
+            Dispatcher = dispatcher,
+            Renderer = renderer
         };
 
         _current = new IdleState(_ctx);
