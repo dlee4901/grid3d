@@ -36,7 +36,7 @@ public class GameBootstrap : LoggableBehaviour
 
     private void InitTestRegistry()
     {
-        IdRegistry<EntityConfig>.Register(UnitConfigs.IceWizard);
+        IdRegistry<EntityConfig>.Register(UnitConfigs.Mage);
         IdRegistry<AbilityConfig>.Register(AbilityConfigs.IcicleBlast);
         IdRegistry<AbilityConfig>.Register(AbilityConfigs.MoveStraight3Step);
         RegistryManager.Register(_entityAssets);
@@ -59,8 +59,8 @@ public class GameBootstrap : LoggableBehaviour
 
     private void CreateTestTeams()
     {
-        var team1 = new TeamData("TestTeam1", "TestMap1", new Dictionary<int, string>{ {2, "IceWizard"}, {5, "IceWizard"}, {10, "IceWizard"} });
-        var team2 = new TeamData("TestTeam2", "TestMap1", new Dictionary<int, string>{ {110, "IceWizard"} });
+        var team1 = new TeamData("TestTeam1", "TestMap1", new Dictionary<int, string>{ {2, "Mage"}, {5, "Mage"}, {10, "Mage"} });
+        var team2 = new TeamData("TestTeam2", "TestMap1", new Dictionary<int, string>{ {110, "Mage"} });
         JsonHandler.SaveData(team1);
         JsonHandler.SaveData(team2);
     }
