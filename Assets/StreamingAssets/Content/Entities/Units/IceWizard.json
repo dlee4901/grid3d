@@ -1,6 +1,0 @@
-{
-  "Id": "IceWizard",
-  "Cost": 4,
-  "Health": 6,
-  "Abilities": [ "MoveStraight3NL", "Spellbook", "IcicleBlast", "Fireball" ]
-}

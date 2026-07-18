@@ -18,8 +18,11 @@ public static class IdRegistry<T> where T : INameId
         }
     }
     
-    public static void Register(T item) 
-        => _items.TryAdd(item.Id, item);
+    public static void Register(T item)
+    {
+        if (!_items.TryAdd(item.Id, item))
+            GridLog.Error($"Duplicate {typeof(T).Name} id '{item.Id}'");
+    }
     
     public static void Clear() 
         => _items.Clear();

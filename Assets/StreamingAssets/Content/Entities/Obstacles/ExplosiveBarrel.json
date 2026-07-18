@@ -1,5 +1,0 @@
-{
-  "Id": "ExplosiveBarrel",
-  "Health": 1,
-  "Passives": ["ExplosiveCurse"]
-}

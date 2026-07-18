@@ -21,8 +21,8 @@ public class Ability : INameId
 
     public static Ability Create(AbilityConfig config) => config.Type switch
     {
-        "Move" => new MoveAbility(config),
-        _      => new Ability(config),
+        AbilityType.Move => new MoveAbility(config),
+        _                => new Ability(config),
     };
 
     protected Ability(AbilityConfig config)

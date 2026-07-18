@@ -1,13 +1,14 @@
 using System.Collections.Generic;
-using Newtonsoft.Json;
+
+public enum AbilityType { Default, Move, Passive }
 
 public class AbilityConfig : INameId
 {
     public string Id { get; set; }
-    public string Type { get; set; } = "Default";
+    public AbilityType Type { get; set; } = AbilityType.Default;
     public int ManaCost { get; set; } = 1;
     public List<AbilityBindings> Bindings { get; set; }
-    [JsonConverter(typeof(AbilitySelection))] public AbilitySelection Selection { get; set; }
+    public AbilitySelection Selection { get; set; }
     
     public int Warmup { get; set; } = 0;
     public int Cooldown { get; set; } = 0;

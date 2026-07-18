@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using System.IO;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -14,13 +14,35 @@ public class GameBootstrap : LoggableBehaviour
     {
         if (!_autoStart) return;
 
-        InitTestRegistry();
+        RegisterContent();
         if (!IdRegistry<GridDefinition>.TryGet(_mapId, out var definition))
         {
             LogError($"{_mapId} not found");
             return;
         }
-        _gridManager.StartGame(definition, BuildTeamSeedCommands());
+
+        CreateTestTeams();
+        var team1 = JsonHandler.LoadData<TeamData>("TestTeam1");
+        var team2 = JsonHandler.LoadData<TeamData>("TestTeam2");
+        var teams = new[] { team1, team2 };
+
+        ValidateContent(definition, teams);
+
+        var seed = new List<ICommand> { new LoadTeamCommand(1, team1), new LoadTeamCommand(2, team2) };
+        _gridManager.StartGame(definition, seed);
+    }
+
+    private void ValidateContent(GridDefinition map, IReadOnlyList<TeamData> teams)
+    {
+        foreach (var issue in RegistryValidator.Validate(map, teams))
+            LogError(issue);
+
+        var spawnable = new HashSet<string>(teams.SelectMany(t => t.UnitStartPositions.Values));
+        if (map.EntityStartPositions != null)
+            foreach (var spec in map.EntityStartPositions) spawnable.Add(spec.EntityId);
+        foreach (var id in spawnable)
+            if (IdRegistry<EntityConfig>.TryGet(id, out _) && !IdRegistry<EntityAssets>.TryGet(id, out _))
+                LogWarning($"Entity '{id}' has no EntityAssets (no model/sprite)");
     }
 
     private void Update()
@@ -34,33 +56,16 @@ public class GameBootstrap : LoggableBehaviour
         }
     }
 
-    private void InitTestRegistry()
+    private void RegisterContent()
     {
-        IdRegistry<EntityConfig>.Register(UnitConfigs.Mage);
-        IdRegistry<AbilityConfig>.Register(AbilityConfigs.IcicleBlast);
-        IdRegistry<AbilityConfig>.Register(AbilityConfigs.MoveStraight3Step);
+        ContentRegistry.RegisterAll();
         RegistryManager.Register(_entityAssets);
-
-        var mapsPath = Path.Combine(Application.streamingAssetsPath, "Content/Maps");
-        RegistryManager.LoadAndRegister<GridDefinition>(mapsPath);
-    }
-
-    private List<ICommand> BuildTeamSeedCommands()
-    {
-        CreateTestTeams();
-        var team1 = JsonHandler.LoadData<TeamData>("TestTeam1");
-        var team2 = JsonHandler.LoadData<TeamData>("TestTeam2");
-        return new List<ICommand>
-        {
-            new LoadTeamCommand(1, team1),
-            new LoadTeamCommand(2, team2),
-        };
     }
 
     private void CreateTestTeams()
     {
-        var team1 = new TeamData("TestTeam1", "TestMap1", new Dictionary<int, string>{ {2, "Mage"}, {5, "Mage"}, {10, "Mage"} });
-        var team2 = new TeamData("TestTeam2", "TestMap1", new Dictionary<int, string>{ {110, "Mage"} });
+        var team1 = new TeamData("TestTeam1", "TestMap1", new Dictionary<int, string>{ {2, "Barbarian"}, {5, "Rogue"}, {10, "Knight"}, {15, "Flameweaver"} });
+        var team2 = new TeamData("TestTeam2", "TestMap1", new Dictionary<int, string>{ {110, "Barbarian"}, {113, "Rogue"}, {116, "Knight"}, {119, "Flameweaver"} });
         JsonHandler.SaveData(team1);
         JsonHandler.SaveData(team2);
     }

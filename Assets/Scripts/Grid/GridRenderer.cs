@@ -155,27 +155,6 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
         }
     }
     
-    // public void ShowAbilityPreview(Ability ability, QueryContext ctx)
-    // {
-    //     var (areas, _) = ability.Selection.GetSelectablePositions(ctx);
-    //     ShowTiles(areas.ToHashSet(), true);
-    // }
-    //
-    // public void ClearAbilityPreview()
-    // {
-    //     ShowTiles(new HashSet<int>(), true);
-    // }
-    //
-    // public void HighlightTargets(IReadOnlyList<(int, int)> targets)
-    // {
-    //     ShowTiles(targets.ToHashSet(), false);
-    // }
-    //
-    // public void ClearTargetHighlight()
-    // {
-    //     ShowTiles(new HashSet<int>(), false);
-    // }
-    
     public void HighlightAvailableEntities()
     {
         // TODO: check abilities for available parameter in GetControllableEntities()
@@ -218,26 +197,4 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
             _highlightSquares[position].material.SetColor(UnityUtil.MaterialBaseColorId, color);
         }
     }
-
-    // private void ShowTiles(HashSet<int> tiles, bool preview)
-    // {
-    //     for (int i = 0; i < _highlightSquares.Length; i++)
-    //         _highlightSquares[i].gameObject.SetActive(false);
-    //     foreach (var tile in tiles)
-    //     {
-    //         if (GridState.IsValidPosition(tile))
-    //         {
-    //             _highlightSquares[tile].color = preview ? _selectionPreviewColor : _selectionActiveColor;
-    //             _highlightSquares[tile].gameObject.SetActive(true);
-    //         }
-    //     }
-    // }
-    //
-    // private void ShowTiles(HashSet<(int, int)> tiles, bool preview)
-    // {
-    //     var positions = new HashSet<int>();
-    //     foreach (var tile in tiles)
-    //         positions.Add(GridState.ToPosition1D(tile));
-    //     ShowTiles(positions, preview);
-    // }
 }

@@ -1,0 +1,7 @@
+<linker>
+  <assembly fullname="Assembly-CSharp">
+    <type fullname="UnitConfigs" preserve="all"/>
+    <type fullname="AbilityConfigs" preserve="all"/>
+    <type fullname="MapConfigs" preserve="all"/>
+  </assembly>
+</linker>
