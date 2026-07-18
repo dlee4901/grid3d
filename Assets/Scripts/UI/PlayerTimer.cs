@@ -2,9 +2,6 @@ using System;
 using TMPro;
 using UnityEngine;
 
-/// Per-player timer display. Ticks locally (a prediction of the authoritative GridState bank) while
-/// running, snaps to the bank via SetTimeMs on state changes, and raises Expired when it hits zero.
-/// The countdown is wall-clock (frontend only) — the authoritative bank lives in GridState.
 public class PlayerTimer : LoggableBehaviour
 {
     [SerializeField] private TMP_Text _playerText;
@@ -12,15 +9,14 @@ public class PlayerTimer : LoggableBehaviour
     [SerializeField] private Color _activeColor = Color.white;
     [SerializeField] private Color _inactiveColor = new Color(1f, 1f, 1f, 0.4f);
 
-    private int _bankMs;         // authoritative time when the current run started
-    private int _remainingMs;    // currently displayed remaining time
-    private float _accum;        // seconds elapsed in the current run
+    private int _bankMs;
+    private int _remainingMs;
+    private float _accum;
     private bool _running;
 
     public bool IsRunning => _running;
     public int ElapsedMs => Mathf.Max(0, Mathf.RoundToInt(_accum * 1000f));
 
-    /// Fires once when a running timer reaches zero.
     public event Action Expired;
 
     private void Update()
@@ -42,7 +38,6 @@ public class PlayerTimer : LoggableBehaviour
 
     public void SetLabel(string label) => _playerText.text = label;
 
-    /// Emphasize the active player's timer; dim the rest.
     public void SetActiveVisual(bool active)
     {
         var color = active ? _activeColor : _inactiveColor;
@@ -50,7 +45,6 @@ public class PlayerTimer : LoggableBehaviour
         _timeText.color = color;
     }
 
-    /// Snap the display to an authoritative value (from GridState) and reset the local run.
     public void SetTimeMs(int ms)
     {
         _remainingMs = Mathf.Max(0, ms);
@@ -61,7 +55,7 @@ public class PlayerTimer : LoggableBehaviour
 
     public void SetRunning(bool running)
     {
-        if (running && !_running)   // (re)start the local run from the current displayed value
+        if (running && !_running)
         {
             _bankMs = _remainingMs;
             _accum = 0f;

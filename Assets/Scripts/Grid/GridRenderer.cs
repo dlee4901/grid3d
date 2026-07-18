@@ -4,10 +4,6 @@ using System.Linq;
 using Unity.Cinemachine;
 using UnityEngine;
 
-// All visual grid concerns: tiles, entity models, ability previews/target highlights, grid lines,
-// camera framing, and the selection outline. Reacts to GridManager's lifecycle like a StateView:
-// build on GameStarted, refresh entity models on StateChanged. Reads state via _gridManager; entity
-// visuals come from the global IdRegistry<EntityAssets>.
 public class GridRenderer : LoggableBehaviour, IGridRenderer
 {
     [SerializeField] private GridManager _gridManager;
@@ -38,7 +34,7 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
     {
         _gridManager.GameStarted += OnGameStarted;
         _gridManager.StateChanged += RefreshEntityModelPositions;
-        if (_gridManager.IsGameStarted) OnGameStarted();   // sticky: match already started → build now
+        if (_gridManager.IsGameStarted) OnGameStarted();
     }
 
     private void OnDestroy()
@@ -46,24 +42,21 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
         if (_gridManager == null) return;
         _gridManager.GameStarted -= OnGameStarted;
         _gridManager.StateChanged -= RefreshEntityModelPositions;
-        if (_gridManager.Input != null) _gridManager.Input.OnSelectionChanged -= MovePressOutline;
+        if (_gridManager.Player != null) _gridManager.Player.SelectionChanged -= MovePressOutline;
     }
 
     private void OnGameStarted() => Build();
 
-    // Build the visual grid. Idempotent — StartGame calls this synchronously before the input FSM
-    // starts (the FSM drives highlights on enter), and the GameStarted subscription may call it again.
     public void Build()
     {
-        if (_highlightSquares != null) return;   // already built
+        if (_highlightSquares != null) return;
         _grid.gameObject.SetActive(true);
         InitCamera();
         InitRendering();
         InstantiateEntityModels();
-        _gridManager.Input.OnSelectionChanged += MovePressOutline;
+        _gridManager.Player.SelectionChanged += MovePressOutline;
     }
 
-    // Reposition/toggle the press outline as selection changes (was GridManager.OnInputChanged).
     private void MovePressOutline(QueryContext? ctx)
     {
         if (!ctx.HasValue)

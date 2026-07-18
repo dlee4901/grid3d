@@ -1,6 +1,6 @@
 public interface ICommand
 {
     int IssuingPlayer { get; }
-    bool RequiresActiveTurn { get; }   // turn-gated commands return true
+    bool RequiresActiveTurn { get; }
     bool ApplyTo(GridState state);
 }

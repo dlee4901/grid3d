@@ -22,7 +22,6 @@ public sealed class AbilityCommand : ICommand
             GridLog.Warning($"[AbilityCommand] no entity at {SourcePosition}");
             return false;
         }
-        // entity ownership — turn ownership is gated by TurnExecutor
         if (!entity.TryGetComponent<ControlComponent>(out var control)
             || control.PlayerController != IssuingPlayer)
         {
@@ -40,7 +39,6 @@ public sealed class AbilityCommand : ICommand
             GridLog.Warning($"[AbilityCommand] {AbilityId} on cooldown ({ability.Cooldown})");
             return false;
         }
-        // mana cost — per-player pool, cost = ability.Cost
         if (!state.HasMana(IssuingPlayer, ability.ManaCost))
         {
             GridLog.Warning($"[AbilityCommand] player {IssuingPlayer} lacks mana for {AbilityId} " +
@@ -48,8 +46,8 @@ public sealed class AbilityCommand : ICommand
             return false;
         }
         if (!ability.Execute(state, SourcePosition, Targets)) return false;
-        state.SpendMana(IssuingPlayer, ability.ManaCost);   // deduct only on success
-        ability.Trigger();                                     // start the cooldown
+        state.SpendMana(IssuingPlayer, ability.ManaCost);
+        ability.Trigger();
         return true;
     }
 }

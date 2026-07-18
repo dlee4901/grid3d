@@ -3,8 +3,6 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-// Test/dev harness that starts a match: registers test content, seeds two test teams, and calls
-// GridManager.StartGame(...). The P2P lobby/relay flow will replace this as the caller of StartGame.
 public class GameBootstrap : LoggableBehaviour
 {
     [SerializeField] private GridManager _gridManager;
@@ -27,7 +25,6 @@ public class GameBootstrap : LoggableBehaviour
 
     private void Update()
     {
-        // Debug-only end-turn trigger until a real end-turn UI is wired everywhere.
         if (_debug && _gridManager.IsGameStarted
             && Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
         {
@@ -48,7 +45,6 @@ public class GameBootstrap : LoggableBehaviour
         RegistryManager.LoadAndRegister<GridDefinition>(mapsPath);
     }
 
-    // Deterministic setup commands applied before the match starts (seed each player's team).
     private List<ICommand> BuildTeamSeedCommands()
     {
         CreateTestTeams();
@@ -63,7 +59,7 @@ public class GameBootstrap : LoggableBehaviour
 
     private void CreateTestTeams()
     {
-        var team1 = new TeamData("TestTeam1", "TestMap1", new Dictionary<int, string>{ {2, "IceWizard"} });
+        var team1 = new TeamData("TestTeam1", "TestMap1", new Dictionary<int, string>{ {2, "IceWizard"}, {5, "IceWizard"}, {10, "IceWizard"} });
         var team2 = new TeamData("TestTeam2", "TestMap1", new Dictionary<int, string>{ {110, "IceWizard"} });
         JsonHandler.SaveData(team1);
         JsonHandler.SaveData(team2);

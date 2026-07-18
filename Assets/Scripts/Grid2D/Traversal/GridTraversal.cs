@@ -40,7 +40,7 @@ public class GridTraversal
 {
     public DirectionType Direction { get; set; }
 
-    public int MaxDistance { get; set; } = 0; // -1: inf
+    public int MaxDistance { get; set; } = 0;
     public bool AbsoluteDirection { get; set; } = false;
     public bool Linear { get; set; } = true;
 
@@ -115,7 +115,6 @@ public class GridTraversal
             var position = traverseTiles[i];
             if (position == currentPosition) continue;
 
-            // If tile is invalid or collided with entity, do not check further
             if (!grid.IsValidPosition(position)) continue;
             Entity entity;
             if ((entity = grid.GetEntity(position)) != null && IsColliding(entity, ctx.SourceEntity)) continue;
@@ -160,22 +159,22 @@ public class GridTraversal
         var rightTile = zeroTuple;
         for (var i = 1; i <= width; i++)
         {
-            if (!unitVectors[0].Equals(zeroTuple) || !unitVectors[4].Equals(zeroTuple)) // N, S
+            if (!unitVectors[0].Equals(zeroTuple) || !unitVectors[4].Equals(zeroTuple))
             {
                 leftTile = (i, 0);
                 rightTile = (-i, 0);
             }
-            if (!unitVectors[1].Equals(zeroTuple) || !unitVectors[5].Equals(zeroTuple)) // NE, SW
+            if (!unitVectors[1].Equals(zeroTuple) || !unitVectors[5].Equals(zeroTuple))
             {
                 leftTile = (i, -i);
                 rightTile = (-i, i);
             }
-            if (!unitVectors[2].Equals(zeroTuple) || !unitVectors[6].Equals(zeroTuple)) // E, W
+            if (!unitVectors[2].Equals(zeroTuple) || !unitVectors[6].Equals(zeroTuple))
             {
                 leftTile = (0, i);
                 rightTile = (0, -i);
             }
-            if (!unitVectors[3].Equals(zeroTuple) || !unitVectors[7].Equals(zeroTuple)) // SE, NW
+            if (!unitVectors[3].Equals(zeroTuple) || !unitVectors[7].Equals(zeroTuple))
             {
                 leftTile = (-i, -i);
                 rightTile = (i, i);

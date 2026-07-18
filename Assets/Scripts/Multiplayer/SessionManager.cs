@@ -40,7 +40,7 @@ public class SessionManager : LoggableBehaviour
             var options = new SessionOptions
             {
                 MaxPlayers = 2
-            }.WithRelayNetwork(); // or WithDistributedAuthorityNetwork() to use Distributed Authority instead of Relay
+            }.WithRelayNetwork();
             var session = await MultiplayerService.Instance.CreateSessionAsync(options);
             Log($"Session {session.Id} created! Join code: {session.Code}");
             CreateJoinCode(session.Code);

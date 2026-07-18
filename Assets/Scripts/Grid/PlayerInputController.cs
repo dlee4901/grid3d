@@ -21,7 +21,6 @@ public class PlayerInputController : LoggableBehaviour
         _current.OnEnter();
 
         input.OnPositionSelected += clicked => _current.OnPositionSelected(clicked);
-        input.OnSelectionChanged += ctx => _current.OnSelectionChanged(ctx);
         input.OnCancelClicked += () => _current.OnCancel();
     }
 
@@ -35,8 +34,6 @@ public class PlayerInputController : LoggableBehaviour
         }
     }
 
-    // ---- Ability icon intent handlers (called by UnitInfo from AbilityIcon events).
-    // Pure pass-throughs: the current state decides what each gesture means.
     public void OnAbilityPreview(Ability ability, QueryContext ctx)
         => _current.OnAbilityPreview(ability, ctx);
 
@@ -46,7 +43,6 @@ public class PlayerInputController : LoggableBehaviour
     public void OnAbilityActivate(Ability ability, QueryContext source)
         => _current.OnAbilityActivate(ability, source);
 
-    // ---- Active ability (armed while in TargetingState) — single source of truth for icon visuals
     private string _activeAbilityId;
     public string ActiveAbilityId => _activeAbilityId;
     public event System.Action<string> OnActiveAbilityChanged;
@@ -59,7 +55,25 @@ public class PlayerInputController : LoggableBehaviour
         OnActiveAbilityChanged?.Invoke(id);
     }
 
-    // ---- State transitions
+    private QueryContext? _currentSelection;
+    public QueryContext? CurrentSelection => _currentSelection;
+    public event System.Action<QueryContext?> SelectionChanged;
+
+    private void UpdateSelection()
+    {
+        QueryContext? sel = _current switch
+        {
+            SelectedState s  => s.Selected,
+            TargetingState t => t.Source,
+            _ => null
+        };
+        if (_currentSelection == sel) return;
+        _currentSelection = sel;
+        SelectionChanged?.Invoke(sel);
+    }
+    
+    public void ResetToIdle() => TransitionTo(new IdleState(_ctx));
+
     public void TransitionTo(IPlayerInputState next)
     {
         if (ReferenceEquals(_current, next)) return;
@@ -68,8 +82,8 @@ public class PlayerInputController : LoggableBehaviour
         _current = next;
         _current.OnEnter();
         UpdateActiveAbility();
+        UpdateSelection();
     }
-
-    // ---- Logging passthrough for the plain state classes (gated by this component's _debug)
+    
     public void LogState(string message) => Log(message);
 }

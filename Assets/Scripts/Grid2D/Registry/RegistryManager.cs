@@ -28,7 +28,6 @@ public static class RegistryManager
     //     IdRegistry<TInstance>.Register(instances);
     // }
     
-    // For Newtonsoft.JSON polymorphic serialization
     public static void RegisterDerivedTypes<T>()
     {
         var assembly = Assembly.GetExecutingAssembly();

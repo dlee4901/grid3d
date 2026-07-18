@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class UnitView : StateView                  // _gridManager now inherited (protected)
+public class UnitView : StateView
 {
     [SerializeField] private VerticalLayoutGroup _container;
     [SerializeField] private AbilityIcon _abilityIcon;
@@ -11,23 +11,23 @@ public class UnitView : StateView                  // _gridManager now inherited
 
     protected override void Start()
     {
-        base.Start();                              // wires StateChanged -> Refresh + initial paint
-        _gridManager.Input.OnSelectionChanged += OnInputChanged;
+        base.Start();
+        _gridManager.Player.SelectionChanged += OnInputChanged;
         _gridManager.Player.OnActiveAbilityChanged += OnActiveAbilityChanged;
     }
 
     protected override void OnDestroy()
     {
-        base.OnDestroy();                          // tears down StateChanged
+        base.OnDestroy();
         if (_gridManager == null) return;
-        if (_gridManager.Input != null)
-            _gridManager.Input.OnSelectionChanged -= OnInputChanged;
         if (_gridManager.Player != null)
+        {
+            _gridManager.Player.SelectionChanged -= OnInputChanged;
             _gridManager.Player.OnActiveAbilityChanged -= OnActiveAbilityChanged;
+        }
     }
 
-    // StateView contract: rebuild the panel for the current selection after any command / on start.
-    protected override void Refresh() => OnInputChanged(_gridManager.Input.Selected);
+    protected override void Refresh() => OnInputChanged(_gridManager.Player.CurrentSelection);
 
     private void OnActiveAbilityChanged(string activeId)
     {
@@ -59,6 +59,7 @@ public class UnitView : StateView                  // _gridManager now inherited
         if (!entity.TryGetComponent<AbilityComponent>(out var abilities))
             return;
         Log($"Selection info: {entity.Id}, abilities={abilities.List.Count}");
+        var actionable = ctx.Grid.IsAvailableControllable(ctx.Grid.ToPosition1D(ctx.SourcePosition));
         var abilityIcons = entityAssets.AbilityIcons;
         for (var i = 0; i < abilities.List.Count; i++)
         {
@@ -69,6 +70,7 @@ public class UnitView : StateView                  // _gridManager now inherited
             icon.OnPreviewRequested  += _gridManager.Player.OnAbilityPreview;
             icon.OnPreviewCancelled  += _gridManager.Player.OnAbilityCancelPreview;
             icon.OnActivateRequested += _gridManager.Player.OnAbilityActivate;
+            icon.SetInteractable(actionable);
             _icons.Add(icon);
         }
         var activeId = _gridManager.Player.ActiveAbilityId;

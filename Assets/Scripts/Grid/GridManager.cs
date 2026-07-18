@@ -3,9 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-// Coordination / composition root. Owns the authoritative executor + dispatcher, the input components,
-// the match lifecycle (StartGame/GameStarted), and the command seam (Submit/StateChanged). Visuals live
-// in GridRenderer; test/dev startup lives in GameBootstrap.
 public class GridManager : LoggableBehaviour
 {
     [SerializeField] private GridRenderer _renderer;
@@ -20,13 +17,10 @@ public class GridManager : LoggableBehaviour
     public GridInput Input { get; private set; }
     public PlayerInputController Player { get; private set; }
 
-    // Fired after any command; GridRenderer re-renders and UI panels (StateView) refresh from state.
     public event Action StateChanged;
-    // Fired once when the match starts (state built). Sticky via IsGameStarted for order-independence.
     public event Action GameStarted;
     public bool IsGameStarted { get; private set; }
 
-    // Frontend entry point for UI-issued commands (end turn, timer timeouts). The seam networking intercepts.
     public bool Submit(ICommand command) => _dispatcher.Submit(command);
 
     private void Awake()
@@ -39,8 +33,6 @@ public class GridManager : LoggableBehaviour
         Player = gameObject.AddComponent<PlayerInputController>();
     }
 
-    // Explicit "begin the match" entry point — called by GameBootstrap today, the lobby/relay flow later.
-    // State does not exist until this runs. seedCommands are applied before the CommandApplied subscription.
     public void StartGame(GridDefinition definition, IReadOnlyList<ICommand> seedCommands)
     {
         if (IsGameStarted) return;
@@ -53,6 +45,7 @@ public class GridManager : LoggableBehaviour
         if (seedCommands != null)
             foreach (var command in seedCommands) _executor.Apply(command);
 
+        _lastActivePlayer = GridState.ActivePlayer;
         _executor.CommandApplied += OnCommandApplied;
 
         Input.Init(_renderer.Grid, _mainCamera, GridState, _selectAction);
@@ -63,6 +56,15 @@ public class GridManager : LoggableBehaviour
         GameStarted?.Invoke();
     }
 
-    // Every command re-renders the grid (GridRenderer) and refreshes UI panels — both via StateChanged.
-    private void OnCommandApplied(ICommand command) => StateChanged?.Invoke();
+    private int _lastActivePlayer;
+
+    private void OnCommandApplied(ICommand command)
+    {
+        if (GridState.ActivePlayer != _lastActivePlayer)
+        {
+            _lastActivePlayer = GridState.ActivePlayer;
+            Player.ResetToIdle();
+        }
+        StateChanged?.Invoke();
+    }
 }

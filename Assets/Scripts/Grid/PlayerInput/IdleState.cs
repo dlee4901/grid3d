@@ -6,8 +6,5 @@ public class IdleState : PlayerInputStateBase
         => Ctx.Renderer.HighlightAvailableEntities();
 
     public override void OnPositionSelected(QueryContext clicked)
-        => Ctx.Input.Select(clicked);
-
-    public override void OnSelectionChanged(QueryContext? ctx)
-        => Ctx.Controller.TransitionTo(new SelectedState(Ctx));
+        => Ctx.Controller.TransitionTo(new SelectedState(Ctx, clicked));
 }

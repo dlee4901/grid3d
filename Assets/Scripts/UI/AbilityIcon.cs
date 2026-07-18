@@ -10,6 +10,7 @@ public class AbilityIcon : LoggableBehaviour
     [SerializeField] private Image _icon;
     [SerializeField] private GameObject _cooldown;
     [SerializeField] private GameObject _activeHighlight;
+    [SerializeField] private Color _disabledTint = new Color(1f, 1f, 1f, 0.4f);
     [SerializeField] private ManaCounter _manaCounter;
     [SerializeField] private ManaCounterPosition _manaCounterPosition = ManaCounterPosition.East;
     [SerializeField] private float _manaCounterTransformOffset = 88f;
@@ -55,6 +56,13 @@ public class AbilityIcon : LoggableBehaviour
     public void SetActiveVisual(bool active)
     {
         if (_activeHighlight != null) _activeHighlight.SetActive(active);
+    }
+
+    public void SetInteractable(bool interactable)
+    {
+        if (_interactableUI == null) _interactableUI = UnityUtil.GetOrAddComponent<InteractableUI>(gameObject);
+        _interactableUI.enabled = interactable;
+        _icon.color = interactable ? Color.white : _disabledTint;
     }
     
     public void UpdateInfo()

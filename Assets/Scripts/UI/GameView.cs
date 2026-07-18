@@ -4,10 +4,6 @@ using UnityEngine.UI;
 
 public class GameView : StateView
 {
-    // Local     — one machine drives every seat's clock and commits its timeouts (hotseat / testing).
-    // Networked — every clock ticks as a prediction, but this client only ends/auto-times-out its own
-    //             seat; remote seats snap to the bank when their EndTurnCommand arrives (P2P).
-    // Off       — no ticking, no auto-timeout (manual end turn still allowed).
     public enum TimerMode { Local, Networked, Off }
 
     [SerializeField] private ManaCounter _manaCounter;
@@ -16,20 +12,20 @@ public class GameView : StateView
     [SerializeField] private VerticalLayoutGroup _container;
     [SerializeField] private PlayerTimer _playerTimerPrefab;
     [SerializeField] private TimerMode _timerMode = TimerMode.Local;
-    [SerializeField] private int _localSeat = 1;   // the seat THIS client controls in Networked mode
+    [SerializeField] private int _localSeat = 1;
 
-    private PlayerTimer[] _timers;    // index 1..PlayerCount
-    private int _shownActivePlayer;   // 0 = uninitialised
+    private PlayerTimer[] _timers;
+    private int _shownActivePlayer;
 
     protected override void Start()
     {
-        base.Start();                                    // subscribes StateChanged + GameStarted (runs OnGameStarted if already started)
+        base.Start();
         if (_endTurn != null) _endTurn.OnClickCompleted += EndActiveTurn;
     }
 
     protected override void OnGameStarted()
     {
-        InitPlayerTimers();                              // needs State — only runs at/after game start
+        InitPlayerTimers();
         Refresh();
     }
 
@@ -41,7 +37,7 @@ public class GameView : StateView
 
     protected override void Refresh()
     {
-        if (_timers == null) return;                     // game not started yet
+        if (_timers == null) return;
         var state = _gridManager.GridState;
         var players = state.Definition.PlayerCount;
 
@@ -54,16 +50,13 @@ public class GameView : StateView
         {
             var isActivePlayer = p == state.ActivePlayer;
             var isRunning = _timerMode != TimerMode.Off && isActivePlayer;
-            // Snap idle timers to the authoritative bank, and snap everyone on a turn change (that's
-            // when a bank actually moved). Never stomp a mid-turn running clock's local prediction.
             if (turnChanged || !_timers[p].IsRunning)
                 _timers[p].SetTimeMs(state.GetTimeMs(p));
             _timers[p].SetRunning(isRunning);
-            _timers[p].SetActiveVisual(isActivePlayer);        // dim the inactive timers
+            _timers[p].SetActiveVisual(isActivePlayer);
         }
 
         _endTurnText.text = "END TURN " + state.Turn;
-        // Only surface the end-turn button for a turn this client is allowed to end.
         if (_endTurn != null)
             _endTurn.gameObject.SetActive(CanEndTurnFor(state.ActivePlayer));
     }
@@ -77,25 +70,23 @@ public class GameView : StateView
             var timer = Instantiate(_playerTimerPrefab, _container.transform, true);
             timer.SetLabel("Player " + p);
             timer.SetTimeMs(_gridManager.GridState.GetTimeMs(p));
-            var seat = p;                                // capture for the closure
+            var seat = p;
             timer.Expired += () => OnTimerExpired(seat);
             _timers[p] = timer;
         }
     }
 
-    // Manual end turn (end-turn button).
     private void EndActiveTurn()
     {
         var active = _gridManager.GridState.ActivePlayer;
         if (CanEndTurnFor(active)) SubmitEndTurn(active);
     }
 
-    // Auto end turn on a local countdown reaching zero.
     private void OnTimerExpired(int player)
     {
         if (_timerMode == TimerMode.Off) return;
-        if (!CanEndTurnFor(player)) return;                     // Networked: don't commit the opponent's timeout
-        if (_gridManager.GridState.ActivePlayer != player) return;  // stale (turn already advanced)
+        if (!CanEndTurnFor(player)) return;
+        if (_gridManager.GridState.ActivePlayer != player) return;
         SubmitEndTurn(player);
     }
 
@@ -105,7 +96,6 @@ public class GameView : StateView
         _gridManager.Submit(new EndTurnCommand(player, elapsed));
     }
 
-    // Which seats this client is authoritative for.
     private bool CanEndTurnFor(int player)
         => _timerMode != TimerMode.Networked || player == _localSeat;
 }
