@@ -18,8 +18,8 @@ public class GridInput : LoggableBehaviour
 
     public event Action<QueryContext> OnPositionSelected;
     public event Action OnCancelClicked;
-    
-    // public event Action<QueryContext?> OnHoverChanged;
+    public event Action<QueryContext?> OnHoverChanged;
+
     // public event Action<bool> OnLockChanged;
     // public bool IsLocked => _isLocked;
 
@@ -69,6 +69,7 @@ public class GridInput : LoggableBehaviour
         if (_hovered == ctx) return;
         _hovered = ctx;
         Log($"Hover: {Describe(_hovered)}");
+        OnHoverChanged?.Invoke(_hovered);
     }
     
     public bool IsHovered((int, int) position)

@@ -7,14 +7,15 @@ public class PlayerInputController : LoggableBehaviour
 
     public IPlayerInputState State => _current;
 
-    public void Init(GridInput input, CommandDispatcher dispatcher, IGridRenderer renderer)
+    public void Init(GridInput input, CommandDispatcher dispatcher, IGridRenderer renderer, IReadOnlyGridState grid)
     {
         _ctx = new PlayerInputContext
         {
             Controller = this,
             Input = input,
             Dispatcher = dispatcher,
-            Renderer = renderer
+            Renderer = renderer,
+            Grid = grid
         };
 
         _current = new IdleState(_ctx);
@@ -22,6 +23,7 @@ public class PlayerInputController : LoggableBehaviour
 
         input.OnPositionSelected += clicked => _current.OnPositionSelected(clicked);
         input.OnCancelClicked += () => _current.OnCancel();
+        input.OnHoverChanged += hovered => _current.OnHover(hovered);
     }
 
     private void Update()

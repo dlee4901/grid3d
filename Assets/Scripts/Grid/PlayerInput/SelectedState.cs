@@ -10,8 +10,9 @@ public class SelectedState : PlayerInputStateBase
     
     public override void OnEnter()
     {
-        if (Actionable) Ctx.Renderer.ClearHighlights();
-        else Ctx.Renderer.HighlightAvailableEntities();
+        Ctx.Renderer.ClearHighlights();
+        if (!Actionable)
+            Ctx.Renderer.HighlightPositions(Ctx.Grid.GetControllableEntities(), GridHighlightType.AvailableEntities);
     }
     public override void OnPositionSelected(QueryContext clicked) => Ctx.Controller.TransitionTo(new SelectedState(Ctx, clicked));
 
@@ -24,7 +25,9 @@ public class SelectedState : PlayerInputStateBase
     public override void OnAbilityPreview(Ability ability, QueryContext ctx)
     {
         if (!Actionable) return;
-        Ctx.Renderer.HighlightAbilityRange(ability, ctx);
+        var (areas, _) = ability.Targeting.GetSelectablePositions(ctx);
+        Ctx.Renderer.ClearHighlights();
+        Ctx.Renderer.HighlightPositions(areas, GridHighlightType.AbilityRange);
     }
     public override void OnAbilityCancelPreview() => Ctx.Renderer.ClearHighlights();
 

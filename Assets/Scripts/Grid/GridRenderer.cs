@@ -4,6 +4,8 @@ using System.Linq;
 using Unity.Cinemachine;
 using UnityEngine;
 
+public enum GridHighlightType { AvailableEntities, AbilityRange, SelectableTargets, EffectPreview }
+
 public class GridRenderer : LoggableBehaviour, IGridRenderer
 {
     [SerializeField] private GridManager _gridManager;
@@ -20,6 +22,7 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
     [SerializeField] private Color _highlightAvailableEntities = new Color(64f, 255f, 64f, 64f);
     [SerializeField] private Color _highlightAbilityRange = new Color(255f, 255f, 255f, 64f);
     [SerializeField] private Color _highlightSelectableTargets = new Color(255f, 64f, 64f, 64f);
+    [SerializeField] private Color _highlightEffectPreview = new Color(255f, 128f, 0f, 96f);
 
     private SpriteRenderer[] _highlightSquares;
     
@@ -155,46 +158,38 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
         }
     }
     
-    public void HighlightAvailableEntities()
-    {
-        // TODO: check abilities for available parameter in GetControllableEntities()
-        HighlightPositions(GridState.GetControllableEntities(), _highlightAvailableEntities);
-    }
-    
-    public void HighlightAbilityRange(Ability ability, QueryContext ctx)
-    {
-        var (areas, _) = ability.Selection.GetSelectablePositions(ctx);
-        HighlightPositions(areas, _highlightAbilityRange);
-    }
-    
-    public void HighlightSelectableTargets(Ability ability, QueryContext ctx)
-    {
-        var (areas, _) = ability.Selection.GetSelectablePositions(ctx);
-        HighlightPositions(areas, _highlightSelectableTargets);
-    }
-    
     public void ClearHighlights()
     {
         foreach (var square in _highlightSquares) square.gameObject.SetActive(false);
     }
-    
-    private void HighlightPositions(List<(int, int)> positions, Color color)
+
+    public void HighlightPositions(IEnumerable<(int, int)> positions, GridHighlightType type)
     {
-        ClearHighlights();
+        var color = HighlightColor(type);
         foreach (var position in positions)
         {
-            _highlightSquares[GridState.ToPosition1D(position)].gameObject.SetActive(true);
-            _highlightSquares[GridState.ToPosition1D(position)].material.SetColor(UnityUtil.MaterialBaseColorId, color);
+            var i = GridState.ToPosition1D(position);
+            _highlightSquares[i].gameObject.SetActive(true);
+            _highlightSquares[i].material.SetColor(UnityUtil.MaterialBaseColorId, color);
         }
     }
-    
-    private void HighlightPositions(List<int> positions, Color color)
+
+    public void HighlightPositions(IEnumerable<int> positions, GridHighlightType type)
     {
-        ClearHighlights();
+        var color = HighlightColor(type);
         foreach (var position in positions)
         {
             _highlightSquares[position].gameObject.SetActive(true);
             _highlightSquares[position].material.SetColor(UnityUtil.MaterialBaseColorId, color);
         }
     }
+
+    private Color HighlightColor(GridHighlightType type) => type switch
+    {
+        GridHighlightType.AvailableEntities => _highlightAvailableEntities,
+        GridHighlightType.AbilityRange      => _highlightAbilityRange,
+        GridHighlightType.SelectableTargets => _highlightSelectableTargets,
+        GridHighlightType.EffectPreview     => _highlightEffectPreview,
+        _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+    };
 }

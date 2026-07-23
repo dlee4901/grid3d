@@ -8,7 +8,7 @@ public class AbilityConfig : INameId
     public AbilityType Type { get; set; } = AbilityType.Default;
     public int ManaCost { get; set; } = 1;
     public List<AbilityBindings> Bindings { get; set; }
-    public AbilitySelection Selection { get; set; }
+    public AbilityTargeting Targeting { get; set; }
     
     public int Warmup { get; set; } = 0;
     public int Cooldown { get; set; } = 0;

@@ -2,8 +2,7 @@ using System.Collections.Generic;
 
 public interface IGridRenderer
 {
-    void HighlightAvailableEntities();
-    void HighlightAbilityRange(Ability ability, QueryContext ctx);
-    void HighlightSelectableTargets(Ability ability, QueryContext ctx);
     void ClearHighlights();
+    void HighlightPositions(IEnumerable<(int, int)> positions, GridHighlightType type);
+    void HighlightPositions(IEnumerable<int> positions, GridHighlightType type);
 }

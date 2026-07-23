@@ -16,7 +16,7 @@ public static partial class MapConfigs
         },
         EntityStartPositions = new List<EntityStartConfig>
         {
-            new() { EntityId = "ExplosiveBarrel", PositionValues = new() { 42, 44 }, PositionRanges = new() { new IntRange(35, 37) } }
+            //new() { EntityId = "ExplosiveBarrel", PositionValues = new() { 42, 44 }, PositionRanges = new() { new IntRange(35, 37) } }
         }
     };
 }

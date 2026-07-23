@@ -2,5 +2,5 @@ public enum AbilityTriggerType { OnSelect, OnTurnStart, OnDeath, OnKill, OnHealt
 
 public class AbilityTrigger : TypeConfig
 {
-    public AbilitySelection Selection { get; set; }
+    public AbilityTargeting Targeting { get; set; }
 }

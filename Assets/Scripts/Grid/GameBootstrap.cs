@@ -64,8 +64,8 @@ public class GameBootstrap : LoggableBehaviour
 
     private void CreateTestTeams()
     {
-        var team1 = new TeamData("TestTeam1", "TestMap1", new Dictionary<int, string>{ {2, "Barbarian"}, {5, "Rogue"}, {10, "Knight"}, {15, "Flameweaver"} });
-        var team2 = new TeamData("TestTeam2", "TestMap1", new Dictionary<int, string>{ {110, "Barbarian"}, {113, "Rogue"}, {116, "Knight"}, {119, "Flameweaver"} });
+        var team1 = new TeamData("TestTeam1", "TestMap1", new Dictionary<int, string>{ {15, "Flameweaver"} });//{2, "Barbarian"}, {5, "Rogue"}, {10, "Knight"} });
+        var team2 = new TeamData("TestTeam2", "TestMap1", new Dictionary<int, string>{ {119, "Flameweaver"} });//{110, "Barbarian"}, {113, "Rogue"}, {116, "Knight"} });
         JsonHandler.SaveData(team1);
         JsonHandler.SaveData(team2);
     }

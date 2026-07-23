@@ -12413,7 +12413,8 @@ MonoBehaviour:
   _highlightSquare: {fileID: 724471960}
   _highlightAvailableEntities: {r: 0.2509804, g: 1, b: 0.2509804, a: 0.2509804}
   _highlightAbilityRange: {r: 1, g: 1, b: 1, a: 0.2509804}
-  _highlightSelectableTargets: {r: 0.5019608, g: 1, b: 0.5019608, a: 0.2509804}
+  _highlightSelectableTargets: {r: 1, g: 0.2509804, b: 0.2509804, a: 0.2509804}
+  _highlightEffectPreview: {r: 1, g: 1, b: 0.2509804, a: 0.2509804}
 --- !u!4 &2142585461
 Transform:
   m_ObjectHideFlags: 0

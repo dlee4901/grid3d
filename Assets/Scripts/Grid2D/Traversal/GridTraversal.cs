@@ -95,6 +95,7 @@ public class GridTraversal
             {
                 if (!steps.Add(nextStep)) continue;
                 queue.Enqueue(nextStep);
+                foreach (var widthStep in Widen(ctx, nextStep)) steps.Add(widthStep);
                 yield return steps;
             }
         }
@@ -108,6 +109,7 @@ public class GridTraversal
 
         var directionFacing = ctx.SourceEntity?.Facing ?? DirectionFacing.North;
         var unitVectors = GetUnitVectors(direction, directionFacing);
+        
         var traverseTiles = unitVectors.Select(vec => (currentPosition.Item1 + vec.Item1, currentPosition.Item2 + vec.Item2)).ToList();
 
         for (var i = 0; i < traverseTiles.Count; i++)
@@ -122,16 +124,24 @@ public class GridTraversal
 
             yield return new Step(position, curDistance, Linear ? (DirectionType)i : direction);
 
-            if ((StartWidth <= 0 && DeltaWidth <= 0) || DeltaWidthDistanceOffset >= curDistance) continue;
-            var curWidth = StartWidth + DeltaWidth * (curDistance - DeltaWidthDistanceOffset) / DeltaWidthStep;
-            var widthTiles = GetWidthTiles(ctx, curWidth, position, unitVectors);
-            foreach (var widthTile in widthTiles)
-                yield return new Step(widthTile, curDistance, Linear ? (DirectionType)i : direction);
-
             if (Chain == null || curDistance < ChainOffset) continue;
             foreach (var step in Chain.Expand(ctx, position, curDistance, Chain.Direction))
                 yield return step;
         }
+    }
+    
+    private IEnumerable<Step> Widen(QueryContext ctx, Step step)
+    {
+        if (StartWidth <= 0 && DeltaWidth <= 0) yield break;
+        if (DeltaWidthDistanceOffset >= step.Distance) yield break;
+        
+        var directionFacing = ctx.SourceEntity?.Facing ?? DirectionFacing.North;
+        var unitVectors = GetUnitVectors(step.Direction, directionFacing);
+        
+        var width = StartWidth + DeltaWidth * (step.Distance - DeltaWidthDistanceOffset) / DeltaWidthStep;
+        var widthPositions = GetWidthPositions(ctx, width, step.Position, unitVectors);
+        
+        foreach (var position in widthPositions) yield return new Step(position, step.Distance, step.Direction);
     }
 
     private bool IsColliding(Entity targetEntity, IReadOnlyEntity? sourceEntity=null)
@@ -150,7 +160,7 @@ public class GridTraversal
         return false;
     }
 
-    private List<(int, int)> GetWidthTiles(QueryContext ctx, int width, (int, int) startPosition, (int, int)[] unitVectors)
+    private List<(int, int)> GetWidthPositions(QueryContext ctx, int width, (int, int) startPosition, (int, int)[] unitVectors)
     {
         var grid = ctx.Grid;
         List<(int, int)> widthTiles = new();

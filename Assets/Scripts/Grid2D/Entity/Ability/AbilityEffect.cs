@@ -3,5 +3,5 @@ public enum AbilityEffectType { ReplaceAbility, AddAbility, Damage, InflictStatu
 
 public class AbilityEffect : TypeConfig
 {
-    public AbilitySelection Selection { get; set; }
+    public AbilityTargeting Targeting { get; set; }
 }

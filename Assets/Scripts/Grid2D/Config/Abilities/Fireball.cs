@@ -5,7 +5,7 @@ public static partial class AbilityConfigs
     public static readonly AbilityConfig Fireball = new()
     {
         Id = "Fireball",
-        Selection = new AreaAbilitySelection()
+        Targeting = new AreaAbilityTargeting()
         {
             EffectArea = new GridSelection()
             {
@@ -15,7 +15,8 @@ public static partial class AbilityConfigs
                     {
                         Direction = DirectionType.Straight,
                         Linear = false,
-                        MaxDistance = 3
+                        MaxDistance = 3,
+                        Passthrough = EntityPassthrough.All
                     }
                 }
             },
@@ -29,7 +30,8 @@ public static partial class AbilityConfigs
                         {
                             Direction = DirectionType.Straight,
                             Linear = false,
-                            MaxDistance = 3
+                            MaxDistance = 3,
+                            Passthrough = EntityPassthrough.All
                         }
                     }
                 }

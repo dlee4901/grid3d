@@ -6,7 +6,7 @@ public static partial class AbilityConfigs
     {
         Id = "MoveStraight3Step",
         Type = AbilityType.Move,
-        Selection = new SingleAbilitySelection()
+        Targeting = new SingleAbilityTargeting()
         {
             SelectableAreas = new List<GridSelection>()
             {

@@ -18,7 +18,9 @@ public class TargetingState : PlayerInputStateBase
 
     public override void OnEnter()
     {
-        Ctx.Renderer.HighlightSelectableTargets(_ability, _source);
+        var (areas, _) = _ability.Targeting.GetSelectablePositions(_source);
+        Ctx.Renderer.ClearHighlights();
+        Ctx.Renderer.HighlightPositions(areas, GridHighlightType.SelectableTargets);
     }
 
     public override void OnPositionSelected(QueryContext clicked)
@@ -29,10 +31,23 @@ public class TargetingState : PlayerInputStateBase
             return;
         }
         _targets.Add(clicked.SourcePosition);
-        Ctx.Controller.LogState($"Target added: {clicked.SourcePosition} ({_targets.Count}/{_ability.Selection.SelectionAmount})");
-        if (_targets.Count >= _ability.Selection.SelectionAmount) Confirm();
+        Ctx.Controller.LogState($"Target added: {clicked.SourcePosition} ({_targets.Count}/{_ability.Targeting.SelectionAmount})");
+        if (_targets.Count >= _ability.Targeting.SelectionAmount) Confirm();
     }
-    
+
+    public override void OnHover(QueryContext? hovered)
+    {
+        var (areas, _) = _ability.Targeting.GetSelectablePositions(_source);
+        Ctx.Renderer.ClearHighlights();
+        Ctx.Renderer.HighlightPositions(areas, GridHighlightType.SelectableTargets);
+        if (hovered.HasValue)
+        {
+            var tentative = new List<(int, int)>(_targets) { hovered.Value.SourcePosition };
+            if (_ability.Targeting.TryGetEffectPositions(_source, tentative, out var effect))
+                Ctx.Renderer.HighlightPositions(effect, GridHighlightType.EffectPreview);
+        }
+    }
+
     public override void OnAbilityActivate(Ability ability, QueryContext source)
     {
         if (ability.Id == _ability.Id) OnCancel();
@@ -47,7 +62,7 @@ public class TargetingState : PlayerInputStateBase
 
     private bool IsValidTarget((int, int) pos)
     {
-        var (areas, _) = _ability.Selection.GetSelectablePositions(_source);
+        var (areas, _) = _ability.Targeting.GetSelectablePositions(_source);
         return areas.Contains(pos);
     }
 

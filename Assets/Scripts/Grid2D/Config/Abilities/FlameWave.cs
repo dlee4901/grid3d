@@ -2,9 +2,9 @@ using System.Collections.Generic;
 
 public static partial class AbilityConfigs
 {
-    public static readonly AbilityConfig IcicleBlast = new()
+    public static readonly AbilityConfig FlameWave = new()
     {
-        Id = "IcicleBlast",
+        Id = "Flame Wave",
         Targeting = new FillAbilityTargeting()
         {
             SelectableAreas = new List<GridSelection>()
@@ -16,18 +16,8 @@ public static partial class AbilityConfigs
                         new GridTraversal()
                         {
                             Direction = DirectionType.North,
-                            MaxDistance = 6
-                        }
-                    }
-                },
-                new GridSelection()
-                {
-                    Traversals = new List<GridTraversal>()
-                    {
-                        new GridTraversal()
-                        {
-                            Direction = DirectionType.South,
-                            MaxDistance = 6
+                            MaxDistance = 2,
+                            DeltaWidth = 1
                         }
                     }
                 }

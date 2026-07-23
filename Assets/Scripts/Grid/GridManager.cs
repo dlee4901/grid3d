@@ -50,7 +50,7 @@ public class GridManager : LoggableBehaviour
 
         Input.Init(_renderer.Grid, _mainCamera, GridState, _selectAction);
         _renderer.Build();
-        Player.Init(Input, _dispatcher, _renderer);
+        Player.Init(Input, _dispatcher, _renderer, GridState);
 
         IsGameStarted = true;
         GameStarted?.Invoke();
