@@ -3,42 +3,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public enum DirectionType {North, NorthEast, East, SouthEast, South, SouthWest, West, NorthWest, Vertical, Horizontal, Diagonal, Straight, Line}
+public enum DirectionType {North, NorthEast, East, SouthEast, South, SouthWest, West, NorthWest, Vertical, Horizontal, Diagonal, Straight, Line, Mask}
 public enum DirectionFacing {North, East, South, West}
 [Flags] public enum EntityPassthrough {None, Ally, Enemy, All=Ally|Enemy}
 
-public struct Step : IEquatable<Step>
-{
-    public (int x, int y) Position;
-    public int Distance;
-    public DirectionType Direction;
-
-    public Step((int x, int y) position, int distance, DirectionType direction)
-    {
-        Position = position;
-        Distance = distance;
-        Direction = direction;
-    }
-
-    public bool Equals(Step other)
-    {
-        return Position.Equals(other.Position) && Direction == other.Direction; //&& Distance == other.Distance;
-    }
-
-    public override bool Equals(object? obj)
-    {
-        return obj is Step other && Equals(other);
-    }
-
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(Position, (int)Direction);
-    }
-}
-
 public class GridTraversal
 {
+    public const int Directions = 8;
     public DirectionType Direction { get; set; }
+    public bool[] DirectionMask { get; set; } = new bool[Directions];
 
     public int MaxDistance { get; set; } = 0;
     public bool AbsoluteDirection { get; set; } = false;
@@ -55,37 +28,37 @@ public class GridTraversal
     public GridTraversal? Chain { get; set; }
     public int ChainOffset { get; set; } = 0; // IF (n > 0) n ~ distance ELSE maxDistReached + n ~ maxDistReached
 
-    public List<Step> GetSteps(QueryContext ctx)
+    public List<GridStep> GetSteps(QueryContext ctx)
     {
-        var steps = new HashSet<Step>();
+        var steps = new HashSet<GridStep>();
         foreach (var iter in Traverse(ctx))
             steps = iter;
         return steps.ToList();
     }
 
-    public HashSet<Step> GetStepsSet(QueryContext ctx)
+    public HashSet<GridStep> GetStepsSet(QueryContext ctx)
     {
-        var steps = new HashSet<Step>();
+        var steps = new HashSet<GridStep>();
         foreach (var iter in Traverse(ctx))
             steps = iter;
         return steps;
     }
 
-    public List<Step> GetTraceSteps(QueryContext ctx)
+    public List<GridStep> GetTraceSteps(QueryContext ctx)
     {
-        return GetTraceSteps(ctx, new Step(ctx.SourcePosition, 0, Direction));
+        return GetTraceSteps(ctx, new GridStep(ctx.SourcePosition, 0, Direction));
     }
 
-    private List<Step> GetTraceSteps(QueryContext ctx, Step initialStep)
+    private List<GridStep> GetTraceSteps(QueryContext ctx, GridStep initialGridStep)
     {
-        return Expand(ctx, initialStep.Position, initialStep.Distance, initialStep.Direction).ToList();
+        return Expand(ctx, initialGridStep.Position, initialGridStep.Distance, initialGridStep.Direction).ToList();
     }
 
-    private IEnumerable<HashSet<Step>> Traverse(QueryContext ctx)
+    private IEnumerable<HashSet<GridStep>> Traverse(QueryContext ctx)
     {
-        var steps = new HashSet<Step>();
-        var queue = new Queue<Step>();
-        var initialStep = new Step(ctx.SourcePosition, 0, Direction);
+        var steps = new HashSet<GridStep>();
+        var queue = new Queue<GridStep>();
+        var initialStep = new GridStep(ctx.SourcePosition, 0, Direction);
         steps.Add(initialStep);
         queue.Enqueue(initialStep);
         while (queue.Count > 0)
@@ -101,7 +74,7 @@ public class GridTraversal
         }
     }
 
-    private IEnumerable<Step> Expand(QueryContext ctx, (int, int) currentPosition, int curDistance, DirectionType direction)
+    private IEnumerable<GridStep> Expand(QueryContext ctx, (int, int) currentPosition, int curDistance, DirectionType direction)
     {
         var grid = ctx.Grid;
         var maxDistance = MaxDistance < 0 || MaxDistance > grid.X * grid.Y ? grid.X * grid.Y : MaxDistance;
@@ -122,7 +95,7 @@ public class GridTraversal
             if ((entity = grid.GetEntity(position)) != null && IsColliding(entity, ctx.SourceEntity)) continue;
             //if (collideMask != null && (entity = grid.GetEntity(tile)) != null && collideMask(entity)) continue;
 
-            yield return new Step(position, curDistance, Linear ? (DirectionType)i : direction);
+            yield return new GridStep(position, curDistance, Linear ? (DirectionType)i : direction);
 
             if (Chain == null || curDistance < ChainOffset) continue;
             foreach (var step in Chain.Expand(ctx, position, curDistance, Chain.Direction))
@@ -130,18 +103,18 @@ public class GridTraversal
         }
     }
     
-    private IEnumerable<Step> Widen(QueryContext ctx, Step step)
+    private IEnumerable<GridStep> Widen(QueryContext ctx, GridStep gridStep)
     {
         if (StartWidth <= 0 && DeltaWidth <= 0) yield break;
-        if (DeltaWidthDistanceOffset >= step.Distance) yield break;
+        if (DeltaWidthDistanceOffset >= gridStep.Distance) yield break;
         
         var directionFacing = ctx.SourceEntity?.Facing ?? DirectionFacing.North;
-        var unitVectors = GetUnitVectors(step.Direction, directionFacing);
+        var unitVectors = GetUnitVectors(gridStep.Direction, directionFacing);
         
-        var width = StartWidth + DeltaWidth * (step.Distance - DeltaWidthDistanceOffset) / DeltaWidthStep;
-        var widthPositions = GetWidthPositions(ctx, width, step.Position, unitVectors);
+        var width = StartWidth + DeltaWidth * (gridStep.Distance - DeltaWidthDistanceOffset) / DeltaWidthStep;
+        var widthPositions = GetWidthPositions(ctx, width, gridStep.Position, unitVectors);
         
-        foreach (var position in widthPositions) yield return new Step(position, step.Distance, step.Direction);
+        foreach (var position in widthPositions) yield return new GridStep(position, gridStep.Distance, gridStep.Direction);
     }
 
     private bool IsColliding(Entity targetEntity, IReadOnlyEntity? sourceEntity=null)
@@ -199,9 +172,9 @@ public class GridTraversal
 
     private (int, int)[] GetUnitVectors(DirectionType direction, DirectionFacing directionFacing=DirectionFacing.North)
     {
-        var unitVectors = new (int, int)[8];
+        var unitVectors = new (int, int)[Directions];
         var absoluteDirections = GetAbsoluteDirections(direction, directionFacing);
-        for (var i = 0; i < 8; i++)
+        for (var i = 0; i < Directions; i++)
         {
             var xOffset = 0;
             var yOffset = 0;
@@ -217,19 +190,19 @@ public class GridTraversal
         return unitVectors;
     }
 
-    private List<bool> GetAbsoluteDirections(DirectionType direction, DirectionFacing directionFacing=DirectionFacing.North)
+    private bool[] GetAbsoluteDirections(DirectionType direction, DirectionFacing directionFacing=DirectionFacing.North)
     {
-        var absoluteDirections = new List<bool>{false, false, false, false, false, false, false, false};
+        var absoluteDirections = new bool[Directions];//List<bool>{false, false, false, false, false, false, false, false};
         switch (direction)
         {
             case DirectionType.Line:
-                for (var i = 0; i < 8; i++) absoluteDirections[i] = true;
+                for (var i = 0; i < Directions; i++) absoluteDirections[i] = true;
                 break;
             case DirectionType.Diagonal:
-                for (var i = 1; i < 8; i += 2) absoluteDirections[i] = true;
+                for (var i = 1; i < Directions; i += 2) absoluteDirections[i] = true;
                 break;
             case DirectionType.Straight:
-                for (var i = 0; i < 8; i += 2) absoluteDirections[i] = true;
+                for (var i = 0; i < Directions; i += 2) absoluteDirections[i] = true;
                 break;
             case DirectionType.Horizontal:
                 absoluteDirections[2] = true;
@@ -263,6 +236,9 @@ public class GridTraversal
             case DirectionType.NorthWest:
                 absoluteDirections[7] = true;
                 break;
+            case DirectionType.Mask:
+                for (var i = 0; i < Directions; i++) absoluteDirections[i] = DirectionMask[i];
+                break;
             default:
                 return absoluteDirections;
         }
@@ -278,9 +254,16 @@ public class GridTraversal
             case DirectionFacing.West:
                 shift = 4;
                 break;
+            case DirectionFacing.North:
             default:
                 return absoluteDirections;
         }
-        return (List<bool>)absoluteDirections.Skip(shift).Concat(absoluteDirections.Take(shift));
+        var buffer = new bool[Directions];
+        shift %= Directions;
+        Array.Copy(absoluteDirections, shift, buffer, 0, Directions - shift);
+        Array.Copy(absoluteDirections, 0, buffer, Directions - shift, shift);
+        Array.Copy(buffer, absoluteDirections, Directions);
+        
+        return buffer;
     }
 }

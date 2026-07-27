@@ -271,7 +271,8 @@ public sealed class GridState : IReadOnlyGridState
 
     public bool IsTraversable(int position)
     {
-        return Definition.TerrainMap[position] != TerrainType.Void && _entities[position] == null;
+        return Definition.IsValidPosition(position) && _entities[position] == null
+            && Definition.TerrainMap[position] != TerrainType.Void; // TODO: Terrain check
     }
 
     public bool IsTraversable(int x, int y)

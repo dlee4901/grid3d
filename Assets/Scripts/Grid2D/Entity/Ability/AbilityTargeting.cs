@@ -21,24 +21,29 @@ public abstract class AbilityTargeting
         var splits = new List<int>();
         foreach (var gridSelection in SelectableAreas)
         {
-            var area = gridSelection.GetSelection(ctx).ToList();
+            var area = gridSelection.GetPositions(ctx).ToList();
             splits.Add(area.Count);
             areas.AddRange(area);
         }
         return (areas, splits);
     }
+    
+    // public (List<Step> areas, List<int> splits) GetSteps(QueryContext ctx)
+    // {
+    //     
+    // }
 
-    public abstract bool TryGetEffectPositions(QueryContext ctx, List<(int, int)> selectedPositions, out HashSet<(int, int)> effectPositions, List<int> splitAreaSelections=null);
+    public abstract bool TryGetEffectPositions(QueryContext ctx, List<(int, int)> selectedPositions, out HashSet<(int, int)> effectPositions, List<int> splitAreaSelections=null, (List<(int, int)> areas, List<int> splits)? selectable=null);
 }
 
 public class SingleAbilityTargeting : AbilityTargeting
 {
-    public override bool TryGetEffectPositions(QueryContext ctx, List<(int, int)> selectedPositions, out HashSet<(int, int)> effectPositions, List<int> splitAreaSelections=null)
+    public override bool TryGetEffectPositions(QueryContext ctx, List<(int, int)> selectedPositions, out HashSet<(int, int)> effectPositions, List<int> splitAreaSelections=null, (List<(int, int)> areas, List<int> splits)? selectable=null)
     {
         effectPositions = new HashSet<(int, int)>();
         if (selectedPositions.Count != SelectionAmount)
             return false;
-        var (areas, splits) = GetSelectablePositions(ctx);
+        var (areas, splits) = selectable ?? GetSelectablePositions(ctx);
         foreach (var position in selectedPositions)
         {
             if (!areas.Contains(position))
@@ -53,17 +58,17 @@ public class AreaAbilityTargeting : AbilityTargeting
 {
     public GridSelection EffectArea { get; set; }
 
-    public override bool TryGetEffectPositions(QueryContext ctx, List<(int, int)> selectedPositions, out HashSet<(int, int)> effectPositions, List<int> splitAreaSelections=null)
+    public override bool TryGetEffectPositions(QueryContext ctx, List<(int, int)> selectedPositions, out HashSet<(int, int)> effectPositions, List<int> splitAreaSelections=null, (List<(int, int)> areas, List<int> splits)? selectable=null)
     {
         effectPositions = new HashSet<(int, int)>();
         if (selectedPositions.Count != SelectionAmount)
             return false;
-        var (areas, splits) = GetSelectablePositions(ctx);
+        var (areas, splits) = selectable ?? GetSelectablePositions(ctx);
         foreach (var position in selectedPositions)
         {
             if (!areas.Contains(position))
                 return false;
-            effectPositions.UnionWith(EffectArea.GetSelection(new QueryContext(ctx.Grid, position, ctx.SourceEntity)));
+            effectPositions.UnionWith(EffectArea.GetPositions(new QueryContext(ctx.Grid, position, ctx.SourceEntity)));
         }
         return true;
     }
@@ -73,7 +78,7 @@ public class FillAbilityTargeting : AbilityTargeting
 {
     public bool CombineAreas { get; set; } = false;
 
-    public override bool TryGetEffectPositions(QueryContext ctx, List<(int, int)> selectedPositions, out HashSet<(int, int)> effectPositions, List<int> splitAreaSelections=null)
+    public override bool TryGetEffectPositions(QueryContext ctx, List<(int, int)> selectedPositions, out HashSet<(int, int)> effectPositions, List<int> splitAreaSelections=null, (List<(int, int)> areas, List<int> splits)? selectable=null)
     {
         effectPositions = new HashSet<(int, int)>();
         if (selectedPositions.Count != SelectionAmount)
@@ -81,7 +86,7 @@ public class FillAbilityTargeting : AbilityTargeting
         if (!CombineAreas && (splitAreaSelections == null || splitAreaSelections.Count != SelectionAmount))
             return false;
 
-        var (areas, splits) = GetSelectablePositions(ctx);
+        var (areas, splits) = selectable ?? GetSelectablePositions(ctx);
         if (CombineAreas)
         {
             if (!areas.Contains(selectedPositions[0]))

@@ -6,11 +6,13 @@ public class TargetingState : PlayerInputStateBase
     private readonly Ability _ability;
     private readonly QueryContext _source;
     private readonly List<(int, int)> _targets = new();
+    private readonly (List<(int, int)> areas, List<int> splits) _selectable;
 
     public TargetingState(PlayerInputContext ctx, Ability ability, QueryContext source) : base(ctx)
     {
         _ability = ability;
         _source = source;
+        _selectable = ability.Targeting.GetSelectablePositions(source);
     }
 
     public string AbilityId => _ability.Id;
@@ -18,9 +20,8 @@ public class TargetingState : PlayerInputStateBase
 
     public override void OnEnter()
     {
-        var (areas, _) = _ability.Targeting.GetSelectablePositions(_source);
         Ctx.Renderer.ClearHighlights();
-        Ctx.Renderer.HighlightPositions(areas, GridHighlightType.SelectableTargets);
+        Ctx.Renderer.HighlightPositions(_selectable.areas, GridHighlightType.SelectableTargets);
     }
 
     public override void OnPositionSelected(QueryContext clicked)
@@ -37,13 +38,12 @@ public class TargetingState : PlayerInputStateBase
 
     public override void OnHover(QueryContext? hovered)
     {
-        var (areas, _) = _ability.Targeting.GetSelectablePositions(_source);
         Ctx.Renderer.ClearHighlights();
-        Ctx.Renderer.HighlightPositions(areas, GridHighlightType.SelectableTargets);
+        Ctx.Renderer.HighlightPositions(_selectable.areas, GridHighlightType.SelectableTargets);
         if (hovered.HasValue)
         {
             var tentative = new List<(int, int)>(_targets) { hovered.Value.SourcePosition };
-            if (_ability.Targeting.TryGetEffectPositions(_source, tentative, out var effect))
+            if (_ability.Targeting.TryGetEffectPositions(_source, tentative, out var effect, selectable: _selectable))
                 Ctx.Renderer.HighlightPositions(effect, GridHighlightType.EffectPreview);
         }
     }
@@ -60,11 +60,7 @@ public class TargetingState : PlayerInputStateBase
     public override void OnCancel()
         => Ctx.Controller.TransitionTo(new SelectedState(Ctx, _source));
 
-    private bool IsValidTarget((int, int) pos)
-    {
-        var (areas, _) = _ability.Targeting.GetSelectablePositions(_source);
-        return areas.Contains(pos);
-    }
+    private bool IsValidTarget((int, int) pos) => _selectable.areas.Contains(pos);
 
     private void Confirm()
     {

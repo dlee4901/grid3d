@@ -14,7 +14,7 @@ public class GridSelection
     public PredicateConfig EntityAllowlist { get; set; }
     public PredicateConfig EntityDenylist { get; set; }
 
-    public HashSet<(int, int)> GetSelection(QueryContext ctx, bool filterEntities=true)
+    public HashSet<(int, int)> GetPositions(QueryContext ctx, bool filterEntities=true)
     {
         var selection = new HashSet<(int, int)>();
         var (steps, maxDistance) = GetUnfilteredSteps(ctx);
@@ -41,9 +41,9 @@ public class GridSelection
         return selection;
     }
 
-    public HashSet<Step> GetSteps(QueryContext ctx, bool filterEntities=true)
+    public HashSet<GridStep> GetSteps(QueryContext ctx, bool filterEntities=true)
     {
-        var filteredSteps = new HashSet<Step>();
+        var filteredSteps = new HashSet<GridStep>();
         var (steps, maxDistance) = GetUnfilteredSteps(ctx);
         var excludedDistances = GetExcludedDistances(maxDistance);
         foreach (var step in steps)
@@ -68,9 +68,9 @@ public class GridSelection
         return filteredSteps;
     }
 
-    private (HashSet<Step> steps, int maxDistance) GetUnfilteredSteps(QueryContext ctx)
+    private (HashSet<GridStep> steps, int maxDistance) GetUnfilteredSteps(QueryContext ctx)
     {
-        var steps = new HashSet<Step>();
+        var steps = new HashSet<GridStep>();
         var maxDistance = MaxDistance;
         foreach (var traversal in Traversals)
         {

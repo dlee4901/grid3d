@@ -15,7 +15,7 @@ public static partial class AbilityConfigs
                     {
                         Direction = DirectionType.Straight,
                         Linear = false,
-                        MaxDistance = 3,
+                        MaxDistance = 2,
                         Passthrough = EntityPassthrough.All
                     }
                 }
@@ -30,7 +30,7 @@ public static partial class AbilityConfigs
                         {
                             Direction = DirectionType.Straight,
                             Linear = false,
-                            MaxDistance = 3,
+                            MaxDistance = 2,
                             Passthrough = EntityPassthrough.All
                         }
                     }
