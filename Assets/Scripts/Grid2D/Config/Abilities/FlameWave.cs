@@ -5,23 +5,39 @@ public static partial class AbilityConfigs
     public static readonly AbilityConfig FlameWave = new()
     {
         Id = "Flame Wave",
-        Targeting = new FillAbilityTargeting()
+        Targeting = new DirectionTargeting()
         {
-            SelectableAreas = new List<GridSelection>()
+            Grouping = new [] {1, 0, 2, 0, 3, 0, 4, 0},
+            EffectArea = new GridSelection()
             {
-                new GridSelection()
+                Traversals = new List<GridTraversal>()
                 {
-                    Traversals = new List<GridTraversal>()
+                    new GridTraversal()
                     {
-                        new GridTraversal()
-                        {
-                            Direction = DirectionType.North,
-                            MaxDistance = 2,
-                            DeltaWidth = 1
-                        }
+                        Direction = DirectionType.Straight,
+                        MaxDistance = 2,
+                        DeltaWidth = 1
                     }
                 }
             }
         }
+        // TargetingOld = new FillAbilityTargetingOld()
+        // {
+        //     SelectableAreas = new List<GridSelection>()
+        //     {
+        //         new GridSelection()
+        //         {
+        //             Traversals = new List<GridTraversal>()
+        //             {
+        //                 new GridTraversal()
+        //                 {
+        //                     Direction = DirectionType.North,
+        //                     MaxDistance = 2,
+        //                     DeltaWidth = 1
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
     };
 }

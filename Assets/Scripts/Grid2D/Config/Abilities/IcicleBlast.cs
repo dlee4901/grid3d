@@ -5,33 +5,48 @@ public static partial class AbilityConfigs
     public static readonly AbilityConfig IcicleBlast = new()
     {
         Id = "IcicleBlast",
-        Targeting = new FillAbilityTargeting()
+        Targeting = new DirectionTargeting()
         {
-            SelectableAreas = new List<GridSelection>()
+            Grouping = new int[] {1, 0, 2, 0, 1, 0, 2, 0},
+            EffectArea = new GridSelection()
             {
-                new GridSelection()
+                Traversals = new List<GridTraversal>()
                 {
-                    Traversals = new List<GridTraversal>()
+                    new GridTraversal()
                     {
-                        new GridTraversal()
-                        {
-                            Direction = DirectionType.North,
-                            MaxDistance = 6
-                        }
-                    }
-                },
-                new GridSelection()
-                {
-                    Traversals = new List<GridTraversal>()
-                    {
-                        new GridTraversal()
-                        {
-                            Direction = DirectionType.South,
-                            MaxDistance = 6
-                        }
+                        Direction = DirectionType.Straight,
+                        MaxDistance = 4
                     }
                 }
             }
         }
+        // TargetingOld = new FillAbilityTargetingOld()
+        // {
+        //     SelectableAreas = new List<GridSelection>()
+        //     {
+        //         new GridSelection()
+        //         {
+        //             Traversals = new List<GridTraversal>()
+        //             {
+        //                 new GridTraversal()
+        //                 {
+        //                     Direction = DirectionType.North,
+        //                     MaxDistance = 6
+        //                 }
+        //             }
+        //         },
+        //         new GridSelection()
+        //         {
+        //             Traversals = new List<GridTraversal>()
+        //             {
+        //                 new GridTraversal()
+        //                 {
+        //                     Direction = DirectionType.South,
+        //                     MaxDistance = 6
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
     };
 }

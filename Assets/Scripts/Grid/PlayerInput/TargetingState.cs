@@ -12,7 +12,7 @@ public class TargetingState : PlayerInputStateBase
     {
         _ability = ability;
         _source = source;
-        _selectable = ability.Targeting.GetSelectablePositions(source);
+        _selectable = ability.TargetingOld.GetSelectablePositions(source);
     }
 
     public string AbilityId => _ability.Id;
@@ -32,8 +32,8 @@ public class TargetingState : PlayerInputStateBase
             return;
         }
         _targets.Add(clicked.SourcePosition);
-        Ctx.Controller.LogState($"Target added: {clicked.SourcePosition} ({_targets.Count}/{_ability.Targeting.SelectionAmount})");
-        if (_targets.Count >= _ability.Targeting.SelectionAmount) Confirm();
+        Ctx.Controller.LogState($"Target added: {clicked.SourcePosition} ({_targets.Count}/{_ability.TargetingOld.SelectionAmount})");
+        if (_targets.Count >= _ability.TargetingOld.SelectionAmount) Confirm();
     }
 
     public override void OnHover(QueryContext? hovered)
@@ -43,7 +43,7 @@ public class TargetingState : PlayerInputStateBase
         if (hovered.HasValue)
         {
             var tentative = new List<(int, int)>(_targets) { hovered.Value.SourcePosition };
-            if (_ability.Targeting.TryGetEffectPositions(_source, tentative, out var effect, selectable: _selectable))
+            if (_ability.TargetingOld.TryGetEffectPositions(_source, tentative, out var effect, selectable: _selectable))
                 Ctx.Renderer.HighlightPositions(effect, GridHighlightType.EffectPreview);
         }
     }

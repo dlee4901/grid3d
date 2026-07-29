@@ -1,121 +1,110 @@
 using System.Collections.Generic;
 using System.Linq;
 
+
 public abstract class AbilityTargeting
 {
-    public List<GridSelection> SelectableAreas { get; set; }
-    public int SelectionAmount { get; set; } = 1;
+    public int Targets { get; set; } = 1;
+    public GridSelection EffectArea { get; set; } = null;
 
-    public HashSet<(int, int)> GetRange(QueryContext ctx)
-    {
-        var selectableAreasCombined = new HashSet<(int, int)>();
-        foreach (var gridSelection in SelectableAreas)
-            foreach (var step in gridSelection.GetSteps(ctx, false))
-                selectableAreasCombined.Add(step.Position);
-        return selectableAreasCombined;
-    }
-
-    public (List<(int, int)> areas, List<int> splits) GetSelectablePositions(QueryContext ctx)
-    {
-        var areas = new List<(int, int)>();
-        var splits = new List<int>();
-        foreach (var gridSelection in SelectableAreas)
-        {
-            var area = gridSelection.GetPositions(ctx).ToList();
-            splits.Add(area.Count);
-            areas.AddRange(area);
-        }
-        return (areas, splits);
-    }
-    
-    // public (List<Step> areas, List<int> splits) GetSteps(QueryContext ctx)
-    // {
-    //     
-    // }
-
-    public abstract bool TryGetEffectPositions(QueryContext ctx, List<(int, int)> selectedPositions, out HashSet<(int, int)> effectPositions, List<int> splitAreaSelections=null, (List<(int, int)> areas, List<int> splits)? selectable=null);
+    //public abstract HashSet<GridStep> GetSelectableSteps(QueryContext ctx);
+    public abstract QueryContext TryTargeting(QueryContext ctx, int[] targets, out List<HashSet<GridStep>> steps);
 }
 
-public class SingleAbilityTargeting : AbilityTargeting
+public class PositionTargeting : AbilityTargeting
 {
-    public override bool TryGetEffectPositions(QueryContext ctx, List<(int, int)> selectedPositions, out HashSet<(int, int)> effectPositions, List<int> splitAreaSelections=null, (List<(int, int)> areas, List<int> splits)? selectable=null)
+    public GridSelection SelectableArea { get; set; }
+    public DirectionTargeting Chain { get; set; } = null;
+
+    public HashSet<(int, int)> GetSelectablePositions(QueryContext ctx) => SelectableArea.GetPositions(ctx);
+
+    public HashSet<GridStep> GetSelectableSteps(QueryContext ctx) => SelectableArea.GetSteps(ctx);
+
+    public override QueryContext TryTargeting(QueryContext ctx, int[] targets, out List<HashSet<GridStep>> steps)
     {
-        effectPositions = new HashSet<(int, int)>();
-        if (selectedPositions.Count != SelectionAmount)
-            return false;
-        var (areas, splits) = selectable ?? GetSelectablePositions(ctx);
-        foreach (var position in selectedPositions)
+        steps = new List<HashSet<GridStep>>();
+        var selectablePositions = GetSelectablePositions(ctx);
+        for (var i = 0; i < Targets; i++)
         {
-            if (!areas.Contains(position))
-                return false;
-            effectPositions.Add(position);
+            if (i >= Targets) return ctx;
+
+            var position = ctx.Grid.ToPosition2D(targets[i]);
+            if (!selectablePositions.Contains(position)) return ctx;
+
+            var newCtx = new QueryContext(ctx.Grid, position, ctx.SourceEntity);
+            if (Chain != null) return newCtx;
+
+            steps.Add(EffectArea == null
+                ? new HashSet<GridStep> { new GridStep(position, 0, DirectionType.Line) }
+                : EffectArea.GetSteps(newCtx));
         }
-        return true;
+        return ctx;
     }
 }
 
-public class AreaAbilityTargeting : AbilityTargeting
+public class DirectionTargeting : AbilityTargeting
 {
-    public GridSelection EffectArea { get; set; }
+    public int[] Grouping { get; set; } = new int[GridTraversal.Directions];
 
-    public override bool TryGetEffectPositions(QueryContext ctx, List<(int, int)> selectedPositions, out HashSet<(int, int)> effectPositions, List<int> splitAreaSelections=null, (List<(int, int)> areas, List<int> splits)? selectable=null)
+    public (Dictionary<(int, int), int> positions, Dictionary<int, List<GridStep>> groups) GetSelectablePositionGroups(QueryContext ctx)
     {
-        effectPositions = new HashSet<(int, int)>();
-        if (selectedPositions.Count != SelectionAmount)
-            return false;
-        var (areas, splits) = selectable ?? GetSelectablePositions(ctx);
-        foreach (var position in selectedPositions)
+        var positions = new Dictionary<(int, int), int>();
+        var groups = new Dictionary<int, List<GridStep>>();
+        var selection = new GridSelection()
         {
-            if (!areas.Contains(position))
-                return false;
-            effectPositions.UnionWith(EffectArea.GetPositions(new QueryContext(ctx.Grid, position, ctx.SourceEntity)));
+            Traversals = new List<GridTraversal>()
+            {
+                new GridTraversal()
+                {
+                    Direction = DirectionType.Line,
+                    MaxDistance = 1,
+                    Passthrough = EntityPassthrough.All
+                }
+            }
+        };
+        var steps = selection.GetSteps(ctx);
+        foreach (var step in steps)
+        {
+            var direction = (int)step.Direction;
+            if (!groups.TryGetValue(Grouping[direction], out var list))
+            {
+                list = new List<GridStep>();
+                groups.Add(Grouping[direction], list);
+            }
+            list.Add(step);
+            positions.Add(step.Position, Grouping[direction]);
         }
-        return true;
+
+        return (positions, groups);
+    }
+
+    public override QueryContext TryTargeting(QueryContext ctx, int[] targets, out List<HashSet<GridStep>> steps)
+    {
+        steps = new List<HashSet<GridStep>>();
+        var (positions, groups) = GetSelectablePositionGroups(ctx);
+        var selectedGroups = new List<int>();
+        for (var i = 0; i < Targets; i++)
+        {
+            if (i >= Targets) return ctx;
+
+            var position = ctx.Grid.ToPosition2D(targets[i]);
+            if (!positions.TryGetValue(position, out var group)) return ctx;
+
+            if (group >= GridTraversal.Directions) group = 0;
+            if (selectedGroups.Contains(group)) return ctx;
+            selectedGroups.Add(group);
+        }
+        var effectSteps = EffectArea.GetSteps(ctx);
+        foreach (var group in selectedGroups)
+        {
+            var gridSteps = new HashSet<GridStep>();
+
+            var gridDirectionSteps = GridSteps.SortByDirection(gridSteps);
+            var directionSteps = groups[group];
+            foreach (var step in directionSteps) gridSteps.UnionWith(gridDirectionSteps[step.Direction]);
+
+            steps.Add(gridSteps);
+        }
+        return ctx;
     }
 }
-
-public class FillAbilityTargeting : AbilityTargeting
-{
-    public bool CombineAreas { get; set; } = false;
-
-    public override bool TryGetEffectPositions(QueryContext ctx, List<(int, int)> selectedPositions, out HashSet<(int, int)> effectPositions, List<int> splitAreaSelections=null, (List<(int, int)> areas, List<int> splits)? selectable=null)
-    {
-        effectPositions = new HashSet<(int, int)>();
-        if (selectedPositions.Count != SelectionAmount)
-            return false;
-        if (!CombineAreas && (splitAreaSelections == null || splitAreaSelections.Count != SelectionAmount))
-            return false;
-
-        var (areas, splits) = selectable ?? GetSelectablePositions(ctx);
-        if (CombineAreas)
-        {
-            if (!areas.Contains(selectedPositions[0]))
-                return false;
-            effectPositions.UnionWith(areas);
-            return true;
-        }
-
-        var splitAreas = new List<List<(int, int)>>();
-        var index = 0;
-        foreach (var split in splits)
-        {
-            var range = areas.GetRange(index, split);
-            splitAreas.Add(range);
-            index += split;
-        }
-        for (var i = 0; i < selectedPositions.Count; i++)
-        {
-            var areaIndex = splitAreaSelections[i];
-            if (!splitAreas[areaIndex].Contains(selectedPositions[i]))
-                return false;
-            effectPositions.UnionWith(splitAreas[i]);
-        }
-        return true;
-    }
-}
-
-// public class ProjectileSelection : AbilitySelection
-// {
-//     public int ProjectileAmount { get; set; } = 1;
-//     public bool SplitSelectionDirections { get; set; } = false;
-// }

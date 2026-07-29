@@ -6,24 +6,39 @@ public static partial class AbilityConfigs
     {
         Id = "MoveStraight3Step",
         Type = AbilityType.Move,
-        Targeting = new SingleAbilityTargeting()
+        Targeting = new PositionTargeting()
         {
-            SelectableAreas = new List<GridSelection>()
+            SelectableArea = new GridSelection()
             {
-                new GridSelection()
+                Traversals = new List<GridTraversal>()
                 {
-                    MinDistance = 1,
-                    Traversals = new List<GridTraversal>()
+                    new GridTraversal()
                     {
-                        new GridTraversal()
-                        {
-                            Direction = DirectionType.Straight,
-                            MaxDistance = 3,
-                            Linear = false
-                        }
+                        Direction = DirectionType.Straight,
+                        MaxDistance = 3,
+                        Linear = false
                     }
                 }
             }
         }
+        // TargetingOld = new SingleAbilityTargetingOld()
+        // {
+        //     SelectableAreas = new List<GridSelection>()
+        //     {
+        //         new GridSelection()
+        //         {
+        //             MinDistance = 1,
+        //             Traversals = new List<GridTraversal>()
+        //             {
+        //                 new GridTraversal()
+        //                 {
+        //                     Direction = DirectionType.Straight,
+        //                     MaxDistance = 3,
+        //                     Linear = false
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
     };
 }

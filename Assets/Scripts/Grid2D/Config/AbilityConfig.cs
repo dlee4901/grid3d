@@ -9,7 +9,8 @@ public class AbilityConfig : INameId
     public int ManaCost { get; set; } = 1;
     public List<AbilityBindings> Bindings { get; set; }
     public AbilityTargeting Targeting { get; set; }
-    
+    //public AbilityTargetingOld TargetingOld { get; set; }
+
     public int Warmup { get; set; } = 0;
     public int Cooldown { get; set; } = 0;
     public int Delay { get; set; } = 0;
