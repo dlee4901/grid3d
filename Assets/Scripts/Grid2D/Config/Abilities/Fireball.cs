@@ -14,7 +14,7 @@ public static partial class AbilityConfigs
                 {
                     new GridTraversal()
                     {
-                        Direction = DirectionType.Straight,
+                        Direction = GridDirection.Straight,
                         Linear = false,
                         MaxDistance = 2,
                         Passthrough = EntityPassthrough.All
@@ -27,7 +27,7 @@ public static partial class AbilityConfigs
                 {
                     new GridTraversal()
                     {
-                        Direction = DirectionType.Straight,
+                        Direction = GridDirection.Straight,
                         Linear = false,
                         MaxDistance = 2,
                         Passthrough = EntityPassthrough.All

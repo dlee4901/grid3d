@@ -12,9 +12,9 @@ public interface IReadOnlyGridState
     int X { get; }
     int Y { get; }
     int Size { get; }
-    int ToPosition1D(int x, int y);
-    int ToPosition1D((int x, int y) position);
-    (int, int) ToPosition2D(int position);
+    //int ToPosition1D(int x, int y);
+    //int ToPosition1D((int x, int y) position);
+    //(int, int) ToPosition2D(int position);
     bool IsValidPosition(int position);
     bool IsValidPosition(int x, int y);
     bool IsValidPosition((int x, int y) position);
@@ -30,8 +30,8 @@ public interface IReadOnlyGridState
     bool IsTraversable(int position);
     bool IsTraversable(int x, int y);
     bool IsTraversable((int x, int y) position);
-    List<int> GetControllableEntities(bool available=false);
-    List<int> GetControllableEntities(int player, bool available=false);
+    HashSet<int> GetControllableEntities(bool available=false);
+    HashSet<int> GetControllableEntities(int player, bool available=false);
     bool IsAvailableControllable(int position);
     HashSet<int> GetOccupiedTilesPositionSet();
 
@@ -206,11 +206,11 @@ public sealed class GridState : IReadOnlyGridState
         return true;
     }
     
-    public List<int> GetControllableEntities(bool available=false) => GetControllableEntities(ActivePlayer, available);
+    public HashSet<int> GetControllableEntities(bool available=false) => GetControllableEntities(ActivePlayer, available);
     
-    public List<int> GetControllableEntities(int player, bool available=false)
+    public HashSet<int> GetControllableEntities(int player, bool available=false)
     {
-        var controllableEntities = new List<int>();
+        var controllableEntities = new HashSet<int>();
         for (var i = 0; i < _entities.Length; i++)
             if (IsControllable(i, player, available)) controllableEntities.Add(i);
         return controllableEntities;

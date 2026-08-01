@@ -14,36 +14,36 @@ public class GridSelection
     public PredicateConfig EntityAllowlist { get; set; }
     public PredicateConfig EntityDenylist { get; set; }
 
-    public HashSet<(int, int)> GetPositions(QueryContext ctx, bool filterEntities=true)
-    {
-        var selection = new HashSet<(int, int)>();
-        var (steps, maxDistance) = GetUnfilteredSteps(ctx);
-        var excludedDistances = GetExcludedDistances(maxDistance);
-        foreach (var step in steps)
-        {
-            if (step.Distance < MinDistance || step.Distance > maxDistance || excludedDistances.Contains(step.Distance) || selection.Contains(step.Position)) continue;
-            if (filterEntities)
-            {
-                Entity entity;
-                if (EntityAllowlist != null && (entity = ctx.Grid.GetEntity(step.Position)) != null)
-                {
-                    var predicate = PredicateFactory<Entity>.Create(EntityAllowlist);
-                    if (!predicate(entity)) continue;
-                }
-                if (EntityDenylist != null && (entity = ctx.Grid.GetEntity(step.Position)) != null)
-                {
-                    var predicate = PredicateFactory<Entity>.Create(EntityDenylist);
-                    if (predicate(entity)) continue;
-                }
-            }
-            selection.Add(step.Position);
-        }
-        return selection;
-    }
+    // public HashSet<(int, int)> GetPositions(QueryContext ctx, bool filterEntities=true)
+    // {
+    //     var selection = new HashSet<(int, int)>();
+    //     var (steps, maxDistance) = GetUnfilteredSteps(ctx);
+    //     var excludedDistances = GetExcludedDistances(maxDistance);
+    //     foreach (var step in steps)
+    //     {
+    //         if (step.Distance < MinDistance || step.Distance > maxDistance || excludedDistances.Contains(step.Distance) || selection.Contains(step.Position)) continue;
+    //         if (filterEntities)
+    //         {
+    //             Entity entity;
+    //             if (EntityAllowlist != null && (entity = ctx.Grid.GetEntity(step.Position)) != null)
+    //             {
+    //                 var predicate = PredicateFactory<Entity>.Create(EntityAllowlist);
+    //                 if (!predicate(entity)) continue;
+    //             }
+    //             if (EntityDenylist != null && (entity = ctx.Grid.GetEntity(step.Position)) != null)
+    //             {
+    //                 var predicate = PredicateFactory<Entity>.Create(EntityDenylist);
+    //                 if (predicate(entity)) continue;
+    //             }
+    //         }
+    //         selection.Add(step.Position);
+    //     }
+    //     return selection;
+    // }
 
-    public HashSet<GridStep> GetSteps(QueryContext ctx, bool filterEntities=true)
+    public GridSteps GetSteps(QueryContext ctx, bool filterEntities=true)
     {
-        var filteredSteps = new HashSet<GridStep>();
+        var filteredSteps = new GridSteps();
         var (steps, maxDistance) = GetUnfilteredSteps(ctx);
         var excludedDistances = GetExcludedDistances(maxDistance);
         foreach (var step in steps)

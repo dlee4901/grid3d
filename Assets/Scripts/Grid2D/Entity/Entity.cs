@@ -8,7 +8,7 @@ public class Entity : INameId, IReadOnlyEntity
     public int Cost { get; }
     
     public int Position { get; private set; }
-    public DirectionFacing Facing { get; private set; } = DirectionFacing.North;
+    public GridDirectionFacing Facing { get; private set; } = GridDirectionFacing.North;
     private Dictionary<Type, IEntityComponent> _components { get; } = new();
     
     static Entity()

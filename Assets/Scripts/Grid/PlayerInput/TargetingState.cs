@@ -6,13 +6,13 @@ public class TargetingState : PlayerInputStateBase
     private readonly Ability _ability;
     private readonly QueryContext _source;
     private readonly List<(int, int)> _targets = new();
-    private readonly (List<(int, int)> areas, List<int> splits) _selectable;
+    private readonly GridSteps _selectable;
 
     public TargetingState(PlayerInputContext ctx, Ability ability, QueryContext source) : base(ctx)
     {
         _ability = ability;
         _source = source;
-        _selectable = ability.TargetingOld.GetSelectablePositions(source);
+        _selectable = ability.Targeting.GetSelectableSteps(source);
     }
 
     public string AbilityId => _ability.Id;
@@ -21,7 +21,7 @@ public class TargetingState : PlayerInputStateBase
     public override void OnEnter()
     {
         Ctx.Renderer.ClearHighlights();
-        Ctx.Renderer.HighlightPositions(_selectable.areas, GridHighlightType.SelectableTargets);
+        Ctx.Renderer.HighlightPositions(_selectable, GridHighlightType.SelectableTargets);
     }
 
     public override void OnPositionSelected(QueryContext clicked)
@@ -32,19 +32,19 @@ public class TargetingState : PlayerInputStateBase
             return;
         }
         _targets.Add(clicked.SourcePosition);
-        Ctx.Controller.LogState($"Target added: {clicked.SourcePosition} ({_targets.Count}/{_ability.TargetingOld.SelectionAmount})");
-        if (_targets.Count >= _ability.TargetingOld.SelectionAmount) Confirm();
+        Ctx.Controller.LogState($"Target added: {clicked.SourcePosition} ({_targets.Count}/{_ability.Targeting.Targets})");
+        if (_targets.Count >= _ability.Targeting.Targets) Confirm();
     }
 
     public override void OnHover(QueryContext? hovered)
     {
         Ctx.Renderer.ClearHighlights();
-        Ctx.Renderer.HighlightPositions(_selectable.areas, GridHighlightType.SelectableTargets);
+        Ctx.Renderer.HighlightPositions(_selectable, GridHighlightType.SelectableTargets);
         if (hovered.HasValue)
         {
-            var tentative = new List<(int, int)>(_targets) { hovered.Value.SourcePosition };
-            if (_ability.TargetingOld.TryGetEffectPositions(_source, tentative, out var effect, selectable: _selectable))
-                Ctx.Renderer.HighlightPositions(effect, GridHighlightType.EffectPreview);
+            var targets = new (int, int)[] {hovered.Value.SourcePosition};
+            if (_ability.Targeting.GetEffectSteps(hovered.Value, targets, out var list))
+                Ctx.Renderer.HighlightPositions(list, GridHighlightType.EffectPreview);
         }
     }
 
@@ -60,7 +60,7 @@ public class TargetingState : PlayerInputStateBase
     public override void OnCancel()
         => Ctx.Controller.TransitionTo(new SelectedState(Ctx, _source));
 
-    private bool IsValidTarget((int, int) pos) => _selectable.areas.Contains(pos);
+    private bool IsValidTarget((int, int) pos) => _selectable.Contains(pos);
 
     private void Confirm()
     {

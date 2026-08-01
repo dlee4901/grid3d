@@ -3,15 +3,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public enum DirectionType {North, NorthEast, East, SouthEast, South, SouthWest, West, NorthWest, Vertical, Horizontal, Diagonal, Straight, Line, Mask}
-public enum DirectionFacing {North, East, South, West}
+public enum GridDirection {North, NorthEast, East, SouthEast, South, SouthWest, West, NorthWest, Vertical, Horizontal, Diagonal, Straight, Line, Mask}
+public enum GridDirectionFacing {North, East, South, West}
 [Flags] public enum EntityPassthrough {None, Ally, Enemy, All=Ally|Enemy}
 
 public class GridTraversal
 {
-    public const int Directions = 8;
-    public DirectionType Direction { get; set; }
-    public bool[] DirectionMask { get; set; } = new bool[Directions];
+    public const int UnidirectionalCount = 8;
+    public GridDirection Direction { get; set; }
+    public bool[] DirectionMask { get; set; } = new bool[UnidirectionalCount];
 
     public int MaxDistance { get; set; } = 0;
     public bool AbsoluteDirection { get; set; } = false;
@@ -74,14 +74,14 @@ public class GridTraversal
         }
     }
 
-    private IEnumerable<GridStep> Expand(QueryContext ctx, (int, int) currentPosition, int curDistance, DirectionType direction)
+    private IEnumerable<GridStep> Expand(QueryContext ctx, (int, int) currentPosition, int curDistance, GridDirection gridDirection)
     {
         var grid = ctx.Grid;
         var maxDistance = MaxDistance < 0 || MaxDistance > grid.X * grid.Y ? grid.X * grid.Y : MaxDistance;
         if (curDistance > maxDistance) yield break;
 
-        var directionFacing = ctx.SourceEntity?.Facing ?? DirectionFacing.North;
-        var unitVectors = GetUnitVectors(direction, directionFacing);
+        var directionFacing = ctx.SourceEntity?.Facing ?? GridDirectionFacing.North;
+        var unitVectors = GetUnitVectors(gridDirection, directionFacing);
         
         var traverseTiles = unitVectors.Select(vec => (currentPosition.Item1 + vec.Item1, currentPosition.Item2 + vec.Item2)).ToList();
 
@@ -95,7 +95,7 @@ public class GridTraversal
             if ((entity = grid.GetEntity(position)) != null && IsColliding(entity, ctx.SourceEntity)) continue;
             //if (collideMask != null && (entity = grid.GetEntity(tile)) != null && collideMask(entity)) continue;
 
-            yield return new GridStep(position, curDistance, Linear ? (DirectionType)i : direction);
+            yield return new GridStep(position, curDistance, Linear ? (GridDirection)i : gridDirection);
 
             if (Chain == null || curDistance < ChainOffset) continue;
             foreach (var step in Chain.Expand(ctx, position, curDistance, Chain.Direction))
@@ -108,7 +108,7 @@ public class GridTraversal
         if (StartWidth <= 0 && DeltaWidth <= 0) yield break;
         if (DeltaWidthDistanceOffset >= gridStep.Distance) yield break;
         
-        var directionFacing = ctx.SourceEntity?.Facing ?? DirectionFacing.North;
+        var directionFacing = ctx.SourceEntity?.Facing ?? GridDirectionFacing.North;
         var unitVectors = GetUnitVectors(gridStep.Direction, directionFacing);
         
         var width = StartWidth + DeltaWidth * (gridStep.Distance - DeltaWidthDistanceOffset) / DeltaWidthStep;
@@ -170,11 +170,11 @@ public class GridTraversal
         return widthTiles;
     }
 
-    private (int, int)[] GetUnitVectors(DirectionType direction, DirectionFacing directionFacing=DirectionFacing.North)
+    private (int, int)[] GetUnitVectors(GridDirection gridDirection, GridDirectionFacing gridDirectionFacing=GridDirectionFacing.North)
     {
-        var unitVectors = new (int, int)[Directions];
-        var absoluteDirections = GetAbsoluteDirections(direction, directionFacing);
-        for (var i = 0; i < Directions; i++)
+        var unitVectors = new (int, int)[UnidirectionalCount];
+        var absoluteDirections = GetAbsoluteDirections(gridDirection, gridDirectionFacing);
+        for (var i = 0; i < UnidirectionalCount; i++)
         {
             var xOffset = 0;
             var yOffset = 0;
@@ -190,79 +190,79 @@ public class GridTraversal
         return unitVectors;
     }
 
-    private bool[] GetAbsoluteDirections(DirectionType direction, DirectionFacing directionFacing=DirectionFacing.North)
+    private bool[] GetAbsoluteDirections(GridDirection gridDirection, GridDirectionFacing gridDirectionFacing=GridDirectionFacing.North)
     {
-        var absoluteDirections = new bool[Directions];//List<bool>{false, false, false, false, false, false, false, false};
-        switch (direction)
+        var absoluteDirections = new bool[UnidirectionalCount];//List<bool>{false, false, false, false, false, false, false, false};
+        switch (gridDirection)
         {
-            case DirectionType.Line:
-                for (var i = 0; i < Directions; i++) absoluteDirections[i] = true;
+            case GridDirection.Line:
+                for (var i = 0; i < UnidirectionalCount; i++) absoluteDirections[i] = true;
                 break;
-            case DirectionType.Diagonal:
-                for (var i = 1; i < Directions; i += 2) absoluteDirections[i] = true;
+            case GridDirection.Diagonal:
+                for (var i = 1; i < UnidirectionalCount; i += 2) absoluteDirections[i] = true;
                 break;
-            case DirectionType.Straight:
-                for (var i = 0; i < Directions; i += 2) absoluteDirections[i] = true;
+            case GridDirection.Straight:
+                for (var i = 0; i < UnidirectionalCount; i += 2) absoluteDirections[i] = true;
                 break;
-            case DirectionType.Horizontal:
+            case GridDirection.Horizontal:
                 absoluteDirections[2] = true;
                 absoluteDirections[6] = true;
                 break;
-            case DirectionType.Vertical:
+            case GridDirection.Vertical:
                 absoluteDirections[0] = true;
                 absoluteDirections[4] = true;
                 break;
-            case DirectionType.North:
+            case GridDirection.North:
                 absoluteDirections[0] = true;
                 break;
-            case DirectionType.NorthEast:
+            case GridDirection.NorthEast:
                 absoluteDirections[1] = true;
                 break;
-            case DirectionType.East:
+            case GridDirection.East:
                 absoluteDirections[2] = true;
                 break;
-            case DirectionType.SouthEast:
+            case GridDirection.SouthEast:
                 absoluteDirections[3] = true;
                 break;
-            case DirectionType.South:
+            case GridDirection.South:
                 absoluteDirections[4] = true;
                 break;
-            case DirectionType.SouthWest:
+            case GridDirection.SouthWest:
                 absoluteDirections[5] = true;
                 break;
-            case DirectionType.West:
+            case GridDirection.West:
                 absoluteDirections[6] = true;
                 break;
-            case DirectionType.NorthWest:
+            case GridDirection.NorthWest:
                 absoluteDirections[7] = true;
                 break;
-            case DirectionType.Mask:
-                for (var i = 0; i < Directions; i++) absoluteDirections[i] = DirectionMask[i];
+            case GridDirection.Mask:
+                for (var i = 0; i < UnidirectionalCount; i++) absoluteDirections[i] = DirectionMask[i];
                 break;
             default:
                 return absoluteDirections;
         }
         var shift = 0;
-        switch (directionFacing)
+        switch (gridDirectionFacing)
         {
-            case DirectionFacing.East:
+            case GridDirectionFacing.East:
                 shift = 6;
                 break;
-            case DirectionFacing.South:
+            case GridDirectionFacing.South:
                 shift = 2;
                 break;
-            case DirectionFacing.West:
+            case GridDirectionFacing.West:
                 shift = 4;
                 break;
-            case DirectionFacing.North:
+            case GridDirectionFacing.North:
             default:
                 return absoluteDirections;
         }
-        var buffer = new bool[Directions];
-        shift %= Directions;
-        Array.Copy(absoluteDirections, shift, buffer, 0, Directions - shift);
-        Array.Copy(absoluteDirections, 0, buffer, Directions - shift, shift);
-        Array.Copy(buffer, absoluteDirections, Directions);
+        var buffer = new bool[UnidirectionalCount];
+        shift %= UnidirectionalCount;
+        Array.Copy(absoluteDirections, shift, buffer, 0, UnidirectionalCount - shift);
+        Array.Copy(absoluteDirections, 0, buffer, UnidirectionalCount - shift, shift);
+        Array.Copy(buffer, absoluteDirections, UnidirectionalCount);
         
         return buffer;
     }

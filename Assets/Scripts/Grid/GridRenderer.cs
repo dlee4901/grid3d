@@ -174,15 +174,51 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
         }
     }
 
-    public void HighlightPositions(IEnumerable<int> positions, GridHighlightType type)
+    // TODO:
+    // public void HighlightPositions(HashSet steps, GridHighlightType type)
+    // {
+    //     var color = HighlightColor(type);
+    //     var positions = steps.GetPositions();
+    //     foreach (var position in positions)
+    //     {
+    //         var pos = _gridManager.GridState.ToPosition1D(position);
+    //         _highlightSquares[pos].gameObject.SetActive(true);
+    //         _highlightSquares[pos].material.SetColor(UnityUtil.MaterialBaseColorId, color);
+    //     }
+    // }
+    
+    public void HighlightPositions(GridSteps steps, GridHighlightType type)
     {
         var color = HighlightColor(type);
+        var positions = steps.GetPositions();
         foreach (var position in positions)
         {
-            _highlightSquares[position].gameObject.SetActive(true);
-            _highlightSquares[position].material.SetColor(UnityUtil.MaterialBaseColorId, color);
+            var pos = _gridManager.GridState.ToPosition1D(position);
+            _highlightSquares[pos].gameObject.SetActive(true);
+            _highlightSquares[pos].material.SetColor(UnityUtil.MaterialBaseColorId, color);
         }
     }
+    
+    // public void HighlightPositions(List<HashSet<GridStep>> steps, GridHighlightType type)
+    // {
+    //     var color = HighlightColor(type);
+    //     foreach (var list in steps)
+    //     foreach (var step in list)
+    //     {
+    //         var position = _gridManager.GridState.ToPosition1D(step.Position);
+    //         _highlightSquares[position].gameObject.SetActive(true);
+    //         if (_highlightSquares[position].material.GetColor(UnityUtil.MaterialBaseColorId) == color)
+    //         {
+    //             var colorMore = color;
+    //             SetAlpha(colorMore, color.a * 2.0f);
+    //             _highlightSquares[position].material.SetColor(UnityUtil.MaterialBaseColorId, colorMore);
+    //         }
+    //         else
+    //         {
+    //             _highlightSquares[position].material.SetColor(UnityUtil.MaterialBaseColorId, color);
+    //         }
+    //     }
+    // }
 
     private Color HighlightColor(GridHighlightType type) => type switch
     {
@@ -192,4 +228,10 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
         GridHighlightType.EffectPreview     => _highlightEffectPreview,
         _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
     };
+    
+    private Color SetAlpha(Color color, float alpha)
+    {
+        color.a = alpha;
+        return color;
+    }
 }

@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public struct GridStep : IEquatable<GridStep>
 {
     public (int x, int y) Position;
     public int Distance;
-    public DirectionType Direction;
+    public GridDirection Direction;
 
-    public GridStep((int x, int y) position, int distance, DirectionType direction)
+    public GridStep((int x, int y) position, int distance, GridDirection direction)
     {
         Position = position;
         Distance = distance;
@@ -30,95 +31,130 @@ public struct GridStep : IEquatable<GridStep>
     }
 }
 
-public static class GridSteps
+public class GridSteps
 {
-    public static Dictionary<DirectionType, List<GridStep>> SortByDirection(List<GridStep> steps)
+    private readonly List<HashSet<GridStep>> _steps = new() { new HashSet<GridStep>() };
+    private readonly List<Dictionary<(int, int), HashSet<GridStep>>> _positions = new() { new Dictionary<(int, int), HashSet<GridStep>>() };
+
+    public void Add(GridStep gridStep, int index=0)
     {
-        var dict = new Dictionary<DirectionType, List<GridStep>>();
-        foreach (var step in steps)
+        ExpandListCount(index);
+        if (!_steps[index].Add(gridStep)) return;
+        if (!_positions[index].TryGetValue(gridStep.Position, out var steps))
         {
-            if (!dict.TryGetValue(step.Direction, out var list))
-            {
-                list = new List<GridStep>();
-                dict.Add(step.Direction, list);
-            }
-            list.Add(step);
+            steps = new HashSet<GridStep>();
+            _positions[index].Add(gridStep.Position, steps);
         }
-        return dict;
+        steps.Add(gridStep);
     }
     
-    public static Dictionary<DirectionType, List<GridStep>> SortByDirection(HashSet<GridStep> steps)
+    public void Add(HashSet<GridStep> gridSteps, int index=0)
     {
-        var dict = new Dictionary<DirectionType, List<GridStep>>();
-        foreach (var step in steps)
-        {
-            if (!dict.TryGetValue(step.Direction, out var list))
-            {
-                list = new List<GridStep>();
-                dict.Add(step.Direction, list);
-            }
-            list.Add(step);
-        }
-        return dict;
+        foreach (var step in gridSteps) Add(step, index);
     }
     
-    public static Dictionary<int, List<GridStep>> SortByDistance(List<GridStep> steps)
+    public void Add(GridSteps gridSteps, int index=0)
     {
-        var dict = new Dictionary<int, List<GridStep>>();
-        foreach (var step in steps)
-        {
-            if (!dict.TryGetValue(step.Distance, out var list))
-            {
-                list = new List<GridStep>();
-                dict.Add(step.Distance, list);
-            }
-            list.Add(step);
-        }
-        return dict;
+        foreach (var steps in gridSteps._steps)
+        foreach (var step in steps) Add(step, index);
     }
     
-    public static Dictionary<int, List<GridStep>> SortByDistance(HashSet<GridStep> steps)
+    public bool Contains(GridStep gridStep, int index=0)
     {
-        var dict = new Dictionary<int, List<GridStep>>();
-        foreach (var step in steps)
-        {
-            if (!dict.TryGetValue(step.Distance, out var list))
-            {
-                list = new List<GridStep>();
-                dict.Add(step.Distance, list);
-            }
-            list.Add(step);
-        }
-        return dict;
+        return index < _steps.Count && _steps[index].Contains(gridStep);
     }
     
-    public static Dictionary<(int, int), List<GridStep>> SortByPosition(List<GridStep> steps)
+    public bool Contains((int, int) position, int index=0)
     {
-        var dict = new Dictionary<(int, int), List<GridStep>>();
-        foreach (var step in steps)
-        {
-            if (!dict.TryGetValue(step.Position, out var list))
-            {
-                list = new List<GridStep>();
-                dict.Add(step.Position, list);
-            }
-            list.Add(step);
-        }
-        return dict;
+        return index < _positions.Count && _positions[index].ContainsKey(position);
     }
     
-    public static Dictionary<(int, int), List<GridStep>> SortByPosition(HashSet<GridStep> steps)
+    public HashSet<GridStep> GetStepsAtPosition((int, int) position, int index=0)
     {
-        var dict = new Dictionary<(int, int), List<GridStep>>();
-        foreach (var step in steps)
+        return _positions[index][position];
+    }
+    
+    public HashSet<GridStep> GetSteps(int index=0)
+    {
+        return _steps[index];
+    }
+    
+    public HashSet<(int, int)> GetPositions(int index=0)
+    {
+        return _positions[index].Keys.ToHashSet();
+    }
+    
+    public Dictionary<GridDirection, HashSet<GridStep>> GetDirectionMap(int index=0)
+    {
+        var map = new Dictionary<GridDirection, HashSet<GridStep>>();
+        if (index >= _steps.Count) return map;
+        foreach (var step in _steps[index])
         {
-            if (!dict.TryGetValue(step.Position, out var list))
+            if (!map.TryGetValue(step.Direction, out var hashset))
             {
-                list = new List<GridStep>();
-                dict.Add(step.Position, list);
+                hashset = new HashSet<GridStep>();
+                map.Add(step.Direction, hashset);
             }
-            list.Add(step);
+            hashset.Add(step);
         }
-        return dict;
+        return map;
+    }
+    
+    public Dictionary<int, HashSet<GridStep>> GetDistanceMap(int index=0)
+    {
+        var map = new Dictionary<int, HashSet<GridStep>>();
+        if (index >= _steps.Count) return map;
+        foreach (var step in _steps[index])
+        {
+            if (!map.TryGetValue(step.Distance, out var hashset))
+            {
+                hashset = new HashSet<GridStep>();
+                map.Add(step.Distance, hashset);
+            }
+            hashset.Add(step);
+        }
+        return map;
+    }
+    
+    public Dictionary<(int, int), HashSet<GridStep>> GetPositionMap(int index=0)
+    {
+        var map = new Dictionary<(int, int), HashSet<GridStep>>();
+        if (index >= _steps.Count) return map;
+        foreach (var step in _steps[index])
+        {
+            if (!map.TryGetValue(step.Position, out var hashset))
+            {
+                hashset = new HashSet<GridStep>();
+                map.Add(step.Position, hashset);
+            }
+            hashset.Add(step);
+        }
+        return map;
+    }
+    
+    public Dictionary<GridDirection, HashSet<GridStep>> GetGroupMap(int[] groups, int index=0)
+    {
+        var map = new Dictionary<GridDirection, HashSet<GridStep>>();
+        if (index >= _steps.Count || groups.Length != GridTraversal.UnidirectionalCount) return map;
+        var directionMap = GetDirectionMap(index);
+        var groupNumToSteps = new Dictionary<int, HashSet<GridStep>>();
+        for (var i = 0; i < GridTraversal.UnidirectionalCount; i++)
+        {
+            if (!groupNumToSteps.TryGetValue(groups[i], out var steps))
+            {
+                steps = new HashSet<GridStep>();
+                groupNumToSteps.Add(groups[i], steps);
+            }
+            if (directionMap.TryGetValue((GridDirection)i, out var directionSteps)) 
+                steps.UnionWith(directionSteps);
+        }
+        for (var i = 0; i < GridTraversal.UnidirectionalCount; i++) map[(GridDirection)i] = groupNumToSteps[groups[i]];
+        return map;
+    }
+    
+    private void ExpandListCount(int index)
+    {
+        if (index >= _steps.Count) for (var i = _steps.Count; i <= index; i++) _steps.Add(new HashSet<GridStep>());
+        if (index >= _positions.Count) for (var i = _positions.Count; i <= index; i++) _positions.Add(new Dictionary<(int, int), HashSet<GridStep>>());
     }
 }

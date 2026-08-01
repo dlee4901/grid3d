@@ -14,7 +14,7 @@ public static partial class AbilityConfigs
                 {
                     new GridTraversal()
                     {
-                        Direction = DirectionType.Straight,
+                        Direction = GridDirection.Straight,
                         MaxDistance = 4
                     }
                 }
