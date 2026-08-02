@@ -59,7 +59,7 @@ public class UnitView : StateView
         if (!entity.TryGetComponent<AbilityComponent>(out var abilities))
             return;
         Log($"Selection info: {entity.Id}, abilities={abilities.List.Count}");
-        var actionable = ctx.Grid.IsAvailableControllable(ctx.Grid.ToPosition1D(ctx.SourcePosition));
+        var actionable = ctx.Grid.IsAvailableControllable(ctx.SourcePosition);
         var abilityIcons = entityAssets.AbilityIcons;
         for (var i = 0; i < abilities.List.Count; i++)
         {

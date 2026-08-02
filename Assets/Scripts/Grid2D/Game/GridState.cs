@@ -12,28 +12,21 @@ public interface IReadOnlyGridState
     int X { get; }
     int Y { get; }
     int Size { get; }
-    //int ToPosition1D(int x, int y);
-    //int ToPosition1D((int x, int y) position);
-    //(int, int) ToPosition2D(int position);
-    bool IsValidPosition(int position);
-    bool IsValidPosition(int x, int y);
-    bool IsValidPosition((int x, int y) position);
-    int GetSpawnPlayer(int spawn);
+    int GetSpawnPlayer(GridPosition position);
 
     Entity GetEntity(int position);
-    Entity GetEntity(int x, int y);
-    Entity GetEntity((int x, int y) position);
-    bool TryGetEntity(int position, out Entity entity);
-    bool TryGetEntity(int x, int y, out Entity entity);
-    bool TryGetEntity((int x, int y) position, out Entity entity);
-    bool TryGetTerrain(int position, out TerrainType terrainType);
-    bool IsTraversable(int position);
-    bool IsTraversable(int x, int y);
-    bool IsTraversable((int x, int y) position);
-    HashSet<int> GetControllableEntities(bool available=false);
-    HashSet<int> GetControllableEntities(int player, bool available=false);
-    bool IsAvailableControllable(int position);
-    HashSet<int> GetOccupiedTilesPositionSet();
+    Entity GetEntity(GridPosition position);
+    bool TryGetEntity(GridPosition position, out Entity entity);
+    bool TryGetTerrain(GridPosition position, out TerrainType terrainType);
+    bool IsTraversable(GridPosition position);
+
+    HashSet<GridPosition> GetControllableEntityPositions(bool available=false);
+    HashSet<GridPosition> GetControllableEntityPositions(int player, bool available=false);
+    HashSet<GridPosition> GetOccupiedEntityPositions();
+    
+    bool IsAvailableControllable(GridPosition position);
+    
+    //HashSet<int> GetOccupiedTilesPositionSet();
 
     string PrintGrid();
 }
@@ -90,13 +83,8 @@ public sealed class GridState : IReadOnlyGridState
     public int X => Definition.X;
     public int Y => Definition.Y;
     public int Size => Definition.Size;
-    public int ToPosition1D(int x, int y) => Definition.ToPosition1D(x, y);
-    public int ToPosition1D((int x, int y) position) => Definition.ToPosition1D(position);
-    public (int, int) ToPosition2D(int position) => Definition.ToPosition2D(position);
-    public bool IsValidPosition(int position) => Definition.IsValidPosition(position);
-    public bool IsValidPosition(int x, int y) => Definition.IsValidPosition(x, y);
-    public bool IsValidPosition((int x, int y) position) => Definition.IsValidPosition(position);
-    public int GetSpawnPlayer(int spawn) => Definition.GetSpawnPlayer(spawn);
+
+    public int GetSpawnPlayer(GridPosition position) => Definition.GetSpawnPlayer(position);
 
     private readonly Entity[] _entities;
     private readonly int[] _mana;
@@ -131,103 +119,96 @@ public sealed class GridState : IReadOnlyGridState
     public void LoadPlayerTeam(int player, TeamData teamData)
     {
         if (!ValidatePlayerTeam(player, teamData)) return;
-        //Debug.Log($"Loading player team {player}");
 
         foreach (var (position, unit) in teamData.UnitStartPositions)
         {
-            //Debug.Log(player + " 1");
             if (!IdRegistry<EntityConfig>.TryGet(unit, out var entityConfig)) continue;
-            //Debug.Log(player + " 2");
             var entity = Entity.Create(entityConfig, player);
             if (!entity.TryGetComponent<ControlComponent>(out var control)) continue;
-            //Debug.Log(player + " 3");
             control.PlayerController = player;
-            SetEntityPosition(position, entity);
+            var gridPosition = new GridPosition(this, position);
+            SetEntityPosition(gridPosition, entity);
         }
     }
 
     private bool ValidatePlayerTeam(int player, TeamData teamData)
     {
-        //Debug.Log(player + " map1");
         if (teamData.MapId != Definition.Id) return false;
-        //Debug.Log(player + " map2");
         foreach (var (position, unit) in teamData.UnitStartPositions)
-            if (!Definition.IsValidPosition(position)
-                || Definition.GetSpawnPlayer(position) != player
-                || _entities[position] != null
+        {
+            var gridPosition = new GridPosition(this, position);
+            if (!gridPosition.IsValid()
+                || Definition.GetSpawnPlayer(gridPosition) != player
+                || _entities[gridPosition.Dim1] != null
                 || !IdRegistry<EntityConfig>.TryGet(unit, out _)) return false;
+        }
         return true;
     }
-
+    
     public Entity GetEntity(int position)
     {
-        return Definition.IsValidPosition(position) ? _entities[position] : null;
+        return position >= 0 && position < _entities.Length ? _entities[position] : null;
+    }
+    
+    public Entity GetEntity(GridPosition position)
+    {
+        return position.IsValid() ? _entities[position.Dim1] : null;
     }
 
-    public Entity GetEntity(int x, int y)
+    public bool TryGetEntity(GridPosition position, out Entity entity)
     {
-        return GetEntity(Definition.ToPosition1D(x, y));
-    }
-
-    public Entity GetEntity((int x, int y) position)
-    {
-        return GetEntity(Definition.ToPosition1D(position.x, position.y));
-    }
-
-    public bool TryGetEntity(int position, out Entity entity)
-    {
-        if (!Definition.IsValidPosition(position) || _entities[position] == null)
+        if (!position.IsValid() || _entities[position.Dim1] == null)
         {
             entity = null;
             return false;
         }
-        entity = _entities[position];
+        entity = _entities[position.Dim1];
         return true;
     }
 
-    public bool TryGetEntity(int x, int y, out Entity entity)
+    public bool TryGetTerrain(GridPosition position, out TerrainType terrainType)
     {
-        return TryGetEntity(Definition.ToPosition1D(x, y), out entity);
-    }
-
-    public bool TryGetEntity((int x, int y) position, out Entity entity)
-    {
-        return TryGetEntity(Definition.ToPosition1D(position.x, position.y), out entity);
-    }
-
-    public bool TryGetTerrain(int position, out TerrainType terrainType)
-    {
-        if (!Definition.IsValidPosition(position))
+        if (!position.IsValid())
         {
             terrainType = TerrainType.Default;
             return false;
         }
-        terrainType = Definition.TerrainMap[position];
+        terrainType = Definition.TerrainMap[position.Dim1];
         return true;
     }
     
-    public HashSet<int> GetControllableEntities(bool available=false) => GetControllableEntities(ActivePlayer, available);
+    public HashSet<GridPosition> GetControllableEntityPositions(bool available=false) => GetControllableEntityPositions(ActivePlayer, available);
     
-    public HashSet<int> GetControllableEntities(int player, bool available=false)
+    public HashSet<GridPosition> GetControllableEntityPositions(int player, bool available=false)
     {
-        var controllableEntities = new HashSet<int>();
+        var positions = new HashSet<GridPosition>();
         for (var i = 0; i < _entities.Length; i++)
-            if (IsControllable(i, player, available)) controllableEntities.Add(i);
-        return controllableEntities;
+        {
+            var gridPosition = new GridPosition(this, i);
+            if (IsControllable(gridPosition, player, available)) positions.Add(gridPosition);
+        }
+        return positions;
+    }
+    
+    public HashSet<GridPosition> GetOccupiedEntityPositions()
+    {
+        var positions = new HashSet<GridPosition>();
+        for (var i = 0; i < _entities.Length; i++) if (_entities[i] != null) positions.Add(new GridPosition(this, i));
+        return positions;
     }
 
-    public bool IsControllable(int position, int player, bool available = false)
+    public bool IsControllable(GridPosition position, int player, bool available = false)
     {
-        if (!Definition.IsValidPosition(position)) return false;
-        var entity = _entities[position];
+        if (!position.IsValid()) return false;
+        var entity = _entities[position.Dim1];
         if (entity == null) return false;
         if (!entity.TryGetComponent<ControlComponent>(out var control)) return false;
         if (control.PlayerController != player) return false;
-        // TODO: `available` — filter units that already acted / lack mana. No-op today (matches current behavior).
+        // TODO: filter units that already acted / lack mana
         return true;
     }
-
-    public bool IsAvailableControllable(int position) => IsControllable(position, ActivePlayer, available: true);
+    
+    public bool IsAvailableControllable(GridPosition position) => IsControllable(position, ActivePlayer, available: true);
 
     public HashSet<int> GetOccupiedTilesPositionSet()
     {
@@ -239,50 +220,38 @@ public sealed class GridState : IReadOnlyGridState
         return indices;
     }
 
-    public bool SetEntityPosition(int position, Entity entity)
+    public bool SetEntityPosition(GridPosition position, Entity entity)
     {
-        if (!Definition.IsValidPosition(position) || entity == null) return false;
-        _entities[position] = entity;
+        if (!position.IsValid() || entity == null) return false;
+        _entities[position.Dim1] = entity;
         entity.SetPosition(position);
         return true;
     }
     
-    public bool ChangeEntityPosition(int startPosition, int targetPosition)
+    public bool ChangeEntityPosition(GridPosition startPosition, GridPosition targetPosition)
     {
-        if (!Definition.IsValidPosition(startPosition) 
-            || !Definition.IsValidPosition(targetPosition) 
-            || !TryGetEntity(startPosition, out var entity)) return false;
-        _entities[targetPosition] = entity;
-        _entities[startPosition] = null;
+        if (!startPosition.IsValid() || !targetPosition.IsValid() || !TryGetEntity(startPosition, out var entity)) return false;
+        _entities[targetPosition.Dim1] = entity;
+        _entities[startPosition.Dim1] = null;
         entity.SetPosition(targetPosition);
         return true;
     }
 
-    public bool PerformAction(int action, int sourceTile, int targetTile)
+    public bool PerformAction(int action, GridPosition sourcePosition, GridPosition targetPosition)
     {
-        Entity entity = GetEntity(sourceTile);
+        var entity = GetEntity(sourcePosition);
         return entity != null;
     }
 
-    public bool PerformAction(int action, int sourceTile, List<int> targetTiles)
+    public bool PerformAction(int action, GridPosition sourcePosition, List<GridPosition> targetPosition)
     {
         return false;
     }
 
-    public bool IsTraversable(int position)
+    // TODO: Terrain check
+    public bool IsTraversable(GridPosition position)
     {
-        return Definition.IsValidPosition(position) && _entities[position] == null
-            && Definition.TerrainMap[position] != TerrainType.Void; // TODO: Terrain check
-    }
-
-    public bool IsTraversable(int x, int y)
-    {
-        return IsTraversable(Definition.ToPosition1D(x, y));
-    }
-
-    public bool IsTraversable((int x, int y) position)
-    {
-        return IsTraversable(Definition.ToPosition1D(position.x, position.y));
+        return position.IsValid() && _entities[position.Dim1] == null && Definition.TerrainMap[position.Dim1] != TerrainType.Void; 
     }
 
     public string PrintGrid()

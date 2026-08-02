@@ -7,7 +7,7 @@ public class Entity : INameId, IReadOnlyEntity
     public string Id { get; }
     public int Cost { get; }
     
-    public int Position { get; private set; }
+    public GridPosition Position { get; private set; }
     public GridDirectionFacing Facing { get; private set; } = GridDirectionFacing.North;
     private Dictionary<Type, IEntityComponent> _components { get; } = new();
     
@@ -42,7 +42,7 @@ public class Entity : INameId, IReadOnlyEntity
         return success;
     }
     
-    public void SetPosition(int position)
+    public void SetPosition(GridPosition position)
     {
         Position = position;
     }

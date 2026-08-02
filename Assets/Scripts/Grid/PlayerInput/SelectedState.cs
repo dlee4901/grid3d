@@ -6,13 +6,13 @@ public class SelectedState : PlayerInputStateBase
     public SelectedState(PlayerInputContext ctx, QueryContext selected) : base(ctx) { _selected = selected; }
 
     public bool Actionable
-        => _selected.Grid.IsAvailableControllable(_selected.Grid.ToPosition1D(_selected.SourcePosition));
+        => _selected.Grid.IsAvailableControllable(_selected.SourcePosition);
     
     public override void OnEnter()
     {
         Ctx.Renderer.ClearHighlights();
         if (!Actionable)
-            Ctx.Renderer.HighlightPositions(Ctx.Grid.GetControllableEntities(), GridHighlightType.AvailableEntities);
+            Ctx.Renderer.HighlightPositions(Ctx.Grid.GetControllableEntityPositions(), GridHighlightType.AvailableEntities);
     }
     public override void OnPositionSelected(QueryContext clicked) => Ctx.Controller.TransitionTo(new SelectedState(Ctx, clicked));
 
@@ -25,9 +25,9 @@ public class SelectedState : PlayerInputStateBase
     public override void OnAbilityPreview(Ability ability, QueryContext ctx)
     {
         if (!Actionable) return;
-        var (areas, _) = ability.Targeting.GetSelectablePositions(ctx);
+        var steps = ability.Targeting.GetSelectableSteps(ctx);
         Ctx.Renderer.ClearHighlights();
-        Ctx.Renderer.HighlightPositions(areas, GridHighlightType.AbilityRange);
+        Ctx.Renderer.HighlightPositions(steps, GridHighlightType.AbilityRange);
     }
     public override void OnAbilityCancelPreview() => Ctx.Renderer.ClearHighlights();
 

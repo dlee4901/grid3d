@@ -22,7 +22,7 @@ public static class ContentRegistry
         foreach (var field in typeof(MapConfigs).GetFields(BindingFlags.Public | BindingFlags.Static))
             if (field.GetValue(null) is GridDefinition map)
             {
-                map.Bake();
+                map.Init();
                 IdRegistry<GridDefinition>.Register(map);
             }
     }

@@ -49,8 +49,9 @@ public class GridInput : LoggableBehaviour
         UnityUtil.GetMouseWorldPosition(_camera, out var worldPos, out var error);
         if (error) { SetHover(null); return; }
         var cell = _grid.WorldToCell(worldPos);
-        if (!_state.IsValidPosition(cell.x, cell.y)) { SetHover(null); return; }
-        SetHover(new QueryContext(_state, (cell.x, cell.y), _state.GetEntity(cell.x, cell.y)));
+        var gridPosition = new GridPosition(_state, (cell.x, cell.y));
+        if (!gridPosition.IsValid()) { SetHover(null); return; }
+        SetHover(new QueryContext(_state, gridPosition, _state.GetEntity(gridPosition)));
     }
 
     private void HandleClick()
@@ -71,9 +72,6 @@ public class GridInput : LoggableBehaviour
         Log($"Hover: {Describe(_hovered)}");
         OnHoverChanged?.Invoke(_hovered);
     }
-    
-    public bool IsHovered((int, int) position)
-        => _hovered.HasValue && _hovered.Value.SourcePosition == position;
 
     private static string Describe(QueryContext? ctx)
     {

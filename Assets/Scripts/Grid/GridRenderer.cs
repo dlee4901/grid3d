@@ -67,8 +67,8 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
             _pressOutline.gameObject.SetActive(false);
             return;
         }
-        var (x, y) = ctx.Value.SourcePosition;
-        var worldPos = _grid.CellToWorld(new Vector3Int(x, y, 0));
+        var position = ctx.Value.SourcePosition;
+        var worldPos = _grid.CellToWorld(new Vector3Int(position.Dim2.x, position.Dim2.y, 0));
         _pressOutline.transform.position = new Vector3(worldPos.x, _gridGroundLevel + 0.05f, worldPos.z);
         _pressOutline.gameObject.SetActive(true);
     }
@@ -91,8 +91,9 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
         {
             for (var y = 0; y < GridState.Y; y++)
             {
-                _highlightSquares[GridState.ToPosition1D(x, y)] = Instantiate(_highlightSquare, _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel + 0.01f, 0.5f), Quaternion.Euler(90f, 0f, 0f), gameObject.transform);
-                _cubePrefabs[GridState.ToPosition1D(x, y)] = Instantiate(_cubePrefab, _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel / 2.0f, 0.5f), Quaternion.identity, gameObject.transform);
+                var gridPosition = new GridPosition(GridState, (x, y));
+                _highlightSquares[gridPosition.Dim1] = Instantiate(_highlightSquare, _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel + 0.01f, 0.5f), Quaternion.Euler(90f, 0f, 0f), gameObject.transform);
+                _cubePrefabs[gridPosition.Dim1] = Instantiate(_cubePrefab, _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel / 2.0f, 0.5f), Quaternion.identity, gameObject.transform);
             }
         }
 
@@ -106,18 +107,17 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
     private void InstantiateEntityModels()
     {
         _entityModels = new GameObject[GridState.Size];
-        foreach (var position in GridState.GetOccupiedTilesPositionSet())
+        foreach (var position in GridState.GetOccupiedEntityPositions())
         {
             var entity = GridState.GetEntity(position);
             if (!IdRegistry<EntityAssets>.TryGet(entity.Id, out var assets)) continue;
             if (assets.Model3D == null) continue;
-
-            var (x, y) = GridState.ToPosition2D(position);
-            var worldPos = _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel, 0.5f);
+            
+            var worldPos = _grid.CellToWorld(new Vector3Int(position.Dim2.x, position.Dim2.y, 0)) + new Vector3(0.5f, _gridGroundLevel, 0.5f);
             var rotation = Quaternion.identity;
             if (entity.TryGetComponent<ControlComponent>(out var control) && control.PlayerController == 2)
                 rotation = Quaternion.Euler(0, 180f, 0);
-            _entityModels[position] = Instantiate(assets.Model3D, worldPos, rotation, gameObject.transform);
+            _entityModels[position.Dim1] = Instantiate(assets.Model3D, worldPos, rotation, gameObject.transform);
         }
     }
 
@@ -139,22 +139,21 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
         }
         foreach (var (entity, model) in entityToModel)
         {
-            var (x, y) = GridState.ToPosition2D(entity.Position);
-            model.transform.position = _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel, 0.5f);
-            _entityModels[entity.Position] = model;
+            var position = entity.Position;
+            model.transform.position = _grid.CellToWorld(new Vector3Int(position.Dim2.x, position.Dim2.y, 0)) + new Vector3(0.5f, _gridGroundLevel, 0.5f);
+            _entityModels[position.Dim1] = model;
         }
-        foreach (var pos in GridState.GetOccupiedTilesPositionSet())
+        foreach (var position in GridState.GetOccupiedEntityPositions())
         {
-            if (_entityModels[pos] != null) continue;
-            var entity = GridState.GetEntity(pos);
+            if (_entityModels[position.Dim1] != null) continue;
+            var entity = GridState.GetEntity(position);
             if (!IdRegistry<EntityAssets>.TryGet(entity.Id, out var assets)) continue;
             if (assets.Model3D == null) continue;
-            var (x, y) = GridState.ToPosition2D(pos);
-            var worldPos = _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel, 0.5f);
+            var worldPos = _grid.CellToWorld(new Vector3Int(position.Dim2.x, position.Dim2.y, 0)) + new Vector3(0.5f, _gridGroundLevel, 0.5f);
             var rotation = Quaternion.identity;
             if (entity.TryGetComponent<ControlComponent>(out var control) && control.PlayerController == 2)
                 rotation = Quaternion.Euler(0, 180f, 0);
-            _entityModels[pos] = Instantiate(assets.Model3D, worldPos, rotation, gameObject.transform);
+            _entityModels[position.Dim1] = Instantiate(assets.Model3D, worldPos, rotation, gameObject.transform);
         }
     }
     
@@ -162,30 +161,16 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
     {
         foreach (var square in _highlightSquares) square.gameObject.SetActive(false);
     }
-
-    public void HighlightPositions(IEnumerable<(int, int)> positions, GridHighlightType type)
+    
+    public void HighlightPositions(HashSet<GridPosition> positions, GridHighlightType type)
     {
         var color = HighlightColor(type);
         foreach (var position in positions)
         {
-            var i = GridState.ToPosition1D(position);
-            _highlightSquares[i].gameObject.SetActive(true);
-            _highlightSquares[i].material.SetColor(UnityUtil.MaterialBaseColorId, color);
+            _highlightSquares[position.Dim1].gameObject.SetActive(true);
+            _highlightSquares[position.Dim1].material.SetColor(UnityUtil.MaterialBaseColorId, color);
         }
     }
-
-    // TODO:
-    // public void HighlightPositions(HashSet steps, GridHighlightType type)
-    // {
-    //     var color = HighlightColor(type);
-    //     var positions = steps.GetPositions();
-    //     foreach (var position in positions)
-    //     {
-    //         var pos = _gridManager.GridState.ToPosition1D(position);
-    //         _highlightSquares[pos].gameObject.SetActive(true);
-    //         _highlightSquares[pos].material.SetColor(UnityUtil.MaterialBaseColorId, color);
-    //     }
-    // }
     
     public void HighlightPositions(GridSteps steps, GridHighlightType type)
     {
@@ -193,9 +178,8 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
         var positions = steps.GetPositions();
         foreach (var position in positions)
         {
-            var pos = _gridManager.GridState.ToPosition1D(position);
-            _highlightSquares[pos].gameObject.SetActive(true);
-            _highlightSquares[pos].material.SetColor(UnityUtil.MaterialBaseColorId, color);
+            _highlightSquares[position.Dim1].gameObject.SetActive(true);
+            _highlightSquares[position.Dim1].material.SetColor(UnityUtil.MaterialBaseColorId, color);
         }
     }
     

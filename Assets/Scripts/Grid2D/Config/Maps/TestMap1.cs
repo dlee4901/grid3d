@@ -7,12 +7,12 @@ public static partial class MapConfigs
         Id = "TestMap1", X = 11, Y = 11, MaxTeamCost = 22,
         Terrain = new List<TerrainConfig>
         {
-            new() { TerrainType = "Void", PositionValues = new() { 60, 62 } }
+            new() { TerrainType = "Void", PositionValues = new List<int> { 60, 62 } }
         },
         PlayerStartPositions = new List<PositionConfig>
         {
-            new() { PositionRanges = new() { new IntRange(0, 22) } },
-            new() { PositionRanges = new() { new IntRange(97, 120) } }
+            new() { PositionRanges = new List<IntRange> { new IntRange(0, 22) } },
+            new() { PositionRanges = new List<IntRange> { new IntRange(97, 120) } }
         },
         EntityStartPositions = new List<EntityStartConfig>
         {

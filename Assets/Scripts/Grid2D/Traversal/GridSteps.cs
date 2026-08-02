@@ -4,15 +4,15 @@ using System.Linq;
 
 public struct GridStep : IEquatable<GridStep>
 {
-    public (int x, int y) Position;
-    public int Distance;
+    public GridPosition Position;
     public GridDirection Direction;
+    public int Distance;
 
-    public GridStep((int x, int y) position, int distance, GridDirection direction)
+    public GridStep(GridPosition position, GridDirection direction, int distance)
     {
         Position = position;
-        Distance = distance;
         Direction = direction;
+        Distance = distance;
     }
 
     public bool Equals(GridStep other)
@@ -34,7 +34,7 @@ public struct GridStep : IEquatable<GridStep>
 public class GridSteps
 {
     private readonly List<HashSet<GridStep>> _steps = new() { new HashSet<GridStep>() };
-    private readonly List<Dictionary<(int, int), HashSet<GridStep>>> _positions = new() { new Dictionary<(int, int), HashSet<GridStep>>() };
+    private readonly List<Dictionary<GridPosition, HashSet<GridStep>>> _positions = new() { new Dictionary<GridPosition, HashSet<GridStep>>() };
 
     public void Add(GridStep gridStep, int index=0)
     {
@@ -64,12 +64,12 @@ public class GridSteps
         return index < _steps.Count && _steps[index].Contains(gridStep);
     }
     
-    public bool Contains((int, int) position, int index=0)
+    public bool Contains(GridPosition position, int index=0)
     {
         return index < _positions.Count && _positions[index].ContainsKey(position);
     }
     
-    public HashSet<GridStep> GetStepsAtPosition((int, int) position, int index=0)
+    public HashSet<GridStep> GetStepsAtPosition(GridPosition position, int index=0)
     {
         return _positions[index][position];
     }
@@ -79,7 +79,7 @@ public class GridSteps
         return _steps[index];
     }
     
-    public HashSet<(int, int)> GetPositions(int index=0)
+    public HashSet<GridPosition> GetPositions(int index=0)
     {
         return _positions[index].Keys.ToHashSet();
     }
@@ -116,9 +116,9 @@ public class GridSteps
         return map;
     }
     
-    public Dictionary<(int, int), HashSet<GridStep>> GetPositionMap(int index=0)
+    public Dictionary<GridPosition, HashSet<GridStep>> GetPositionMap(int index=0)
     {
-        var map = new Dictionary<(int, int), HashSet<GridStep>>();
+        var map = new Dictionary<GridPosition, HashSet<GridStep>>();
         if (index >= _steps.Count) return map;
         foreach (var step in _steps[index])
         {
@@ -155,6 +155,6 @@ public class GridSteps
     private void ExpandListCount(int index)
     {
         if (index >= _steps.Count) for (var i = _steps.Count; i <= index; i++) _steps.Add(new HashSet<GridStep>());
-        if (index >= _positions.Count) for (var i = _positions.Count; i <= index; i++) _positions.Add(new Dictionary<(int, int), HashSet<GridStep>>());
+        if (index >= _positions.Count) for (var i = _positions.Count; i <= index; i++) _positions.Add(new Dictionary<GridPosition, HashSet<GridStep>>());
     }
 }

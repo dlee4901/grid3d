@@ -10,6 +10,7 @@ public enum GridDirectionFacing {North, East, South, West}
 public class GridTraversal
 {
     public const int UnidirectionalCount = 8;
+    
     public GridDirection Direction { get; set; }
     public bool[] DirectionMask { get; set; } = new bool[UnidirectionalCount];
 
@@ -46,7 +47,7 @@ public class GridTraversal
 
     public List<GridStep> GetTraceSteps(QueryContext ctx)
     {
-        return GetTraceSteps(ctx, new GridStep(ctx.SourcePosition, 0, Direction));
+        return GetTraceSteps(ctx, new GridStep(ctx.SourcePosition, Direction, 0));
     }
 
     private List<GridStep> GetTraceSteps(QueryContext ctx, GridStep initialGridStep)
@@ -58,7 +59,7 @@ public class GridTraversal
     {
         var steps = new HashSet<GridStep>();
         var queue = new Queue<GridStep>();
-        var initialStep = new GridStep(ctx.SourcePosition, 0, Direction);
+        var initialStep = new GridStep(ctx.SourcePosition, Direction, 0);
         steps.Add(initialStep);
         queue.Enqueue(initialStep);
         while (queue.Count > 0)
@@ -74,8 +75,10 @@ public class GridTraversal
         }
     }
 
-    private IEnumerable<GridStep> Expand(QueryContext ctx, (int, int) currentPosition, int curDistance, GridDirection gridDirection)
+    private IEnumerable<GridStep> Expand(QueryContext ctx, GridPosition currentPosition, int curDistance, GridDirection gridDirection)
     {
+        if (!currentPosition.IsValid()) yield break;
+        
         var grid = ctx.Grid;
         var maxDistance = MaxDistance < 0 || MaxDistance > grid.X * grid.Y ? grid.X * grid.Y : MaxDistance;
         if (curDistance > maxDistance) yield break;
@@ -83,19 +86,20 @@ public class GridTraversal
         var directionFacing = ctx.SourceEntity?.Facing ?? GridDirectionFacing.North;
         var unitVectors = GetUnitVectors(gridDirection, directionFacing);
         
-        var traverseTiles = unitVectors.Select(vec => (currentPosition.Item1 + vec.Item1, currentPosition.Item2 + vec.Item2)).ToList();
+        var currentPosition2D = currentPosition.Dim2;
+        var traverseTiles = unitVectors.Select(vec => (currentPosition2D.x + vec.Item1, currentPosition2D.y + vec.Item2)).ToList();
 
         for (var i = 0; i < traverseTiles.Count; i++)
         {
-            var position = traverseTiles[i];
-            if (position == currentPosition) continue;
+            var position = new GridPosition(grid, traverseTiles[i]);
+            if (position.Equals(currentPosition)) continue;
 
-            if (!grid.IsValidPosition(position)) continue;
+            if (!position.IsValid()) continue;
             Entity entity;
             if ((entity = grid.GetEntity(position)) != null && IsColliding(entity, ctx.SourceEntity)) continue;
             //if (collideMask != null && (entity = grid.GetEntity(tile)) != null && collideMask(entity)) continue;
 
-            yield return new GridStep(position, curDistance, Linear ? (GridDirection)i : gridDirection);
+            yield return new GridStep(position, Linear ? (GridDirection)i : gridDirection, curDistance);
 
             if (Chain == null || curDistance < ChainOffset) continue;
             foreach (var step in Chain.Expand(ctx, position, curDistance, Chain.Direction))
@@ -114,7 +118,7 @@ public class GridTraversal
         var width = StartWidth + DeltaWidth * (gridStep.Distance - DeltaWidthDistanceOffset) / DeltaWidthStep;
         var widthPositions = GetWidthPositions(ctx, width, gridStep.Position, unitVectors);
         
-        foreach (var position in widthPositions) yield return new GridStep(position, gridStep.Distance, gridStep.Direction);
+        foreach (var position in widthPositions) yield return new GridStep(position, gridStep.Direction, gridStep.Distance);
     }
 
     private bool IsColliding(Entity targetEntity, IReadOnlyEntity? sourceEntity=null)
@@ -133,41 +137,41 @@ public class GridTraversal
         return false;
     }
 
-    private List<(int, int)> GetWidthPositions(QueryContext ctx, int width, (int, int) startPosition, (int, int)[] unitVectors)
+    private List<GridPosition> GetWidthPositions(QueryContext ctx, int width, GridPosition startPosition, (int, int)[] unitVectors)
     {
         var grid = ctx.Grid;
-        List<(int, int)> widthTiles = new();
+        List<GridPosition> widthPositions = new();
         var zeroTuple = (0, 0);
-        var leftTile = zeroTuple;
-        var rightTile = zeroTuple;
+        var leftShift = zeroTuple;
+        var rightShift = zeroTuple;
         for (var i = 1; i <= width; i++)
         {
             if (!unitVectors[0].Equals(zeroTuple) || !unitVectors[4].Equals(zeroTuple))
             {
-                leftTile = (i, 0);
-                rightTile = (-i, 0);
+                leftShift = (i, 0);
+                rightShift = (-i, 0);
             }
             if (!unitVectors[1].Equals(zeroTuple) || !unitVectors[5].Equals(zeroTuple))
             {
-                leftTile = (i, -i);
-                rightTile = (-i, i);
+                leftShift = (i, -i);
+                rightShift = (-i, i);
             }
             if (!unitVectors[2].Equals(zeroTuple) || !unitVectors[6].Equals(zeroTuple))
             {
-                leftTile = (0, i);
-                rightTile = (0, -i);
+                leftShift = (0, i);
+                rightShift = (0, -i);
             }
             if (!unitVectors[3].Equals(zeroTuple) || !unitVectors[7].Equals(zeroTuple))
             {
-                leftTile = (-i, -i);
-                rightTile = (i, i);
+                leftShift = (-i, -i);
+                rightShift = (i, i);
             }
-            var newTile = GridUtil.TupleArithmetic(startPosition, leftTile, GridUtil.ArithmeticOperation.Add);
-            if (newTile.HasValue && grid.IsValidPosition(newTile.Value)) widthTiles.Add(newTile.Value);
-            newTile = GridUtil.TupleArithmetic(startPosition, rightTile, GridUtil.ArithmeticOperation.Add);
-            if (newTile.HasValue && grid.IsValidPosition(newTile.Value)) widthTiles.Add(newTile.Value);
+            var newPosition = startPosition.Add(leftShift); //GridUtil.TupleArithmetic(startPosition, leftTile, GridUtil.ArithmeticOperation.Add));
+            if (newPosition.IsValid()) widthPositions.Add(newPosition);
+            newPosition = startPosition.Add(rightShift);
+            if (newPosition.IsValid()) widthPositions.Add(newPosition);
         }
-        return widthTiles;
+        return widthPositions;
     }
 
     private (int, int)[] GetUnitVectors(GridDirection gridDirection, GridDirectionFacing gridDirectionFacing=GridDirectionFacing.North)
@@ -242,28 +246,18 @@ public class GridTraversal
             default:
                 return absoluteDirections;
         }
-        var shift = 0;
-        switch (gridDirectionFacing)
+        var shift = gridDirectionFacing switch
         {
-            case GridDirectionFacing.East:
-                shift = 6;
-                break;
-            case GridDirectionFacing.South:
-                shift = 2;
-                break;
-            case GridDirectionFacing.West:
-                shift = 4;
-                break;
-            case GridDirectionFacing.North:
-            default:
-                return absoluteDirections;
-        }
+            GridDirectionFacing.East => 6,
+            GridDirectionFacing.South => 4,
+            GridDirectionFacing.West => 2,
+            _ => 0
+        };
+        if (shift == 0) return absoluteDirections;
+  
         var buffer = new bool[UnidirectionalCount];
-        shift %= UnidirectionalCount;
         Array.Copy(absoluteDirections, shift, buffer, 0, UnidirectionalCount - shift);
         Array.Copy(absoluteDirections, 0, buffer, UnidirectionalCount - shift, shift);
-        Array.Copy(buffer, absoluteDirections, UnidirectionalCount);
-        
         return buffer;
     }
 }

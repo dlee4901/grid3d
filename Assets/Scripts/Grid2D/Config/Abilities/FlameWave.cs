@@ -7,7 +7,7 @@ public static partial class AbilityConfigs
         Id = "Flame Wave",
         Targeting = new DirectionTargeting()
         {
-            Grouping = new [] {1, 0, 2, 0, 3, 0, 4, 0},
+            Grouping = new [] {1, 0, 1, 0, 2, 0, 2, 0},
             EffectArea = new GridSelection()
             {
                 Traversals = new List<GridTraversal>()

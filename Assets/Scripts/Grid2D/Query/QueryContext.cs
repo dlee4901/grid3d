@@ -5,10 +5,10 @@ using System;
 public readonly struct QueryContext : IEquatable<QueryContext>
 {
     public readonly IReadOnlyGridState Grid;
-    public readonly (int, int) SourcePosition;
+    public readonly GridPosition SourcePosition;
     public readonly IReadOnlyEntity? SourceEntity;
 
-    public QueryContext(IReadOnlyGridState grid, (int, int) sourcePosition, IReadOnlyEntity? sourceEntity = null)
+    public QueryContext(IReadOnlyGridState grid, GridPosition sourcePosition, IReadOnlyEntity? sourceEntity = null)
     {
         Grid = grid;
         SourcePosition = sourcePosition;
@@ -16,7 +16,7 @@ public readonly struct QueryContext : IEquatable<QueryContext>
     }
 
     public bool Equals(QueryContext other)
-        => SourcePosition == other.SourcePosition
+        => SourcePosition.Equals(other.SourcePosition)
            && ReferenceEquals(SourceEntity, other.SourceEntity)
            && ReferenceEquals(Grid, other.Grid);
 

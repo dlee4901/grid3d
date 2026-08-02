@@ -41,7 +41,7 @@ public class GridSelection
     //     return selection;
     // }
 
-    public GridSteps GetSteps(QueryContext ctx, bool filterEntities=true)
+    public GridSteps GetGridSteps(QueryContext ctx, bool filterEntities=true)
     {
         var filteredSteps = new GridSteps();
         var (steps, maxDistance) = GetUnfilteredSteps(ctx);

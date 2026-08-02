@@ -33,9 +33,9 @@ public class Ability : INameId
         Locked = config.Locked;
     }
 
-    public virtual bool Execute(GridState state, int sourcePosition, IReadOnlyList<int> targets)
+    public virtual bool Execute(GridState state, GridPosition sourcePosition, List<GridPosition> targetPositions)
     {
-        GridLog.Info($"[Ability] {Id} from {sourcePosition} → [{string.Join(", ", targets)}] (no-op stub)");
+        GridLog.Info($"[Ability] {Id} from {sourcePosition} → [{string.Join(", ", targetPositions)}] (no-op stub)");
         return true;
     }
 

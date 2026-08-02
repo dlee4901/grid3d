@@ -1,31 +1,37 @@
+using System.Collections.Generic;
+
 public sealed class AbilityCommand : ICommand
 {
     public int IssuingPlayer { get; }
     public bool RequiresActiveTurn => true;
     public string AbilityId { get; }
     public int SourcePosition { get; }
-    public int[] Targets { get; }
+    public int[] TargetPositions { get; }
 
-    public AbilityCommand(int issuingPlayer, string abilityId, int sourcePosition, int[] targets)
+    public AbilityCommand(int issuingPlayer, string abilityId, int sourcePosition, int[] targetPositions)
     {
         IssuingPlayer = issuingPlayer;
         AbilityId = abilityId;
         SourcePosition = sourcePosition;
-        Targets = targets;
+        TargetPositions = targetPositions;
     }
 
     public bool ApplyTo(GridState state)
     {
-        var entity = state.GetEntity(SourcePosition);
+        var sourcePosition = new GridPosition(state, SourcePosition);
+        var targetPositions = new List<GridPosition>();
+        foreach (var position in TargetPositions) targetPositions.Add(new GridPosition(state, position));
+        
+        var entity = state.GetEntity(sourcePosition);
         if (entity == null)
         {
-            GridLog.Warning($"[AbilityCommand] no entity at {SourcePosition}");
+            GridLog.Warning($"[AbilityCommand] no entity at {sourcePosition}");
             return false;
         }
         if (!entity.TryGetComponent<ControlComponent>(out var control)
             || control.PlayerController != IssuingPlayer)
         {
-            GridLog.Warning($"[AbilityCommand] player {IssuingPlayer} can't command entity at {SourcePosition}");
+            GridLog.Warning($"[AbilityCommand] player {IssuingPlayer} can't command entity at {sourcePosition}");
             return false;
         }
         if (!entity.TryGetComponent<AbilityComponent>(out var abilities)) return false;
@@ -45,7 +51,7 @@ public sealed class AbilityCommand : ICommand
                             $"(have {state.GetMana(IssuingPlayer)}, need {ability.ManaCost})");
             return false;
         }
-        if (!ability.Execute(state, SourcePosition, Targets)) return false;
+        if (!ability.Execute(state, sourcePosition, targetPositions)) return false;
         state.SpendMana(IssuingPlayer, ability.ManaCost);
         ability.Trigger();
         return true;

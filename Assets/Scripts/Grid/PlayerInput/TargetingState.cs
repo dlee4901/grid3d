@@ -5,7 +5,7 @@ public class TargetingState : PlayerInputStateBase
 {
     private readonly Ability _ability;
     private readonly QueryContext _source;
-    private readonly List<(int, int)> _targets = new();
+    private readonly List<GridPosition> _targets = new();
     private readonly GridSteps _selectable;
 
     public TargetingState(PlayerInputContext ctx, Ability ability, QueryContext source) : base(ctx)
@@ -40,12 +40,9 @@ public class TargetingState : PlayerInputStateBase
     {
         Ctx.Renderer.ClearHighlights();
         Ctx.Renderer.HighlightPositions(_selectable, GridHighlightType.SelectableTargets);
-        if (hovered.HasValue)
-        {
-            var targets = new (int, int)[] {hovered.Value.SourcePosition};
-            if (_ability.Targeting.GetEffectSteps(hovered.Value, targets, out var list))
-                Ctx.Renderer.HighlightPositions(list, GridHighlightType.EffectPreview);
-        }
+        if (!hovered.HasValue || !_selectable.Contains(hovered.Value.SourcePosition)) return;
+        if (_ability.Targeting.GetEffectSteps(_source, hovered.Value.SourcePosition, out var list))
+            Ctx.Renderer.HighlightPositions(list, GridHighlightType.EffectPreview);
     }
 
     public override void OnAbilityActivate(Ability ability, QueryContext source)
@@ -60,17 +57,19 @@ public class TargetingState : PlayerInputStateBase
     public override void OnCancel()
         => Ctx.Controller.TransitionTo(new SelectedState(Ctx, _source));
 
-    private bool IsValidTarget((int, int) pos) => _selectable.Contains(pos);
+    private bool IsValidTarget(GridPosition position) => _selectable.Contains(position);
 
     private void Confirm()
     {
-        var sourcePos1D = _source.Grid.ToPosition1D(_source.SourcePosition);
-        var targets1D = _targets.Select(t => _source.Grid.ToPosition1D(t)).ToArray();
-        int issuer = 0;
+        var issuer = 0;
         if (_source.SourceEntity != null
             && _source.SourceEntity.TryGetComponent<ControlComponent>(out var ctrl))
             issuer = ctrl.PlayerController;
-        var ok = Ctx.Dispatcher.Submit(new AbilityCommand(issuer, _ability.Id, sourcePos1D, targets1D));
+            
+        var targets1D = new int[_targets.Count];
+        for (var i = 0; i < _targets.Count; i++) targets1D[i] = _targets[i].Dim1;
+        var ok = Ctx.Dispatcher.Submit(new AbilityCommand(issuer, _ability.Id, _source.SourcePosition.Dim1, targets1D));
+        
         Ctx.Controller.LogState($"AbilityCommand: {_ability.Id} ok={ok}");
         Ctx.Controller.TransitionTo(new IdleState(Ctx));
     }
