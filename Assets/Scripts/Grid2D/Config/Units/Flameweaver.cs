@@ -7,6 +7,6 @@ public static partial class UnitConfigs
         Id = "Flameweaver",
         Cost = 4,
         Health = 8,
-        Abilities = new List<string> {"MoveStraight3Step", "Fireball", "Flame Wave"}//, "Wildfire"}
+        Abilities = new List<string> {"MoveStraight3Step", "Fireball", "Heatwave", "Flame Burst"}//, "Wildfire"}
     };
 }

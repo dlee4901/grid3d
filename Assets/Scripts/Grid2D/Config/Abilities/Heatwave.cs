@@ -2,22 +2,21 @@ using System.Collections.Generic;
 
 public static partial class AbilityConfigs
 {
-    public static readonly AbilityConfig MoveStraight3Step = new()
+    public static readonly AbilityConfig Heatwave = new()
     {
-        Id = "MoveStraight3Step",
-        Type = AbilityType.Move,
-        Targeting = new PositionTargeting()
+        Id = "Heatwave",
+        Targeting = new DirectionTargeting()
         {
-            SelectableArea = new GridSelection()
+            Grouping = new [] {1, 0, 2, 0, 3, 0, 4, 0},
+            EffectArea = new GridSelection()
             {
-                MinDistance = 1,
                 Traversals = new List<GridTraversal>()
                 {
                     new GridTraversal()
                     {
                         Direction = GridDirection.Straight,
-                        MaxDistance = 3,
-                        Linear = false
+                        MaxDistance = 2,
+                        DeltaWidth = 1
                     }
                 }
             }

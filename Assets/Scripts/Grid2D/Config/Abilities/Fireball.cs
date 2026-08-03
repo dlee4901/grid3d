@@ -35,37 +35,5 @@ public static partial class AbilityConfigs
                 }
             }
         }
-        // TargetingOld = new AreaAbilityTargetingOld()
-        // {
-        //     EffectArea = new GridSelection()
-        //     {
-        //         Traversals = new List<GridTraversal>()
-        //         {
-        //             new GridTraversal()
-        //             {
-        //                 Direction = DirectionType.Straight,
-        //                 Linear = false,
-        //                 MaxDistance = 2,
-        //                 Passthrough = EntityPassthrough.All
-        //             }
-        //         }
-        //     },
-        //     SelectableAreas = new List<GridSelection>()
-        //     {
-        //         new GridSelection()
-        //         {
-        //             Traversals = new List<GridTraversal>()
-        //             {
-        //                 new GridTraversal()
-        //                 {
-        //                     Direction = DirectionType.Straight,
-        //                     Linear = false,
-        //                     MaxDistance = 2,
-        //                     Passthrough = EntityPassthrough.All
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
     };
 }
