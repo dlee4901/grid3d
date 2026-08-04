@@ -1,4 +1,3 @@
-using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -16,18 +15,16 @@ public class ManaCounter : MonoBehaviour
     private float _lineLength;
     private float _fontSize;
     
-    private RectTransform _manaIconTransform;
-    private RectTransform _counterTextTransform;
+    //private RectTransform _manaIconTransform;
+    //private RectTransform _counterTextTransform;
     
     private void Start()
     {
-        _manaIconTransform = _manaIcon.gameObject.GetComponent<RectTransform>();
-        _counterTextTransform = _counterText.GetComponent<RectTransform>();
+        //_manaIconTransform = _manaIcon.gameObject.GetComponent<RectTransform>();
+        //_counterTextTransform = _counterText.GetComponent<RectTransform>();
         var rectTransform = GetComponent<RectTransform>();
         rectTransform.sizeDelta = new Vector2(_size, _size);
-        InitOutline();
-        
-        _counterText.fontSize = _fontSize;
+        if (_outline != null) InitOutline();
     }
     
     private void InitOutline()
@@ -36,6 +33,7 @@ public class ManaCounter : MonoBehaviour
         _cornerPosition = _linePosition * 2f;
         _lineLength = _cornerPosition * Mathf.Sqrt(2);
         _fontSize = _size / 2f;
+        _counterText.fontSize = _fontSize;
         _outline.SetTransformsDiamond(_linePosition, _cornerPosition, _lineLength);
     }
     

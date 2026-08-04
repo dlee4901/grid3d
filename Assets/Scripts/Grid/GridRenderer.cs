@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Unity.Cinemachine;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public enum GridHighlightType { AvailableEntities, AbilityRange, SelectableTargets, EffectPreview }
 
@@ -16,7 +17,7 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
     [SerializeField] private LineRenderer _pressOutline;
     [SerializeField] private GameObject _cubePrefab;
 
-    [SerializeField] private List<Sprite> _unidirectionalArrowSprites;
+    [SerializeField] private List<Sprite> _directionalArrowSprites;
     [SerializeField] private SpriteRenderer _highlightSquare;
     // [SerializeField] private Color _selectionPreviewColor = new Color(255f, 255f, 255f, 64f);
     // [SerializeField] private Color _selectionActiveColor = new Color(255f, 255f, 255f, 128f);
@@ -27,17 +28,18 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
 
     private GameObject[] _cubePrefabs;
     private SpriteRenderer[] _highlightSquares;
-    private SpriteRenderer[] _unidirectionalArrows;
+    private SpriteRenderer[] _directionalArrows;
     
     private GameObject[] _entityModels;
     
     private float _gridGroundLevel;
-
-    public Grid Grid => _grid;
+    
     private IReadOnlyGridState GridState => _gridManager.GridState;
     
     private const float HighlightSquarePositionOffset = 0.01f;
     private const float UnidirectionalArrowPositionOffset = 0.02f;
+    
+    public Grid Grid => _grid;
 
     private void Start()
     {
@@ -93,7 +95,7 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
         _gridGroundLevel = _cubePrefab.transform.localScale.y;
         _cubePrefabs = new GameObject[GridState.Size];
         _highlightSquares = new SpriteRenderer[GridState.Size];
-        _unidirectionalArrows = new SpriteRenderer[GridState.Size];
+        _directionalArrows = new SpriteRenderer[GridState.Size];
         
         for (var x = 0; x < GridState.X; x++)
         {
@@ -102,10 +104,10 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
                 var gridPosition = new GridPosition(GridState, (x, y));
                 _cubePrefabs[gridPosition.Dim1] = Instantiate(_cubePrefab, _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel / 2.0f, 0.5f), Quaternion.identity, gameObject.transform);
                 _highlightSquares[gridPosition.Dim1] = Instantiate(_highlightSquare, _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel + HighlightSquarePositionOffset, 0.5f), Quaternion.Euler(90f, 0f, 0f), gameObject.transform);
-                var unidirectionalArrow = new GameObject("UnidirectionalArrow").AddComponent<SpriteRenderer>();
-                unidirectionalArrow.transform.SetParent(gameObject.transform);
-                unidirectionalArrow.transform.SetPositionAndRotation(_grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel + UnidirectionalArrowPositionOffset, 0.5f), Quaternion.Euler(90f, 0f, 0f));
-                _unidirectionalArrows[gridPosition.Dim1] = unidirectionalArrow;
+                var directionalArrow = new GameObject("UnidirectionalArrow").AddComponent<SpriteRenderer>();
+                directionalArrow.transform.SetParent(gameObject.transform);
+                directionalArrow.transform.SetPositionAndRotation(_grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel + UnidirectionalArrowPositionOffset, 0.5f), Quaternion.Euler(90f, 0f, 0f));
+                _directionalArrows[gridPosition.Dim1] = directionalArrow;
             }
         }
 
@@ -172,7 +174,7 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
     public void ClearHighlights()
     {
         foreach (var square in _highlightSquares) square.gameObject.SetActive(false);
-        foreach (var arrow in _unidirectionalArrows) arrow.gameObject.SetActive(false);
+        foreach (var arrow in _directionalArrows) arrow.gameObject.SetActive(false);
     }
     
     public void HighlightPositions(HashSet<GridPosition> positions, GridHighlightType type)
@@ -212,8 +214,8 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
             _highlightSquares[position.Dim1].material.SetColor(UnityUtil.MaterialBaseColorId, color);
             
             var direction = (int)step.Direction;
-            _unidirectionalArrows[position.Dim1].gameObject.SetActive(true);
-            _unidirectionalArrows[position.Dim1].sprite = _unidirectionalArrowSprites[direction];
+            _directionalArrows[position.Dim1].gameObject.SetActive(true);
+            _directionalArrows[position.Dim1].sprite = _directionalArrowSprites[direction];
         }
     }
     

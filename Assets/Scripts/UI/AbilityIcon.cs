@@ -13,7 +13,7 @@ public class AbilityIcon : LoggableBehaviour
     [SerializeField] private Color _disabledTint = new Color(1f, 1f, 1f, 0.4f);
     [SerializeField] private ManaCounter _manaCounter;
     [SerializeField] private ManaCounterPosition _manaCounterPosition = ManaCounterPosition.East;
-    [SerializeField] private float _manaCounterTransformOffset = 88f;
+    [SerializeField] private float _manaCounterTransformOffset = 64f;
 
     private InteractableUI _interactableUI;
     private TextMeshPro _cooldownText;
