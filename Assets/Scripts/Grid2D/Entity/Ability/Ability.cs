@@ -6,8 +6,8 @@ public class Ability : INameId
 
     public string Id => Config.Id;
     public int ManaCost => Config.ManaCost;
-    public List<AbilityBindings> Bindings => Config.Bindings;
     public AbilityTargeting Targeting => Config.Targeting;
+    public List<AbilityBindings> Bindings => Config.Bindings;
 
     public int Cooldown { get; private set; }
     public int Delay { get; private set; }

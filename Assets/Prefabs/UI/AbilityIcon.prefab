@@ -229,8 +229,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 28
-  m_fontSizeBase: 28
+  m_fontSize: 48
+  m_fontSizeBase: 48
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -463,7 +463,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 64, y: 64}
+  m_SizeDelta: {x: 128, y: 128}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &4591438385694372730
 MonoBehaviour:
@@ -484,7 +484,7 @@ MonoBehaviour:
   _disabledTint: {r: 1, g: 1, b: 1, a: 0.4}
   _manaCounter: {fileID: 5295675333675445194}
   _manaCounterPosition: 1
-  _manaCounterTransformOffset: 128
+  _manaCounterTransformOffset: 256
 --- !u!114 &3395392730149398043
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -549,7 +549,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: -4, y: -4}
+  m_SizeDelta: {x: -8, y: -8}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6197654877334950863
 CanvasRenderer:
@@ -736,8 +736,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 64, y: 0}
-  m_SizeDelta: {x: 48, y: 48}
+  m_AnchoredPosition: {x: 128, y: 0}
+  m_SizeDelta: {x: 96, y: 96}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &5295675333675445194
 MonoBehaviour:
@@ -754,4 +754,4 @@ MonoBehaviour:
   _manaIcon: {fileID: 9043091967237494040}
   _counterText: {fileID: 6872364024505970547}
   _outline: {fileID: 0}
-  _size: 48
+  _size: 96

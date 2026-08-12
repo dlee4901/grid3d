@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Unity.Cinemachine;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 public enum GridHighlightType { AvailableEntities, AbilityRange, SelectableTargets, EffectPreview }
 
@@ -16,6 +14,7 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
     [SerializeField] private GameObject _gridLines;
     [SerializeField] private LineRenderer _pressOutline;
     [SerializeField] private GameObject _cubePrefab;
+    [SerializeField] private EntityRenderer _entityRenderer;
 
     [SerializeField] private List<Sprite> _directionalArrowSprites;
     [SerializeField] private SpriteRenderer _highlightSquare;
@@ -29,9 +28,7 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
     private GameObject[] _cubePrefabs;
     private SpriteRenderer[] _highlightSquares;
     private SpriteRenderer[] _directionalArrows;
-    
-    private GameObject[] _entityModels;
-    
+
     private float _gridGroundLevel;
     
     private IReadOnlyGridState GridState => _gridManager.GridState;
@@ -41,10 +38,13 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
     
     public Grid Grid => _grid;
 
+    public Vector3 CellCenter(GridPosition position, float heightOffset = 0f)
+        => _grid.CellToWorld(new Vector3Int(position.Dim2.x, position.Dim2.y, 0))
+           + new Vector3(0.5f, _gridGroundLevel + heightOffset, 0.5f);
+
     private void Start()
     {
         _gridManager.GameStarted += OnGameStarted;
-        _gridManager.StateChanged += RefreshEntityModelPositions;
         if (_gridManager.IsGameStarted) OnGameStarted();
     }
 
@@ -52,7 +52,6 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
     {
         if (_gridManager == null) return;
         _gridManager.GameStarted -= OnGameStarted;
-        _gridManager.StateChanged -= RefreshEntityModelPositions;
         if (_gridManager.Player != null) _gridManager.Player.SelectionChanged -= MovePressOutline;
     }
 
@@ -64,18 +63,18 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
         _grid.gameObject.SetActive(true);
         InitCamera();
         InitRendering();
-        InstantiateEntityModels();
+        _entityRenderer.Build();
         _gridManager.Player.SelectionChanged += MovePressOutline;
     }
 
-    private void MovePressOutline(QueryContext? ctx)
+    private void MovePressOutline(GridSource? source)
     {
-        if (!ctx.HasValue)
+        if (!source.HasValue)
         {
             _pressOutline.gameObject.SetActive(false);
             return;
         }
-        var position = ctx.Value.SourcePosition;
+        var position = source.Value.Position;
         var worldPos = _grid.CellToWorld(new Vector3Int(position.Dim2.x, position.Dim2.y, 0));
         _pressOutline.transform.position = new Vector3(worldPos.x, _gridGroundLevel + 0.05f, worldPos.z);
         _pressOutline.gameObject.SetActive(true);
@@ -102,11 +101,11 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
             for (var y = 0; y < GridState.Y; y++)
             {
                 var gridPosition = new GridPosition(GridState, (x, y));
-                _cubePrefabs[gridPosition.Dim1] = Instantiate(_cubePrefab, _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel / 2.0f, 0.5f), Quaternion.identity, gameObject.transform);
-                _highlightSquares[gridPosition.Dim1] = Instantiate(_highlightSquare, _grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel + HighlightSquarePositionOffset, 0.5f), Quaternion.Euler(90f, 0f, 0f), gameObject.transform);
+                _cubePrefabs[gridPosition.Dim1] = Instantiate(_cubePrefab, CellCenter(gridPosition, -_gridGroundLevel / 2.0f), Quaternion.identity, gameObject.transform);
+                _highlightSquares[gridPosition.Dim1] = Instantiate(_highlightSquare, CellCenter(gridPosition, HighlightSquarePositionOffset), Quaternion.Euler(90f, 0f, 0f), gameObject.transform);
                 var directionalArrow = new GameObject("UnidirectionalArrow").AddComponent<SpriteRenderer>();
                 directionalArrow.transform.SetParent(gameObject.transform);
-                directionalArrow.transform.SetPositionAndRotation(_grid.CellToWorld(new Vector3Int(x, y, 0)) + new Vector3(0.5f, _gridGroundLevel + UnidirectionalArrowPositionOffset, 0.5f), Quaternion.Euler(90f, 0f, 0f));
+                directionalArrow.transform.SetPositionAndRotation(CellCenter(gridPosition, UnidirectionalArrowPositionOffset), Quaternion.Euler(90f, 0f, 0f));
                 _directionalArrows[gridPosition.Dim1] = directionalArrow;
             }
         }
@@ -118,59 +117,6 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
         material.SetVector("_Size", new Vector2(GridState.X, GridState.Y));
     }
 
-    private void InstantiateEntityModels()
-    {
-        _entityModels = new GameObject[GridState.Size];
-        foreach (var position in GridState.GetOccupiedEntityPositions())
-        {
-            var entity = GridState.GetEntity(position);
-            if (!IdRegistry<EntityAssets>.TryGet(entity.Id, out var assets)) continue;
-            if (assets.Model3D == null) continue;
-            
-            var worldPos = _grid.CellToWorld(new Vector3Int(position.Dim2.x, position.Dim2.y, 0)) + new Vector3(0.5f, _gridGroundLevel, 0.5f);
-            var rotation = Quaternion.identity;
-            if (entity.TryGetComponent<ControlComponent>(out var control) && control.PlayerController == 2)
-                rotation = Quaternion.Euler(0, 180f, 0);
-            _entityModels[position.Dim1] = Instantiate(assets.Model3D, worldPos, rotation, gameObject.transform);
-        }
-    }
-
-    public void RefreshEntityModelPositions()
-    {
-        var entityToModel = new Dictionary<Entity, GameObject>();
-        for (var i = 0; i < _entityModels.Length; i++)
-        {
-            if (_entityModels[i] == null) continue;
-            var entity = GridState.GetEntity(i);
-            if (entity == null)
-            {
-                Destroy(_entityModels[i]);
-                _entityModels[i] = null;
-                continue;
-            }
-            entityToModel[entity] = _entityModels[i];
-            _entityModels[i] = null;
-        }
-        foreach (var (entity, model) in entityToModel)
-        {
-            var position = entity.Position;
-            model.transform.position = _grid.CellToWorld(new Vector3Int(position.Dim2.x, position.Dim2.y, 0)) + new Vector3(0.5f, _gridGroundLevel, 0.5f);
-            _entityModels[position.Dim1] = model;
-        }
-        foreach (var position in GridState.GetOccupiedEntityPositions())
-        {
-            if (_entityModels[position.Dim1] != null) continue;
-            var entity = GridState.GetEntity(position);
-            if (!IdRegistry<EntityAssets>.TryGet(entity.Id, out var assets)) continue;
-            if (assets.Model3D == null) continue;
-            var worldPos = _grid.CellToWorld(new Vector3Int(position.Dim2.x, position.Dim2.y, 0)) + new Vector3(0.5f, _gridGroundLevel, 0.5f);
-            var rotation = Quaternion.identity;
-            if (entity.TryGetComponent<ControlComponent>(out var control) && control.PlayerController == 2)
-                rotation = Quaternion.Euler(0, 180f, 0);
-            _entityModels[position.Dim1] = Instantiate(assets.Model3D, worldPos, rotation, gameObject.transform);
-        }
-    }
-    
     public void ClearHighlights()
     {
         foreach (var square in _highlightSquares) square.gameObject.SetActive(false);

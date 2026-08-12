@@ -1,6 +1,5 @@
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class GameView : StateView
 {
@@ -9,12 +8,11 @@ public class GameView : StateView
     [SerializeField] private ManaCounter _manaCounter;
     [SerializeField] private InteractableUI _endTurn;
     [SerializeField] private TMP_Text _endTurnText;
-    [SerializeField] private VerticalLayoutGroup _container;
-    [SerializeField] private PlayerTimer _playerTimerPrefab;
+    [SerializeField] private PlayerTimerView[] _playerTimerViews;
     [SerializeField] private TimerMode _timerMode = TimerMode.Local;
     [SerializeField] private int _localSeat = 1;
 
-    private PlayerTimer[] _timers;
+    private readonly PlayerTimers _playerTimers = new();
     private int _shownActivePlayer;
 
     protected override void Start()
@@ -33,11 +31,12 @@ public class GameView : StateView
     {
         base.OnDestroy();
         if (_endTurn != null) _endTurn.OnClickCompleted -= EndActiveTurn;
+        _playerTimers.SeatExpired -= OnTimersExpired;
     }
 
     protected override void Refresh()
     {
-        if (_timers == null) return;
+        if (!_gridManager.IsGameStarted) return;
         var state = _gridManager.GridState;
         var players = state.Definition.PlayerCount;
 
@@ -48,33 +47,45 @@ public class GameView : StateView
 
         for (var p = 1; p <= players; p++)
         {
-            var isActivePlayer = p == state.ActivePlayer;
-            var isRunning = _timerMode != TimerMode.Off && isActivePlayer;
-            if (turnChanged || !_timers[p].IsRunning)
-                _timers[p].SetTimeMs(state.GetTimeMs(p));
-            _timers[p].SetRunning(isRunning);
-            _timers[p].SetActiveVisual(isActivePlayer);
+            var isActive = p == state.ActivePlayer;
+            var isRunning = _timerMode != TimerMode.Off && isActive;
+            if (turnChanged || !_playerTimers.IsRunning(p))
+                _playerTimers.SetTimeMs(p, state.GetTimeMs(p));
+            _playerTimers.SetRunning(p, isRunning);
+
+            var view = ViewFor(p);
+            if (view == null) continue;
+            view.SetLabel("Player " + p);
+            view.SetTimeMs(_playerTimers.RemainingMs(p));
+            view.SetActiveVisual(isActive && _timerMode != TimerMode.Off);
         }
 
-        _endTurnText.text = "END TURN " + state.Turn;
+        _endTurnText.text = "END TURN\n" + state.Turn;
         if (_endTurn != null)
             _endTurn.gameObject.SetActive(CanEndTurnFor(state.ActivePlayer));
     }
 
     private void InitPlayerTimers()
     {
-        var definition = _gridManager.GridState.Definition;
-        _timers = new PlayerTimer[definition.PlayerCount + 1];
-        for (var p = 1; p <= definition.PlayerCount; p++)
-        {
-            var timer = Instantiate(_playerTimerPrefab, _container.transform, true);
-            timer.SetLabel("Player " + p);
-            timer.SetTimeMs(_gridManager.GridState.GetTimeMs(p));
-            var seat = p;
-            timer.Expired += () => OnTimerExpired(seat);
-            _timers[p] = timer;
-        }
+        var state = _gridManager.GridState;
+        var players = state.Definition.PlayerCount;
+        _playerTimers.Init(players);
+        _playerTimers.SeatExpired += OnTimersExpired;
+        for (var p = 1; p <= players; p++) _playerTimers.SetTimeMs(p, state.GetTimeMs(p));
     }
+
+    private void Update()
+    {
+        if (!_gridManager.IsGameStarted) return;
+        _playerTimers.Tick(Time.deltaTime);
+        var view = ViewFor(_shownActivePlayer);
+        if (view != null) view.SetTimeMs(_playerTimers.RemainingMs(_shownActivePlayer));
+    }
+
+    private PlayerTimerView ViewFor(int seat)
+        => _playerTimerViews != null && seat >= 1 && seat <= _playerTimerViews.Length
+            ? _playerTimerViews[seat - 1]
+            : null;
 
     private void EndActiveTurn()
     {
@@ -82,7 +93,7 @@ public class GameView : StateView
         if (CanEndTurnFor(active)) SubmitEndTurn(active);
     }
 
-    private void OnTimerExpired(int player)
+    private void OnTimersExpired(int player)
     {
         if (_timerMode == TimerMode.Off) return;
         if (!CanEndTurnFor(player)) return;
@@ -92,8 +103,7 @@ public class GameView : StateView
 
     private void SubmitEndTurn(int player)
     {
-        var elapsed = _timers[player] != null ? _timers[player].ElapsedMs : 0;
-        _gridManager.Submit(new EndTurnCommand(player, elapsed));
+        _gridManager.Submit(new EndTurnCommand(player, _playerTimers.ElapsedMs(player)));
     }
 
     private bool CanEndTurnFor(int player)

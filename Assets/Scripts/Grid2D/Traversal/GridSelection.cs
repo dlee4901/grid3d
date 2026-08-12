@@ -41,10 +41,10 @@ public class GridSelection
     //     return selection;
     // }
 
-    public GridSteps GetGridSteps(QueryContext ctx, bool filterEntities=true)
+    public GridSteps GetGridSteps(GridSource source, bool filterEntities=true)
     {
         var filteredSteps = new GridSteps();
-        var (steps, maxDistance) = GetUnfilteredSteps(ctx);
+        var (steps, maxDistance) = GetUnfilteredSteps(source);
         var excludedDistances = GetExcludedDistances(maxDistance);
         foreach (var step in steps)
         {
@@ -52,12 +52,12 @@ public class GridSelection
             if (filterEntities)
             {
                 Entity entity;
-                if (EntityAllowlist != null && (entity = ctx.Grid.GetEntity(step.Position)) != null)
+                if (EntityAllowlist != null && (entity = source.Grid.GetEntity(step.Position)) != null)
                 {
                     var predicate = PredicateFactory<Entity>.Create(EntityAllowlist);
                     if (!predicate(entity)) continue;
                 }
-                if (EntityDenylist != null && (entity = ctx.Grid.GetEntity(step.Position)) != null)
+                if (EntityDenylist != null && (entity = source.Grid.GetEntity(step.Position)) != null)
                 {
                     var predicate = PredicateFactory<Entity>.Create(EntityDenylist);
                     if (predicate(entity)) continue;
@@ -68,13 +68,13 @@ public class GridSelection
         return filteredSteps;
     }
 
-    private (HashSet<GridStep> steps, int maxDistance) GetUnfilteredSteps(QueryContext ctx)
+    private (HashSet<GridStep> steps, int maxDistance) GetUnfilteredSteps(GridSource source)
     {
         var steps = new HashSet<GridStep>();
         var maxDistance = MaxDistance;
         foreach (var traversal in Traversals)
         {
-            steps.UnionWith(traversal.GetStepsSet(ctx));
+            steps.UnionWith(traversal.GetStepsSet(source));
             if (MaxDistance <= 0) maxDistance = Math.Max(maxDistance, traversal.MaxDistance);
         }
         return (steps, maxDistance);

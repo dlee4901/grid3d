@@ -16,6 +16,7 @@ public class GridManager : LoggableBehaviour
     public IReadOnlyGridState GridState => _executor.State;
     public GridInput Input { get; private set; }
     public PlayerInputController Player { get; private set; }
+    public Camera MainCamera => _mainCamera;
 
     public event Action StateChanged;
     public event Action GameStarted;

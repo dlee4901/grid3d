@@ -15,7 +15,7 @@ public class Outline : MonoBehaviour
         foreach (var line in _corners) line.color = _color;
     }
     
-    public void SetTransformsDiamond(float linePosition, float cornerPosition, float lineLength, float width=1f)
+    public void SetTransformsDiamond(float linePosition, float cornerPosition, float lineLength, float width=2f)
     {
         var cornerNormals = new List<(int, int)>{(0, 1), (1, 0), (0, -1), (-1, 0)};
         for (var i = 0; i < _lines.Count; i++)

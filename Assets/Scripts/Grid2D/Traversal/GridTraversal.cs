@@ -29,7 +29,7 @@ public class GridTraversal
     public GridTraversal? Chain { get; set; }
     public int ChainOffset { get; set; } = 0; // IF (n > 0) n ~ distance ELSE maxDistReached + n ~ maxDistReached
 
-    public List<GridStep> GetSteps(QueryContext ctx)
+    public List<GridStep> GetSteps(GridSource ctx)
     {
         var steps = new HashSet<GridStep>();
         foreach (var iter in Traverse(ctx))
@@ -37,7 +37,7 @@ public class GridTraversal
         return steps.ToList();
     }
 
-    public HashSet<GridStep> GetStepsSet(QueryContext ctx)
+    public HashSet<GridStep> GetStepsSet(GridSource ctx)
     {
         var steps = new HashSet<GridStep>();
         foreach (var iter in Traverse(ctx))
@@ -45,21 +45,21 @@ public class GridTraversal
         return steps;
     }
 
-    public List<GridStep> GetTraceSteps(QueryContext ctx)
+    public List<GridStep> GetTraceSteps(GridSource ctx)
     {
-        return GetTraceSteps(ctx, new GridStep(ctx.SourcePosition, Direction, 0));
+        return GetTraceSteps(ctx, new GridStep(ctx.Position, Direction, 0));
     }
 
-    private List<GridStep> GetTraceSteps(QueryContext ctx, GridStep initialGridStep)
+    private List<GridStep> GetTraceSteps(GridSource ctx, GridStep initialGridStep)
     {
         return Expand(ctx, initialGridStep.Position, initialGridStep.Distance, initialGridStep.Direction).ToList();
     }
 
-    private IEnumerable<HashSet<GridStep>> Traverse(QueryContext ctx)
+    private IEnumerable<HashSet<GridStep>> Traverse(GridSource ctx)
     {
         var steps = new HashSet<GridStep>();
         var queue = new Queue<GridStep>();
-        var initialStep = new GridStep(ctx.SourcePosition, Direction, 0);
+        var initialStep = new GridStep(ctx.Position, Direction, 0);
         steps.Add(initialStep);
         queue.Enqueue(initialStep);
         while (queue.Count > 0)
@@ -75,7 +75,7 @@ public class GridTraversal
         }
     }
 
-    private IEnumerable<GridStep> Expand(QueryContext ctx, GridPosition currentPosition, int curDistance, GridDirection gridDirection)
+    private IEnumerable<GridStep> Expand(GridSource ctx, GridPosition currentPosition, int curDistance, GridDirection gridDirection)
     {
         if (!currentPosition.IsValid()) yield break;
         
@@ -83,7 +83,7 @@ public class GridTraversal
         var maxDistance = MaxDistance < 0 || MaxDistance > grid.X * grid.Y ? grid.X * grid.Y : MaxDistance;
         if (curDistance > maxDistance) yield break;
 
-        var directionFacing = ctx.SourceEntity?.Facing ?? GridDirectionFacing.North;
+        var directionFacing = ctx.Entity?.Facing ?? GridDirectionFacing.North;
         var unitVectors = GetUnitVectors(gridDirection, directionFacing);
         
         var currentPosition2D = currentPosition.Dim2;
@@ -96,7 +96,7 @@ public class GridTraversal
 
             if (!position.IsValid()) continue;
             Entity entity;
-            if ((entity = grid.GetEntity(position)) != null && IsColliding(entity, ctx.SourceEntity)) continue;
+            if ((entity = grid.GetEntity(position)) != null && IsColliding(entity, ctx.Entity)) continue;
             //if (collideMask != null && (entity = grid.GetEntity(tile)) != null && collideMask(entity)) continue;
 
             yield return new GridStep(position, Linear ? (GridDirection)i : gridDirection, curDistance);
@@ -107,12 +107,12 @@ public class GridTraversal
         }
     }
     
-    private IEnumerable<GridStep> Widen(QueryContext ctx, GridStep gridStep)
+    private IEnumerable<GridStep> Widen(GridSource ctx, GridStep gridStep)
     {
         if (StartWidth <= 0 && DeltaWidth <= 0) yield break;
         if (DeltaWidthDistanceOffset >= gridStep.Distance) yield break;
         
-        var directionFacing = ctx.SourceEntity?.Facing ?? GridDirectionFacing.North;
+        var directionFacing = ctx.Entity?.Facing ?? GridDirectionFacing.North;
         var unitVectors = GetUnitVectors(gridStep.Direction, directionFacing);
         
         var width = StartWidth + DeltaWidth * (gridStep.Distance - DeltaWidthDistanceOffset) / DeltaWidthStep;
@@ -137,7 +137,7 @@ public class GridTraversal
         return false;
     }
 
-    private List<GridPosition> GetWidthPositions(QueryContext ctx, int width, GridPosition startPosition, (int, int)[] unitVectors)
+    private List<GridPosition> GetWidthPositions(GridSource ctx, int width, GridPosition startPosition, (int, int)[] unitVectors)
     {
         var grid = ctx.Grid;
         List<GridPosition> widthPositions = new();

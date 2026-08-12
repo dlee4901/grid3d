@@ -1,12 +1,12 @@
 public class SelectedState : PlayerInputStateBase
 {
-    private readonly QueryContext _selected;
-    public QueryContext Selected => _selected;
+    private readonly GridSource _selected;
+    public GridSource Selected => _selected;
 
-    public SelectedState(PlayerInputContext ctx, QueryContext selected) : base(ctx) { _selected = selected; }
+    public SelectedState(PlayerInputContext ctx, GridSource selected) : base(ctx) { _selected = selected; }
 
     public bool Actionable
-        => _selected.Grid.IsAvailableControllable(_selected.SourcePosition);
+        => _selected.Grid.IsAvailableControllable(_selected.Position);
     
     public override void OnEnter()
     {
@@ -14,18 +14,18 @@ public class SelectedState : PlayerInputStateBase
         if (!Actionable)
             Ctx.Renderer.HighlightPositions(Ctx.Grid.GetControllableEntityPositions(), GridHighlightType.AvailableEntities);
     }
-    public override void OnPositionSelected(QueryContext clicked) => Ctx.Controller.TransitionTo(new SelectedState(Ctx, clicked));
+    public override void OnPositionSelected(GridSource clicked) => Ctx.Controller.TransitionTo(new SelectedState(Ctx, clicked));
 
-    public override void OnAbilityActivate(Ability ability, QueryContext source)
+    public override void OnAbilityActivate(Ability ability, GridSource source)
     {
         if (!Actionable) return;
         Ctx.Controller.TransitionTo(new TargetingState(Ctx, ability, source));
     }
     
-    public override void OnAbilityPreview(Ability ability, QueryContext ctx)
+    public override void OnAbilityPreview(Ability ability, GridSource source)
     {
         if (!Actionable) return;
-        var steps = ability.Targeting.GetSelectableSteps(ctx);
+        var steps = ability.Targeting.GetSelectableSteps(source);
         Ctx.Renderer.ClearHighlights();
         Ctx.Renderer.HighlightPositions(steps, GridHighlightType.AbilityRange);
     }

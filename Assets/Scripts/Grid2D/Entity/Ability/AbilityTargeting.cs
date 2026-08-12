@@ -8,10 +8,10 @@ public abstract class AbilityTargeting
     public GridSelection EffectArea { get; set; } = null;
     public int Targets { get; set; } = 1;
     
-    public bool GetEffectSteps(QueryContext ctx, GridPosition target, out GridSteps gridSteps)
+    public bool GetEffectSteps(GridSource source, GridPosition target, out GridSteps gridSteps)
     {
         var gridPositions = new List<GridPosition>{target};
-        return GetEffectSteps(ctx, gridPositions, out gridSteps);
+        return GetEffectSteps(source, gridPositions, out gridSteps);
     }
     
     // public bool GetEffectSteps(QueryContext ctx, int[] targets, out GridSteps gridSteps)
@@ -21,20 +21,20 @@ public abstract class AbilityTargeting
     //     return GetEffectSteps(ctx, gridPositions, out gridSteps);
     // }
     
-    public abstract GridSteps GetSelectableSteps(QueryContext ctx);
-    public abstract bool GetEffectSteps(QueryContext ctx, List<GridPosition> targets, out GridSteps gridSteps);
+    public abstract GridSteps GetSelectableSteps(GridSource source);
+    public abstract bool GetEffectSteps(GridSource source, List<GridPosition> targets, out GridSteps gridSteps);
 }
 
 public class FillTargeting : AbilityTargeting
 {
-    public override GridSteps GetSelectableSteps(QueryContext ctx) => EffectArea.GetGridSteps(ctx);
+    public override GridSteps GetSelectableSteps(GridSource source) => EffectArea.GetGridSteps(source);
     
-    public override bool GetEffectSteps(QueryContext ctx, List<GridPosition> targets, out GridSteps steps)
+    public override bool GetEffectSteps(GridSource source, List<GridPosition> targets, out GridSteps steps)
     {
         steps = new GridSteps();
-        var selectableSteps = GetSelectableSteps(ctx);
+        var selectableSteps = GetSelectableSteps(source);
         if (targets.Count == 0 || !selectableSteps.Contains(targets[0])) return false;
-        steps = EffectArea.GetGridSteps(ctx);
+        steps = EffectArea.GetGridSteps(source);
         return true;
     }
 }
@@ -46,17 +46,17 @@ public class PositionTargeting : AbilityTargeting
 
     //public GridSteps GetSelectablePositions(QueryContext ctx) => SelectableArea.GetPositions(ctx);
     
-    public override GridSteps GetSelectableSteps(QueryContext ctx) => SelectableArea.GetGridSteps(ctx);
+    public override GridSteps GetSelectableSteps(GridSource source) => SelectableArea.GetGridSteps(source);
     
-    public override bool GetEffectSteps(QueryContext ctx, List<GridPosition> targets, out GridSteps steps)
+    public override bool GetEffectSteps(GridSource source, List<GridPosition> targets, out GridSteps steps)
     {
         steps = new GridSteps();
-        var selectableSteps = GetSelectableSteps(ctx);
+        var selectableSteps = GetSelectableSteps(source);
         for (var i = 0; i < Targets; i++)
         {
             if (!selectableSteps.Contains(targets[i])) return false;
 
-            var ctxTarget = new QueryContext(ctx.Grid, targets[i], ctx.SourceEntity);
+            var ctxTarget = new GridSource(source.Grid, targets[i], source.Entity);
 
             if (EffectArea == null) steps.Add(new GridStep(targets[i], GridDirection.Line, 0), i);
             else steps.Add(EffectArea.GetGridSteps(ctxTarget), i);
@@ -69,7 +69,7 @@ public class DirectionTargeting : AbilityTargeting
 {
     public int[] Grouping { get; set; } = new int[GridTraversal.UnidirectionalCount];
     
-    public override GridSteps GetSelectableSteps(QueryContext ctx)
+    public override GridSteps GetSelectableSteps(GridSource source)
     {
         var mask = new bool[GridTraversal.UnidirectionalCount];
         for (var i = 0; i < mask.Length; i++) mask[i] = Grouping[i] != 0;
@@ -87,19 +87,19 @@ public class DirectionTargeting : AbilityTargeting
                 }
             }
         };
-        return selection.GetGridSteps(ctx);
+        return selection.GetGridSteps(source);
     }
     
-    public override bool GetEffectSteps(QueryContext ctx, List<GridPosition> targets, out GridSteps steps)
+    public override bool GetEffectSteps(GridSource source, List<GridPosition> targets, out GridSteps steps)
     {
         steps = new GridSteps();
-        var selectableSteps = GetSelectableSteps(ctx);
+        var selectableSteps = GetSelectableSteps(source);
         
         if (targets.Count != 1 || !selectableSteps.Contains(targets[0])) return false;
         var targetSteps = selectableSteps.GetStepsAtPosition(targets[0]);
         if (targetSteps.Count > 1) return false;
         
-        var effectSteps = EffectArea.GetGridSteps(ctx);
+        var effectSteps = EffectArea.GetGridSteps(source);
         var groupMap = effectSteps.GetGroupMap(Grouping);
         foreach (var targetStep in targetSteps) steps.Add(groupMap[targetStep.Direction]);
         

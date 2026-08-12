@@ -21,13 +21,13 @@ public class AbilityIcon : LoggableBehaviour
     private RectTransform _manaCounterTransform;
     
     private Ability _ability;
-    private QueryContext _ctx;
+    private GridSource _source;
 
     public string AbilityId => _ability?.Id;
 
-    public event Action<Ability, QueryContext> OnPreviewRequested;
+    public event Action<Ability, GridSource> OnPreviewRequested;
     public event Action OnPreviewCancelled;
-    public event Action<Ability, QueryContext> OnActivateRequested;
+    public event Action<Ability, GridSource> OnActivateRequested;
 
     private void Start()
     {
@@ -36,20 +36,20 @@ public class AbilityIcon : LoggableBehaviour
         _manaCounterTransform = _manaCounter.GetComponent<RectTransform>();
         SetManaCounterPosition();
         
-        _interactableUI.OnHoverTriggered += () => { Log($"PreviewRequested: {_ability?.Id}"); OnPreviewRequested?.Invoke(_ability, _ctx); };
+        _interactableUI.OnHoverTriggered += () => { Log($"PreviewRequested: {_ability?.Id}"); OnPreviewRequested?.Invoke(_ability, _source); };
         _interactableUI.OnHoverCompleted     += () => { Log("PreviewCancelled"); OnPreviewCancelled?.Invoke(); };
         
-        _interactableUI.OnHoldTriggered += () => { Log($"PreviewRequested: {_ability?.Id}"); OnPreviewRequested?.Invoke(_ability, _ctx); };
+        _interactableUI.OnHoldTriggered += () => { Log($"PreviewRequested: {_ability?.Id}"); OnPreviewRequested?.Invoke(_ability, _source); };
         _interactableUI.OnHoldCompleted     += () => { Log("PreviewCancelled"); OnPreviewCancelled?.Invoke(); };
         
-        _interactableUI.OnClickCompleted += () => { Log($"ActivateRequested: {_ability?.Id}"); OnActivateRequested?.Invoke(_ability, _ctx); };
+        _interactableUI.OnClickCompleted += () => { Log($"ActivateRequested: {_ability?.Id}"); OnActivateRequested?.Invoke(_ability, _source); };
     }
 
-    public void Init(Sprite sprite, Ability ability, QueryContext ctx)
+    public void Init(Sprite sprite, Ability ability, GridSource source)
     {
         _icon.sprite = sprite;
         _ability = ability;
-        _ctx = ctx;
+        _source = source;
         UpdateInfo();
     }
 

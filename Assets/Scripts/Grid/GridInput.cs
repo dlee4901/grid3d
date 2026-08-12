@@ -11,14 +11,14 @@ public class GridInput : LoggableBehaviour
     private InputAction _selectAction;
     private bool _initialized;
 
-    private QueryContext? _hovered;
+    private GridSource? _hovered;
     private bool _isLocked;
 
-    public QueryContext? Hovered => _hovered;
+    public GridSource? Hovered => _hovered;
 
-    public event Action<QueryContext> OnPositionSelected;
+    public event Action<GridSource> OnPositionSelected;
     public event Action OnCancelClicked;
-    public event Action<QueryContext?> OnHoverChanged;
+    public event Action<GridSource?> OnHoverChanged;
 
     // public event Action<bool> OnLockChanged;
     // public bool IsLocked => _isLocked;
@@ -51,7 +51,7 @@ public class GridInput : LoggableBehaviour
         var cell = _grid.WorldToCell(worldPos);
         var gridPosition = new GridPosition(_state, (cell.x, cell.y));
         if (!gridPosition.IsValid()) { SetHover(null); return; }
-        SetHover(new QueryContext(_state, gridPosition, _state.GetEntity(gridPosition)));
+        SetHover(new GridSource(_state, gridPosition, _state.GetEntity(gridPosition)));
     }
 
     private void HandleClick()
@@ -65,18 +65,18 @@ public class GridInput : LoggableBehaviour
         OnPositionSelected?.Invoke(_hovered.Value);
     }
     
-    public void SetHover(QueryContext? ctx)
+    public void SetHover(GridSource? source)
     {
-        if (_hovered == ctx) return;
-        _hovered = ctx;
+        if (_hovered == source) return;
+        _hovered = source;
         Log($"Hover: {Describe(_hovered)}");
         OnHoverChanged?.Invoke(_hovered);
     }
 
-    private static string Describe(QueryContext? ctx)
+    private static string Describe(GridSource? source)
     {
-        if (!ctx.HasValue) return "<none>";
-        var c = ctx.Value;
-        return $"{c.SourcePosition} {c.SourceEntity?.Id ?? "<empty>"}";
+        if (!source.HasValue) return "<none>";
+        var c = source.Value;
+        return $"{c.Position} {c.Entity?.Id ?? "<empty>"}";
     }
 }

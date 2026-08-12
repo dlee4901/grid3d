@@ -36,13 +36,13 @@ public class PlayerInputController : LoggableBehaviour
         }
     }
 
-    public void OnAbilityPreview(Ability ability, QueryContext ctx)
-        => _current.OnAbilityPreview(ability, ctx);
+    public void OnAbilityPreview(Ability ability, GridSource source)
+        => _current.OnAbilityPreview(ability, source);
 
     public void OnAbilityCancelPreview()
         => _current.OnAbilityCancelPreview();
 
-    public void OnAbilityActivate(Ability ability, QueryContext source)
+    public void OnAbilityActivate(Ability ability, GridSource source)
         => _current.OnAbilityActivate(ability, source);
 
     private string _activeAbilityId;
@@ -57,13 +57,13 @@ public class PlayerInputController : LoggableBehaviour
         OnActiveAbilityChanged?.Invoke(id);
     }
 
-    private QueryContext? _currentSelection;
-    public QueryContext? CurrentSelection => _currentSelection;
-    public event System.Action<QueryContext?> SelectionChanged;
+    private GridSource? _currentSelection;
+    public GridSource? CurrentSelection => _currentSelection;
+    public event System.Action<GridSource?> SelectionChanged;
 
     private void UpdateSelection()
     {
-        QueryContext? sel = _current switch
+        GridSource? sel = _current switch
         {
             SelectedState s  => s.Selected,
             TargetingState t => t.Source,

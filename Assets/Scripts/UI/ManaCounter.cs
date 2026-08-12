@@ -29,9 +29,9 @@ public class ManaCounter : MonoBehaviour
     
     private void InitOutline()
     {
-        _linePosition = (_size - 8f) / 4f;
+        _linePosition = (_size - 12f) / 4f;
         _cornerPosition = _linePosition * 2f;
-        _lineLength = _cornerPosition * Mathf.Sqrt(2);
+        _lineLength = _cornerPosition * Mathf.Sqrt(2) - 2;
         _fontSize = _size / 2f;
         _counterText.fontSize = _fontSize;
         _outline.SetTransformsDiamond(_linePosition, _cornerPosition, _lineLength);

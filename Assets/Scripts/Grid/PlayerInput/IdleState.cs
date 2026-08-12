@@ -8,6 +8,6 @@ public class IdleState : PlayerInputStateBase
         Ctx.Renderer.HighlightPositions(Ctx.Grid.GetControllableEntityPositions(), GridHighlightType.AvailableEntities);
     }
 
-    public override void OnPositionSelected(QueryContext clicked)
+    public override void OnPositionSelected(GridSource clicked)
         => Ctx.Controller.TransitionTo(new SelectedState(Ctx, clicked));
 }
