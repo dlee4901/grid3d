@@ -9,6 +9,14 @@ public class HealthComponent : IEntityComponent
         Current = health;
     }
     
+    public bool ApplyDamage(int amount)
+    {
+        if (amount <= 0) return false;
+        Current = System.Math.Max(0, Current - amount);
+        return Current == 0;
+    }
+
+    
     static HealthComponent()
     {
         //AccessorRegistry<Entity>.Register<int>("StartingHealth", e => e.Health?.Starting ?? 0);

@@ -6,6 +6,15 @@ public static partial class AbilityConfigs
     public static readonly AbilityConfig Fireball = new()
     {
         Id = "Fireball",
+        ManaCost = 2,
+        Effects = new List<AbilityEffect>()
+        {
+            new DamageEffect()
+            {
+                Relation = TargetRelation.Any & ~TargetRelation.Self,
+                Amount = 3
+            }
+        },
         Targeting = new PositionTargeting()
         {
             EffectArea = new GridSelection()

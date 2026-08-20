@@ -7,7 +7,8 @@ public class Ability : INameId
     public string Id => Config.Id;
     public int ManaCost => Config.ManaCost;
     public AbilityTargeting Targeting => Config.Targeting;
-    public List<AbilityBindings> Bindings => Config.Bindings;
+    public List<AbilityEffect> Effects => Config.Effects;
+    //public List<AbilityBindings> Bindings => Config.Bindings;
 
     public int Cooldown { get; private set; }
     public int Delay { get; private set; }
@@ -35,9 +36,27 @@ public class Ability : INameId
 
     public virtual bool Execute(GridState state, GridPosition sourcePosition, List<GridPosition> targetPositions)
     {
-        GridLog.Info($"[Ability] {Id} from {sourcePosition} → [{string.Join(", ", targetPositions)}] (no-op stub)");
+        var source = state.GetEntity(sourcePosition);
+        if (source == null) return false;
+        
+        var gridSource = new GridSource(state, sourcePosition, source);
+        if (!Targeting.GetEffectSteps(gridSource, targetPositions, out var steps)) return false;
+        
+        var ctx = new EffectContext(state, source, sourcePosition);
+        for (var group = 0; group < steps.GroupCount; group++)
+        {
+            var affected = new HashSet<Entity>();
+            foreach (var position in steps.GetPositions(group))
+                if (state.TryGetEntity(position, out var entity))
+                    affected.Add(entity);
+  
+            var ordered = state.OrderByPriority(affected);
+            foreach (var effect in Effects) foreach (var target in ordered) effect.Apply(ctx, target);
+        }
+
         return true;
     }
+
 
     public void Trigger()
     {

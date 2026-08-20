@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 public struct GridStep : IEquatable<GridStep>
 {
@@ -34,6 +35,8 @@ public struct GridStep : IEquatable<GridStep>
 
 public class GridSteps
 {
+    public int GroupCount => _steps.Count;
+    
     private readonly List<HashSet<GridStep>> _steps = new() { new HashSet<GridStep>() };
     private readonly List<Dictionary<GridPosition, HashSet<GridStep>>> _positions = new() { new Dictionary<GridPosition, HashSet<GridStep>>() };
 
@@ -133,7 +136,7 @@ public class GridSteps
         return map;
     }
     
-    public Dictionary<GridDirection, HashSet<GridStep>> GetGroupMap(int[] groups, int index=0)
+    public Dictionary<GridDirection, HashSet<GridStep>> GetGroupMapSingle(int[] groups, int index=0)
     {
         var map = new Dictionary<GridDirection, HashSet<GridStep>>();
         if (index >= _steps.Count || groups.Length != GridTraversal.UnidirectionalCount) return map;
@@ -150,6 +153,63 @@ public class GridSteps
                 steps.UnionWith(directionSteps);
         }
         for (var i = 0; i < GridTraversal.UnidirectionalCount; i++) map[(GridDirection)i] = groupNumToSteps[groups[i]];
+        return map;
+    }
+    
+    // 1 0 2 0 3 0 4 0
+    // 1: 0
+    // 2: 2
+    // 3: 4
+    // 4: 6
+    
+    // 1 0 2 0 1 0 2 0
+    // GROUPINGS
+    // 1: 0, 4
+    // 2: 2, 6 
+    // GROUP INDEXES
+    // 0: 0
+    // 2: 1
+    // 4: 2
+    // 6: 3
+    
+    public Dictionary<GridDirection, HashSet<GridStep>> GetGroupMap(int[] groups)
+    {
+        var map = new Dictionary<GridDirection, HashSet<GridStep>>();
+        if (groups.Length != GridTraversal.UnidirectionalCount) return map;
+        var groupings = new Dictionary<int, List<int>>();
+        var groupIndexes = new Dictionary<int, int>();
+        var index = 0;
+        for (var i = 0; i < GridTraversal.UnidirectionalCount; i++)
+        {
+            if (!groupings.TryGetValue(groups[i], out var group))
+            {
+                group = new List<int>();
+                groupings.Add(groups[i], group);
+            }
+            group.Add(i);
+            if (groups[i] > 0)
+            {
+                groupIndexes[i] = index;
+                index++;
+            }
+        }
+        for (var i = 0; i < GridTraversal.UnidirectionalCount; i++)
+        {
+            var group = groups[i];
+            if (group == 0) continue;
+            Debug.Log(i + " " + group);
+            var grouping = groupings[group];
+            Debug.Log(grouping);
+            foreach (var direction in grouping)
+            {
+                if (!map.TryGetValue((GridDirection)i, out var steps))
+                {
+                    steps = new HashSet<GridStep>();
+                    map.Add((GridDirection)i, steps);
+                }
+                steps.UnionWith(GetSteps(groupIndexes[direction]));
+            }
+        }
         return map;
     }
     

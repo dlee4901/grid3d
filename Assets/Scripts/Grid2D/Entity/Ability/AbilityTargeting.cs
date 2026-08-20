@@ -80,8 +80,8 @@ public class DirectionTargeting : AbilityTargeting
             {
                 new GridTraversal()
                 {
-                    Direction = GridDirection.Mask,
-                    DirectionMask = mask,
+                    Direction = GridDirection.Custom,
+                    CustomDirection = mask,
                     MaxDistance = 1,
                     Passthrough = EntityPassthrough.All
                 }
@@ -100,8 +100,16 @@ public class DirectionTargeting : AbilityTargeting
         if (targetSteps.Count > 1) return false;
         
         var effectSteps = EffectArea.GetGridSteps(source);
-        var groupMap = effectSteps.GetGroupMap(Grouping);
-        foreach (var targetStep in targetSteps) steps.Add(groupMap[targetStep.Direction]);
+        if (effectSteps.GroupCount == 1)
+        {
+            var groupMapSingle = effectSteps.GetGroupMapSingle(Grouping);
+            foreach (var targetStep in targetSteps) steps.Add(groupMapSingle[targetStep.Direction]);
+        }
+        else if (effectSteps.GroupCount > 1)
+        {
+            var groupMap = effectSteps.GetGroupMap(Grouping);
+            foreach (var targetStep in targetSteps) steps.Add(groupMap[targetStep.Direction]);
+        }
         
         return true;
     }

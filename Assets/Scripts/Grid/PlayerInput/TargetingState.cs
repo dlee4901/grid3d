@@ -62,8 +62,7 @@ public class TargetingState : PlayerInputStateBase
     private void Confirm()
     {
         var issuer = 0;
-        if (_source.Entity != null
-            && _source.Entity.TryGetComponent<ControlComponent>(out var ctrl))
+        if (_source.Entity != null && _source.Entity.TryGetComponent<ControlComponent>(out var ctrl))
             issuer = ctrl.PlayerController;
             
         var targets1D = new int[_targets.Count];

@@ -3,9 +3,13 @@ using UnityEngine;
 
 public class GameView : StateView
 {
-    public enum TimerMode { Local, Networked, Off }
+    private enum TimerMode { Local, Networked, Off }
 
+    [SerializeField] private EntityRenderer _entityRenderer;
     [SerializeField] private ManaCounter _manaCounter;
+    [SerializeField] private InteractableUI _toggleHealth;
+    [SerializeField] private InteractableUI _cameraCenter;
+    [SerializeField] private InteractableUI _cameraRotate;
     [SerializeField] private InteractableUI _endTurn;
     [SerializeField] private TMP_Text _endTurnText;
     [SerializeField] private PlayerTimerView[] _playerTimerViews;
@@ -19,6 +23,7 @@ public class GameView : StateView
     {
         base.Start();
         if (_endTurn != null) _endTurn.OnClickCompleted += EndActiveTurn;
+        if (_toggleHealth != null) _toggleHealth.OnClickCompleted += ToggleHealth;
     }
 
     protected override void OnGameStarted()
@@ -31,6 +36,7 @@ public class GameView : StateView
     {
         base.OnDestroy();
         if (_endTurn != null) _endTurn.OnClickCompleted -= EndActiveTurn;
+        if (_toggleHealth != null) _toggleHealth.OnClickCompleted -= ToggleHealth;
         _playerTimers.SeatExpired -= OnTimersExpired;
     }
 
@@ -86,6 +92,11 @@ public class GameView : StateView
         => _playerTimerViews != null && seat >= 1 && seat <= _playerTimerViews.Length
             ? _playerTimerViews[seat - 1]
             : null;
+            
+    private void ToggleHealth()
+    {
+        _entityRenderer.ShowHealthCounters = !_entityRenderer.ShowHealthCounters;
+    }
 
     private void EndActiveTurn()
     {

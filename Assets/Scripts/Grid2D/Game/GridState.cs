@@ -89,7 +89,8 @@ public sealed class GridState : IReadOnlyGridState
     private readonly Entity[] _entities;
     private readonly int[] _mana;
     private readonly int[] _timeMs;
-    private List<Entity> _prioritizedEntities;
+    
+    private readonly List<Entity> _prioritizedEntities = new();
 
     public GridState(GridDefinition definition)
     {
@@ -209,7 +210,7 @@ public sealed class GridState : IReadOnlyGridState
     }
     
     public bool IsAvailableControllable(GridPosition position) => IsControllable(position, ActivePlayer, available: true);
-
+    
     public HashSet<int> GetOccupiedTilesPositionSet()
     {
         HashSet<int> indices = new();
@@ -219,12 +220,13 @@ public sealed class GridState : IReadOnlyGridState
         }
         return indices;
     }
-
+    
     public bool SetEntityPosition(GridPosition position, Entity entity)
     {
         if (!position.IsValid() || entity == null) return false;
         _entities[position.Dim1] = entity;
         entity.SetPosition(position);
+        if (!_prioritizedEntities.Contains(entity)) _prioritizedEntities.Add(entity);
         return true;
     }
     
@@ -235,6 +237,23 @@ public sealed class GridState : IReadOnlyGridState
         _entities[startPosition.Dim1] = null;
         entity.SetPosition(targetPosition);
         return true;
+    }
+    
+    public bool RemoveEntity(GridPosition position)
+    {
+        if (!position.IsValid()) return false;
+        var entity = _entities[position.Dim1];
+        if (entity == null) return false;
+        _entities[position.Dim1] = null;
+        _prioritizedEntities.Remove(entity);
+        return true;
+    }
+    
+    public List<Entity> OrderByPriority(HashSet<Entity> subset)
+    {
+        var ordered = new List<Entity>();
+        foreach (var entity in _prioritizedEntities) if (subset.Contains(entity)) ordered.Add(entity);
+        return ordered;
     }
 
     public bool PerformAction(int action, GridPosition sourcePosition, GridPosition targetPosition)

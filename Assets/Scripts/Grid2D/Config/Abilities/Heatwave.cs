@@ -14,9 +14,27 @@ public static partial class AbilityConfigs
                 {
                     new GridTraversal()
                     {
-                        Direction = GridDirection.Straight,
+                        Direction = GridDirection.NorthCone,
                         MaxDistance = 2,
-                        DeltaWidth = 1
+                        Linear = false,
+                    },
+                    new GridTraversal()
+                    {
+                        Direction = GridDirection.EastCone,
+                        MaxDistance = 2,
+                        Linear = false
+                    },
+                    new GridTraversal()
+                    {
+                        Direction = GridDirection.SouthCone,
+                        MaxDistance = 2,
+                        Linear = false
+                    },
+                    new GridTraversal()
+                    {
+                        Direction = GridDirection.WestCone,
+                        MaxDistance = 2,
+                        Linear = false
                     }
                 }
             }
