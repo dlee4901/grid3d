@@ -13,7 +13,6 @@ public class TeamEditor : MonoBehaviour
     [SerializeField] private GridLayoutGroup _unitListContainer;
 
     private List<UnitUIManager> _unitsUI;
-    private PlayerData _playerData;
     private Dictionary<int, List<TeamData>> _teams;
 
     private void Start()
@@ -33,16 +32,6 @@ public class TeamEditor : MonoBehaviour
     private void SaveTeamData()
     {
        // TeamData teamData = new()
-    }
-
-    private void InitPlayerData()
-    {
-        _playerData = UnityUtil.LoadJsonData<PlayerData>();
-        if (_playerData == null) return;
-        // foreach (TeamData team in _playerData.GetTeams())
-        // {
-
-        // }
     }
 
     private void LoadPlayerData()

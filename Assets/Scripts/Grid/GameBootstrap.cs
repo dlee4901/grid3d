@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -28,18 +27,23 @@ public class GameBootstrap : LoggableBehaviour
 
         ValidateContent(definition, teams);
 
-        var seed = new List<ICommand> { new LoadTeamCommand(1, team1), new LoadTeamCommand(2, team2) };
+        var seed = new List<ICommand>
+        {
+            new LoadTeamCommand(1, team1), 
+            new LoadTeamCommand(2, team2), 
+            new SpawnTeamsCommand()
+        };
         _gridManager.StartGame(definition, seed);
     }
 
     private void ValidateContent(GridDefinition map, IReadOnlyList<TeamData> teams)
     {
-        foreach (var issue in RegistryValidator.Validate(map, teams))
-            LogError(issue);
+        foreach (var issue in RegistryValidator.Validate(map, teams)) LogError(issue);
 
-        var spawnable = new HashSet<string>(teams.SelectMany(t => t.UnitStartPositions.Values));
-        if (map.EntityStartPositions != null)
-            foreach (var spec in map.EntityStartPositions) spawnable.Add(spec.EntityId);
+        var spawnable = new HashSet<string>();
+        foreach (var team in teams)
+        foreach (var unit in team.UnitStartPositions) spawnable.Add(unit.UnitId);
+        if (map.EntityStartPositions != null) foreach (var spec in map.EntityStartPositions) spawnable.Add(spec.EntityId);
         foreach (var id in spawnable)
             if (IdRegistry<EntityConfig>.TryGet(id, out _) && !IdRegistry<EntityAssets>.TryGet(id, out _))
                 LogWarning($"Entity '{id}' has no EntityAssets (no model/sprite)");
@@ -64,8 +68,8 @@ public class GameBootstrap : LoggableBehaviour
 
     private void CreateTestTeams()
     {
-        var team1 = new TeamData("TestTeam1", "TestMap1", new Dictionary<int, string>{ {15, "Flameweaver"} });//{2, "Barbarian"}, {5, "Rogue"}, {10, "Knight"} });
-        var team2 = new TeamData("TestTeam2", "TestMap1", new Dictionary<int, string>{ {119, "Flameweaver"} });//{110, "Barbarian"}, {113, "Rogue"}, {116, "Knight"} });
+        var team1 = new TeamData("TestTeam1", "TestMap1", new List<(int, string)> { (15, "Flameweaver"), (17, "Flameweaver") });//{2, "Barbarian"}, {5, "Rogue"}, {10, "Knight"} });
+        var team2 = new TeamData("TestTeam2", "TestMap1", new List<(int, string)> { (117, "Flameweaver"), (119, "Flameweaver") });//{110, "Barbarian"}, {113, "Rogue"}, {116, "Knight"} });
         JsonHandler.SaveData(team1);
         JsonHandler.SaveData(team2);
     }

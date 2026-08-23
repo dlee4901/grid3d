@@ -83,7 +83,7 @@ public class DirectionTargeting : AbilityTargeting
                     Direction = GridDirection.Custom,
                     CustomDirection = mask,
                     MaxDistance = 1,
-                    Passthrough = EntityPassthrough.All
+                    Passthrough = EntityRelation.Any
                 }
             }
         };

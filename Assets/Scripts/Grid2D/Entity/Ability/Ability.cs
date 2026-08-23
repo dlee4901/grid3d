@@ -50,7 +50,7 @@ public class Ability : INameId
                 if (state.TryGetEntity(position, out var entity))
                     affected.Add(entity);
   
-            var ordered = state.OrderByPriority(affected);
+            var ordered = state.ResolutionOrder.GetOrderByPriority(affected);
             foreach (var effect in Effects) foreach (var target in ordered) effect.Apply(ctx, target);
         }
 

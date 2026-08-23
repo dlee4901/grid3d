@@ -12,8 +12,8 @@ public static class RegistryValidator
                 CheckEntity(spec.EntityId, $"Map '{map.Id}'", checkedEntities, issues);
 
         foreach (var team in teams)
-            foreach (var unitId in team.UnitStartPositions.Values)
-                CheckEntity(unitId, $"Team '{team.Id}'", checkedEntities, issues);
+            foreach (var unit in team.UnitStartPositions)
+                CheckEntity(unit.UnitId, $"Team '{team.Id}'", checkedEntities, issues);
 
         return issues;
     }

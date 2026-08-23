@@ -3,17 +3,17 @@ using System.Collections.Generic;
 public interface IReadOnlyGridState
 {
     GridDefinition Definition { get; }
-    int Turn { get; }
-    int ActivePlayer { get; }
-    bool CanPlayerAct(int player);
-    int GetMana(int player);
-    int GetTimeMs(int player);
-
     int X { get; }
     int Y { get; }
     int Size { get; }
-    int GetSpawnPlayer(GridPosition position);
+    int Turn { get; }
+    int ActivePlayer { get; }
+    IReadOnlyResolutionOrder ResolutionOrder { get; }
 
+    bool CanPlayerAct(int player);
+    int GetMana(int player);
+    int GetTimeMs(int player);
+    int GetSpawnPlayer(GridPosition position);
     Entity GetEntity(int position);
     Entity GetEntity(GridPosition position);
     bool TryGetEntity(GridPosition position, out Entity entity);
@@ -38,6 +38,33 @@ public sealed class GridState : IReadOnlyGridState
     public int ActivePlayer { get; private set; } = 1;
     public bool CanPlayerAct(int player) => ActivePlayer == player;
 
+    public int X => Definition.X;
+    public int Y => Definition.Y;
+    public int Size => Definition.Size;
+    public ResolutionOrder ResolutionOrder { get; } = new();
+    IReadOnlyResolutionOrder IReadOnlyGridState.ResolutionOrder => ResolutionOrder;
+    
+    private readonly Entity[] _entities;
+    private readonly int[] _mana;
+    private readonly int[] _timeMs;
+    
+    private readonly TeamData[] _loadedTeams;
+    
+    private int PlayerSlots => Definition.PlayerCount + 1;
+    
+    public GridState(GridDefinition definition)
+    {
+        Definition = definition;
+        _entities = new Entity[definition.Size];
+        _mana = new int[PlayerSlots];
+        _loadedTeams = new TeamData[PlayerSlots];
+        
+        RefillMana(ActivePlayer);
+        _timeMs = new int[PlayerSlots];
+        for (var p = 1; p <= Definition.PlayerCount; p++) _timeMs[p] = definition.PlayerStartingTimeSeconds * 1000;
+        SeedStartingEntities();
+    }
+    
     public void AdvanceTurn()
     {
         ActivePlayer = ActivePlayer % Definition.PlayerCount + 1;
@@ -45,6 +72,29 @@ public sealed class GridState : IReadOnlyGridState
         RefillMana(ActivePlayer);
         TickAbilityCooldowns(ActivePlayer);
     }
+
+    public int GetMana(int player) => player < 1 || player > Definition.PlayerCount ? 0 : _mana[player];
+
+    public bool HasMana(int player, int cost) => GetMana(player) >= cost;
+
+    public bool SpendMana(int player, int cost)
+    {
+        if (!HasMana(player, cost)) return false;
+        _mana[player] -= cost;
+        return true;
+    }
+
+    private void RefillMana(int player) => _mana[player] = Definition.ManaPerTurn;
+
+    public int GetTimeMs(int player) => player < 1 || player > Definition.PlayerCount ? 0 : _timeMs[player];
+
+    public void SpendTime(int player, int elapsedMs)
+    {
+        if (player < 1 || player > Definition.PlayerCount) return;
+        _timeMs[player] = System.Math.Max(0, _timeMs[player] - System.Math.Max(0, elapsedMs));
+    }
+
+    public int GetSpawnPlayer(GridPosition position) => Definition.GetSpawnPlayer(position);
 
     private void TickAbilityCooldowns(int player)
     {
@@ -58,51 +108,7 @@ public sealed class GridState : IReadOnlyGridState
             foreach (var ability in abilities.List) ability.TurnUpdate();
         }
     }
-
-    public int GetMana(int player) => (player >= 1 && player <= Definition.PlayerCount) ? _mana[player] : 0;
-
-    public bool HasMana(int player, int cost) => GetMana(player) >= cost;
-
-    public bool SpendMana(int player, int cost)
-    {
-        if (!HasMana(player, cost)) return false;
-        _mana[player] -= cost;
-        return true;
-    }
-
-    private void RefillMana(int player) => _mana[player] = Definition.ManaPerTurn;
-
-    public int GetTimeMs(int player) => (player >= 1 && player <= Definition.PlayerCount) ? _timeMs[player] : 0;
-
-    public void SpendTime(int player, int elapsedMs)
-    {
-        if (player < 1 || player > Definition.PlayerCount) return;
-        _timeMs[player] = System.Math.Max(0, _timeMs[player] - System.Math.Max(0, elapsedMs));
-    }
-
-    public int X => Definition.X;
-    public int Y => Definition.Y;
-    public int Size => Definition.Size;
-
-    public int GetSpawnPlayer(GridPosition position) => Definition.GetSpawnPlayer(position);
-
-    private readonly Entity[] _entities;
-    private readonly int[] _mana;
-    private readonly int[] _timeMs;
     
-    private readonly List<Entity> _prioritizedEntities = new();
-
-    public GridState(GridDefinition definition)
-    {
-        Definition = definition;
-        _entities = new Entity[definition.Size];
-        _mana = new int[definition.PlayerCount + 1];
-        RefillMana(ActivePlayer);
-        _timeMs = new int[definition.PlayerCount + 1];
-        for (var p = 1; p <= definition.PlayerCount; p++) _timeMs[p] = definition.PlayerStartingTimeSeconds * 1000;
-        SeedStartingEntities();
-    }
-
     private void SeedStartingEntities()
     {
         if (Definition.EntityStartPositions == null) return;
@@ -116,32 +122,47 @@ public sealed class GridState : IReadOnlyGridState
             }
         }
     }
-
-    public void LoadPlayerTeam(int player, TeamData teamData)
+    
+    public void SpawnTeams()
     {
-        if (!ValidatePlayerTeam(player, teamData)) return;
-
-        foreach (var (position, unit) in teamData.UnitStartPositions)
+        var maxUnits = 0;
+        for (var player = 1; player <= Definition.PlayerCount; player++)
         {
-            if (!IdRegistry<EntityConfig>.TryGet(unit, out var entityConfig)) continue;
-            var entity = Entity.Create(entityConfig, player);
-            if (!entity.TryGetComponent<ControlComponent>(out var control)) continue;
-            control.PlayerController = player;
-            var gridPosition = new GridPosition(this, position);
-            SetEntityPosition(gridPosition, entity);
+            var team = _loadedTeams[player];
+            if (team != null && team.UnitStartPositions.Count > maxUnits) maxUnits =
+                team.UnitStartPositions.Count;
+        }
+
+        for (var unit = 0; unit < maxUnits; unit++)
+        for (var player = Definition.PlayerCount; player >= 1; player--)
+        {
+            var team = _loadedTeams[player];
+            if (team == null || unit >= team.UnitStartPositions.Count) continue;
+
+            var placement = team.UnitStartPositions[unit];
+            if (!IdRegistry<EntityConfig>.TryGet(placement.UnitId, out var config)) continue;
+            SetEntityPosition(new GridPosition(this, placement.Position), Entity.Create(config, player));
         }
     }
+    
+    public void LoadPlayerTeam(int player, TeamData teamData)
+    {
+        if (player < 1 || player > Definition.PlayerCount) return;
+        if (!ValidatePlayerTeam(player, teamData)) return;
+        _loadedTeams[player] = teamData;
+    }
+
 
     private bool ValidatePlayerTeam(int player, TeamData teamData)
     {
-        if (teamData.MapId != Definition.Id) return false;
-        foreach (var (position, unit) in teamData.UnitStartPositions)
+        if (teamData == null || teamData.MapId != Definition.Id) return false;
+        foreach (var unit in teamData.UnitStartPositions)
         {
-            var gridPosition = new GridPosition(this, position);
+            var gridPosition = new GridPosition(this, unit.Position);
             if (!gridPosition.IsValid()
                 || Definition.GetSpawnPlayer(gridPosition) != player
                 || _entities[gridPosition.Dim1] != null
-                || !IdRegistry<EntityConfig>.TryGet(unit, out _)) return false;
+                || !IdRegistry<EntityConfig>.TryGet(unit.UnitId, out _)) return false;
         }
         return true;
     }
@@ -226,7 +247,7 @@ public sealed class GridState : IReadOnlyGridState
         if (!position.IsValid() || entity == null) return false;
         _entities[position.Dim1] = entity;
         entity.SetPosition(position);
-        if (!_prioritizedEntities.Contains(entity)) _prioritizedEntities.Add(entity);
+        ResolutionOrder.Add(entity);
         return true;
     }
     
@@ -245,15 +266,8 @@ public sealed class GridState : IReadOnlyGridState
         var entity = _entities[position.Dim1];
         if (entity == null) return false;
         _entities[position.Dim1] = null;
-        _prioritizedEntities.Remove(entity);
+        ResolutionOrder.Remove(entity);
         return true;
-    }
-    
-    public List<Entity> OrderByPriority(HashSet<Entity> subset)
-    {
-        var ordered = new List<Entity>();
-        foreach (var entity in _prioritizedEntities) if (subset.Contains(entity)) ordered.Add(entity);
-        return ordered;
     }
 
     public bool PerformAction(int action, GridPosition sourcePosition, GridPosition targetPosition)

@@ -54,6 +54,7 @@ public sealed class AbilityCommand : ICommand
         if (!ability.Execute(state, sourcePosition, targetPositions)) return false;
         state.SpendMana(IssuingPlayer, ability.ManaCost);
         ability.Trigger();
+        state.ResolutionOrder.MoveToFront(entity);
         return true;
     }
 }

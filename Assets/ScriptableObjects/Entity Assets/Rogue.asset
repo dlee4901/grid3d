@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EntityAssets
   <Id>k__BackingField: Rogue
   Model3D: {fileID: 4888636897523344757, guid: aa9b885afee054328b05b7bb28359573, type: 3}
-  Model2D: {fileID: 0}
+  Model2D: {fileID: 21300000, guid: 38d5dde8fb892364296297a3a5c97a20, type: 3}
   AbilityIcons:
   - {fileID: 21300000, guid: 29a1226f7b5e20240942612e151c3c4c, type: 3}
   - {fileID: 21300000, guid: 38d5dde8fb892364296297a3a5c97a20, type: 3}

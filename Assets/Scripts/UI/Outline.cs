@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,6 +10,12 @@ public class Outline : MonoBehaviour
     
     private void Start()
     {
+        SetColor(_color);
+    }
+    
+    public void SetColor(Color color)
+    {
+        _color = color;
         foreach (var line in _lines) line.color = _color;
         foreach (var line in _corners) line.color = _color;
     }

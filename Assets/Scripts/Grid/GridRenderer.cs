@@ -149,6 +149,15 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
         }
     }
     
+    public Color HighlightColor(GridHighlightType type) => type switch
+    {
+        GridHighlightType.AvailableEntities => _highlightAvailableEntities,
+        GridHighlightType.AbilityRange      => _highlightAbilityRange,
+        GridHighlightType.SelectableTargets => _highlightSelectableTargets,
+        GridHighlightType.EffectPreview     => _highlightEffectPreview,
+        _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+    };
+    
     private void HighlightSteps(GridSteps gridSteps, GridHighlightType type)
     {
         var color = HighlightColor(type);
@@ -185,15 +194,6 @@ public class GridRenderer : LoggableBehaviour, IGridRenderer
     //         }
     //     }
     // }
-
-    private Color HighlightColor(GridHighlightType type) => type switch
-    {
-        GridHighlightType.AvailableEntities => _highlightAvailableEntities,
-        GridHighlightType.AbilityRange      => _highlightAbilityRange,
-        GridHighlightType.SelectableTargets => _highlightSelectableTargets,
-        GridHighlightType.EffectPreview     => _highlightEffectPreview,
-        _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
-    };
     
     private Color SetAlpha(Color color, float alpha)
     {

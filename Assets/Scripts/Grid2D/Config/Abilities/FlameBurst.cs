@@ -15,6 +15,7 @@ public static partial class AbilityConfigs
                     {
                         Direction = GridDirection.Line,
                         MaxDistance = 2,
+                        Passthrough = EntityRelation.Any
                     }
                 }
             }

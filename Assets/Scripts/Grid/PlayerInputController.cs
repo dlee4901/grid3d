@@ -2,58 +2,53 @@ using UnityEngine.InputSystem;
 
 public class PlayerInputController : LoggableBehaviour
 {
+    public IPlayerInputState State { get; private set; }
+    public HighlightTracker Highlights { get; private set; }
+    public string ActiveAbilityId { get; private set; }
+    public event System.Action<string> OnActiveAbilityChanged;
+    
     private PlayerInputContext _ctx;
-    private IPlayerInputState _current;
-
-    public IPlayerInputState State => _current;
 
     public void Init(GridInput input, CommandDispatcher dispatcher, IGridRenderer renderer, IReadOnlyGridState grid)
     {
+        Highlights = new HighlightTracker(renderer);
         _ctx = new PlayerInputContext
         {
             Controller = this,
             Input = input,
             Dispatcher = dispatcher,
-            Renderer = renderer,
+            Renderer = Highlights,
             Grid = grid
         };
 
-        _current = new IdleState(_ctx);
-        _current.OnEnter();
+        State = new IdleState(_ctx);
+        State.OnEnter();
 
-        input.OnPositionSelected += clicked => _current.OnPositionSelected(clicked);
-        input.OnCancelClicked += () => _current.OnCancel();
-        input.OnHoverChanged += hovered => _current.OnHover(hovered);
+        input.OnPositionSelected += clicked => State.OnPositionSelected(clicked);
+        input.OnCancelClicked += () => State.OnCancel();
+        input.OnHoverChanged += hovered => State.OnHover(hovered);
     }
 
     private void Update()
     {
-        if (_current == null) return;
+        if (State == null) return;
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
             Log("Cancel (ESC)");
-            _current.OnCancel();
+            State.OnCancel();
         }
     }
 
-    public void OnAbilityPreview(Ability ability, GridSource source)
-        => _current.OnAbilityPreview(ability, source);
-
-    public void OnAbilityCancelPreview()
-        => _current.OnAbilityCancelPreview();
-
-    public void OnAbilityActivate(Ability ability, GridSource source)
-        => _current.OnAbilityActivate(ability, source);
-
-    private string _activeAbilityId;
-    public string ActiveAbilityId => _activeAbilityId;
-    public event System.Action<string> OnActiveAbilityChanged;
+    public void OnAbilityPreview(Ability ability, GridSource source) => State.OnAbilityPreview(ability, source);
+    public void OnAbilityCancelPreview() => State.OnAbilityCancelPreview();
+    public void OnAbilityActivate(Ability ability, GridSource source) => State.OnAbilityActivate(ability, source);
+    public void OnPositionSelected(GridSource source) => State.OnPositionSelected(source);
 
     private void UpdateActiveAbility()
     {
-        var id = (_current as TargetingState)?.AbilityId;
-        if (_activeAbilityId == id) return;
-        _activeAbilityId = id;
+        var id = (State as TargetingState)?.AbilityId;
+        if (ActiveAbilityId == id) return;
+        ActiveAbilityId = id;
         OnActiveAbilityChanged?.Invoke(id);
     }
 
@@ -63,7 +58,7 @@ public class PlayerInputController : LoggableBehaviour
 
     private void UpdateSelection()
     {
-        GridSource? sel = _current switch
+        GridSource? sel = State switch
         {
             SelectedState s  => s.Selected,
             TargetingState t => t.Source,
@@ -78,11 +73,11 @@ public class PlayerInputController : LoggableBehaviour
 
     public void TransitionTo(IPlayerInputState next)
     {
-        if (ReferenceEquals(_current, next)) return;
-        Log($"State: {_current?.GetType().Name} → {next.GetType().Name}");
-        _current?.OnExit();
-        _current = next;
-        _current.OnEnter();
+        if (ReferenceEquals(State, next)) return;
+        Log($"State: {State?.GetType().Name} → {next.GetType().Name}");
+        State?.OnExit();
+        State = next;
+        State.OnEnter();
         UpdateActiveAbility();
         UpdateSelection();
     }

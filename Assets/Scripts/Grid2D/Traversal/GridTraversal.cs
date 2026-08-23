@@ -5,7 +5,17 @@ using System.Linq;
 
 public enum GridDirection {North, NorthEast, East, SouthEast, South, SouthWest, West, NorthWest, NorthCone, EastCone, SouthCone, WestCone, Vertical, Horizontal, Diagonal, Straight, Line, Custom}
 public enum GridDirectionFacing {North, East, South, West}
-[Flags] public enum EntityPassthrough {None, Ally, Enemy, All=Ally|Enemy}
+
+// [Flags] 
+// public enum EntityPassthrough
+// {
+//     None = 0,
+//     Self = 1 << 0,
+//     Enemy = 1 << 1,
+//     Ally = 1 << 2,
+//     Neutral = 1 << 3,
+//     Any = Self | Enemy | Ally | Neutral
+// }
 
 public class GridTraversal
 {
@@ -21,7 +31,7 @@ public class GridTraversal
     public int StartWidth { get; set; } = 0;
     public bool DiagonalWidth { get; set; } = false;
 
-    public EntityPassthrough Passthrough { get; set; } = EntityPassthrough.None;
+    public EntityRelation Passthrough { get; set; } = EntityRelation.None;
     public PredicateConfig? PassthroughQuery { get; set; }
 
     public GridTraversal? Chain { get; set; }
@@ -123,8 +133,8 @@ public class GridTraversal
 
         if (sourceEntity != null && sourceEntity.TryGetComponent<ControlComponent>(out var sourceControl) && targetEntity.TryGetComponent<ControlComponent>(out var targetControl))
         {
-            if ((!Passthrough.HasFlag(EntityPassthrough.Enemy) && !sourceControl.IsAlly(targetControl))
-            || (!Passthrough.HasFlag(EntityPassthrough.Ally) && sourceControl.IsAlly(targetControl)))
+            if ((!Passthrough.HasFlag(EntityRelation.Enemy) && !sourceControl.IsAlly(targetControl))
+            || (!Passthrough.HasFlag(EntityRelation.Ally) && sourceControl.IsAlly(targetControl)))
                 return predicate?.Invoke(targetEntity) ?? true;
         }
         //if (!Passthrough.HasFlag(EntityPassthrough.Unit) && targetEntity.GetType() == typeof(Unit)) return true;

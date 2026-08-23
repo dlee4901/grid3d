@@ -447,6 +447,7 @@ MonoBehaviour:
   _gridLines: {fileID: 8463856003356838673}
   _pressOutline: {fileID: 920977426797182568}
   _cubePrefab: {fileID: 5605170146761424364, guid: 4fb39e8c28a6243c195aee201830d8d5, type: 3}
+  _entityRenderer: {fileID: 0}
   _directionalArrowSprites:
   - {fileID: 1971738423993067291, guid: 313f213a99e3e43a9b4c5f6346c1eb51, type: 3}
   - {fileID: -7097763755111408915, guid: 2e1c416c5112c4825b63e74161c1c9da, type: 3}
@@ -456,6 +457,10 @@ MonoBehaviour:
   - {fileID: 70464959845765214, guid: 14ef75a72a2cc4d4aabcc2af0a2a92ff, type: 3}
   - {fileID: -3646648088846649019, guid: f430ec44a35c74937bce7b53d85f76fe, type: 3}
   - {fileID: -8087575459239908926, guid: 62190d026e72c42079992beef35bbd9b, type: 3}
+  - {fileID: 357006442158401228, guid: d188e732a7c864775882326c6020eda2, type: 3}
+  - {fileID: -2208510542369132325, guid: 0f7360166850c444d850c6a31aae5b3d, type: 3}
+  - {fileID: 5655321678828108626, guid: 95a2642f41e67440aa63c830cf8ec071, type: 3}
+  - {fileID: -4345969612696422427, guid: 37dd001a3e604450ea81d732b166cdae, type: 3}
   - {fileID: -6135066407726741817, guid: 891cff7228b2045ef85d897a6f996489, type: 3}
   - {fileID: 1870245304260876862, guid: 6715747cae2314fc78391a633d9912c4, type: 3}
   - {fileID: 5839820706974066888, guid: 2e90ff077f33943c9aa1834537430c6b, type: 3}
@@ -465,5 +470,5 @@ MonoBehaviour:
   _highlightSquare: {fileID: 2654918041755339147}
   _highlightAvailableEntities: {r: 0.2509804, g: 1, b: 0.2509804, a: 0.2509804}
   _highlightAbilityRange: {r: 1, g: 1, b: 1, a: 0.2509804}
-  _highlightSelectableTargets: {r: 1, g: 0.2509804, b: 0.2509804, a: 0.2509804}
-  _highlightEffectPreview: {r: 1, g: 1, b: 0.2509804, a: 0.2509804}
+  _highlightSelectableTargets: {r: 1, g: 1, b: 0.2509804, a: 0.2509804}
+  _highlightEffectPreview: {r: 1, g: 0.2509804, b: 0.2509804, a: 0.2509804}
