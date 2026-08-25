@@ -21,6 +21,7 @@ public class ResolutionOrderIcon : LoggableBehaviour
     {
         _interactableUI = UnityUtil.GetOrAddComponent<InteractableUI>(gameObject);
         _interactableUI.OnClickCompleted += () => OnSelectRequested?.Invoke(Entity);
+        _image.preserveAspect = true;
     }
     
     public void Bind(IReadOnlyEntity entity)

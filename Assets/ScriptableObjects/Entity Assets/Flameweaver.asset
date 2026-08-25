@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EntityAssets
   <Id>k__BackingField: Flameweaver
   Model3D: {fileID: 6769735443732236303, guid: 27ff49a3e50e14f79989e456f85b39dc, type: 3}
-  Model2D: {fileID: 21300000, guid: 02ff976d39577774bb44b83610e61dec, type: 3}
+  Model2D: {fileID: 21300000, guid: 98f43eab6214444269cf3f7fb096a27b, type: 3}
   AbilityIcons:
   - {fileID: 21300000, guid: 29a1226f7b5e20240942612e151c3c4c, type: 3}
   - {fileID: 21300000, guid: 7b3876a2b72c44540a4bbd5aaba9e506, type: 3}
