@@ -56,6 +56,9 @@ MonoBehaviour:
   _outline: {fileID: 1123644867987216053}
   _image: {fileID: 7504328589286346789}
   _healthCounter: {fileID: 5154024148301014427}
+  _allyColor: {r: 0, g: 0.7529412, b: 0, a: 1}
+  _neutralColor: {r: 1, g: 0.5019608, b: 0.1254902, a: 1}
+  _enemyColor: {r: 1, g: 0.1254902, b: 0.1254902, a: 1}
 --- !u!114 &3009775680433396321
 MonoBehaviour:
   m_ObjectHideFlags: 0

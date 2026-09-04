@@ -39,6 +39,12 @@ public class HealthCounter : LoggableBehaviour
         _counterText.text = health.ToString();
     }
     
+    public void SetColor(Color color)
+    {
+        color.a = _healthIcon.color.a;
+        _healthIcon.color = color;
+    }
+
     public void SetAlpha(float alpha)
     {
         var color = _healthIcon.color;

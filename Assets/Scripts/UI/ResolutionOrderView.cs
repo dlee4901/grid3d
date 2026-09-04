@@ -30,7 +30,8 @@ public class ResolutionOrderView : StateView
     
     protected override void Refresh()
     {
-        var entities = _gridManager.GridState.ResolutionOrder.Entities;
+        var state = _gridManager.GridState;
+        var entities = state.ResolutionOrder.Entities;
 
         while (_icons.Count < entities.Count)
         {
@@ -43,7 +44,7 @@ public class ResolutionOrderView : StateView
         {
             var active = i < entities.Count;
             _icons[i].gameObject.SetActive(active);
-            if (active) _icons[i].Bind(entities[i]);
+            if (active) _icons[i].Bind(entities[i], state.ActivePlayer);
         }
         RefreshOutlines();
     }

@@ -82,7 +82,7 @@ SpriteRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.5019608}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -468,7 +468,7 @@ MonoBehaviour:
   - {fileID: 4815476061570213978, guid: 272cf5c7dc7a349aa8090eb36bda4272, type: 3}
   - {fileID: 6068752714494607558, guid: 6c398e4c7feaf40799c72d1ca48c1aa9, type: 3}
   _highlightSquare: {fileID: 2654918041755339147}
-  _highlightAvailableEntities: {r: 0.2509804, g: 1, b: 0.2509804, a: 0.2509804}
-  _highlightAbilityRange: {r: 1, g: 1, b: 1, a: 0.2509804}
-  _highlightSelectableTargets: {r: 1, g: 1, b: 0.2509804, a: 0.2509804}
-  _highlightEffectPreview: {r: 1, g: 0.2509804, b: 0.2509804, a: 0.2509804}
+  _highlightAvailableEntities: {r: 0.2509804, g: 1, b: 0.2509804, a: 0.75}
+  _highlightAbilityRange: {r: 1, g: 1, b: 1, a: 0.75}
+  _highlightSelectableTargets: {r: 1, g: 1, b: 0.2509804, a: 0.75}
+  _highlightEffectPreview: {r: 1, g: 0.2509804, b: 0.2509804, a: 0.75}
