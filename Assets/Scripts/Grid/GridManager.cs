@@ -17,6 +17,7 @@ public class GridManager : LoggableBehaviour
     public GridInput Input { get; private set; }
     public PlayerInputController Player { get; private set; }
     public Camera MainCamera => _mainCamera;
+    public GridRenderer Renderer => _renderer;
 
     public event Action StateChanged;
     public event Action GameStarted;

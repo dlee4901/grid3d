@@ -165,7 +165,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.multiplayer.tools": {
-      "version": "2.2.10",
+      "version": "2.2.11",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -290,7 +290,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.services.multiplayer": {
-      "version": "2.3.0",
+      "version": "2.3.1",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -320,7 +320,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.services.wire": {
-      "version": "1.4.4",
+      "version": "1.5.0",
       "depth": 1,
       "source": "registry",
       "dependencies": {
@@ -343,7 +343,7 @@
       "source": "builtin",
       "dependencies": {
         "com.unity.render-pipelines.core": "17.3.0",
-        "com.unity.searcher": "4.9.3"
+        "com.unity.searcher": "4.9.5"
       }
     },
     "com.unity.splines": {

@@ -5,6 +5,10 @@ Shader "Grid3D/Cube Edge Outline"
         _OutlineColor("Outline Color", Color) = (1, 1, 1, 1)
         _Thickness("Outline Thickness (world units)", Float) = 0.02
         _Smoothing("Edge Smoothing", Range(0, 2)) = 1
+        [HDR] _EdgeEmission("Edge Emission", Color) = (0, 0, 0, 0)
+        [HDR] _TopEmission("Face Emission - Top", Color) = (0, 0, 0, 0)
+        [HDR] _SideEmission("Face Emission - Sides", Color) = (0, 0, 0, 0)
+        [HDR] _BottomEmission("Face Emission - Bottom", Color) = (0, 0, 0, 0)
     }
 
     SubShader
@@ -22,7 +26,7 @@ Shader "Grid3D/Cube Edge Outline"
             Name "Outline"
             Tags { "LightMode" = "UniversalForward" }
 
-            Blend SrcAlpha OneMinusSrcAlpha
+            Blend One OneMinusSrcAlpha
             ZWrite Off
             ZTest LEqual
             Offset -1, -1
@@ -39,6 +43,10 @@ Shader "Grid3D/Cube Edge Outline"
                 float4 _OutlineColor;
                 float _Thickness;
                 float _Smoothing;
+                float4 _EdgeEmission;
+                float4 _TopEmission;
+                float4 _SideEmission;
+                float4 _BottomEmission;
             CBUFFER_END
 
             struct Attributes
@@ -77,14 +85,25 @@ Shader "Grid3D/Cube Edge Outline"
             {
                 UNITY_SETUP_INSTANCE_ID(input);
 
-                float3 faceAxis = abs(normalize(input.normalOS));
+                float3 normalOS = normalize(input.normalOS);
+                float3 faceAxis = abs(normalOS);
                 float3 distances = (0.5 - abs(input.positionOS)) * input.scale + faceAxis * 1e4;
                 float distanceToEdge = min(distances.x, min(distances.y, distances.z));
 
                 float aa = max(fwidth(distanceToEdge) * _Smoothing, 1e-5);
                 float outline = 1.0 - smoothstep(_Thickness - aa, _Thickness + aa, distanceToEdge);
 
-                return half4(_OutlineColor.rgb, _OutlineColor.a * outline);
+                half3 faceEmission = lerp(
+                    lerp(_SideEmission.rgb, _BottomEmission.rgb, step(normalOS.y, -0.5)),
+                    _TopEmission.rgb,
+                    step(0.5, normalOS.y));
+
+                float coverage = _OutlineColor.a * outline;
+                half3 rgb = _OutlineColor.rgb * coverage
+                          + _EdgeEmission.rgb * outline
+                          + faceEmission * (1.0 - outline);
+
+                return half4(rgb, coverage);
             }
             ENDHLSL
         }

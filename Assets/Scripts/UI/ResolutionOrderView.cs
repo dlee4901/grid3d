@@ -9,6 +9,7 @@ public class ResolutionOrderView : StateView
 
     [SerializeField] private Color _selectedColor = new Color32(255, 255, 255, 160);
     [SerializeField] private Color _unhighlightedColor = new Color32(255, 255, 255, 0);
+    [SerializeField] private HighlightPalette _palette;
         
     private readonly List<ResolutionOrderIcon> _icons = new();
     private bool _outlinesDirty;
@@ -16,7 +17,7 @@ public class ResolutionOrderView : StateView
     protected override void OnGameStarted()
     {
         _gridManager.Player.SelectionChanged += OnSelectionChanged;
-        _gridManager.Player.Highlights.Changed += MarkOutlinesDirty;
+        _gridManager.Renderer.HighlightsChanged += MarkOutlinesDirty;
         base.OnGameStarted();
     }
 
@@ -25,7 +26,7 @@ public class ResolutionOrderView : StateView
         base.OnDestroy();
         if (_gridManager == null || _gridManager.Player == null) return;
         _gridManager.Player.SelectionChanged -= OnSelectionChanged;
-        if (_gridManager.Player.Highlights != null) _gridManager.Player.Highlights.Changed -= MarkOutlinesDirty;
+        if (_gridManager.Renderer != null) _gridManager.Renderer.HighlightsChanged -= MarkOutlinesDirty;
     }
     
     protected override void Refresh()
@@ -62,26 +63,25 @@ public class ResolutionOrderView : StateView
 
     private void RefreshOutlines()
     {
-        var player = _gridManager.Player;
-        var selected = player.CurrentSelection?.Entity;
+        var selected = _gridManager.Player.CurrentSelection?.Entity;
 
         foreach (var icon in _icons)
         {
             if (!icon.gameObject.activeSelf || icon.Entity == null) continue;
-            icon.SetOutlineColor(OutlineColor(icon.Entity, selected, player));
+            icon.SetOutlineColor(OutlineColor(icon.Entity, selected));
         }
     }
   
-    private Color OutlineColor(IReadOnlyEntity entity, IReadOnlyEntity selected, PlayerInputController player)
+    private Color OutlineColor(IReadOnlyEntity entity, IReadOnlyEntity selected)
     {
         if (ReferenceEquals(entity, selected)) return _selectedColor;
-        if (player.Highlights.TryGet(entity.Position, out var type) && SyncsToStrip(type)) 
-            return player.Highlights.HighlightColor(type);
+        if (_gridManager.Renderer.TryGetHighlight(entity.Position, out var type) && SyncsToStrip(type))
+            return _palette.UIColorFor(type);
         return _unhighlightedColor;
     }
 
-    private static bool SyncsToStrip(GridHighlightType type) 
-        => type is GridHighlightType.AvailableEntities or GridHighlightType.EffectPreview;
+    private static bool SyncsToStrip(HighlightType type) 
+        => type is HighlightType.AvailableSources or HighlightType.EffectArea;
 
     private void OnIconSelected(IReadOnlyEntity entity)
     {

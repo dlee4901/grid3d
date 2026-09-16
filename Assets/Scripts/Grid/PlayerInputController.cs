@@ -3,21 +3,19 @@ using UnityEngine.InputSystem;
 public class PlayerInputController : LoggableBehaviour
 {
     public IPlayerInputState State { get; private set; }
-    public HighlightTracker Highlights { get; private set; }
     public string ActiveAbilityId { get; private set; }
     public event System.Action<string> OnActiveAbilityChanged;
     
     private PlayerInputContext _ctx;
 
-    public void Init(GridInput input, CommandDispatcher dispatcher, IGridRenderer renderer, IReadOnlyGridState grid)
+    public void Init(GridInput input, CommandDispatcher dispatcher, GridRenderer renderer, IReadOnlyGridState grid)
     {
-        Highlights = new HighlightTracker(renderer);
         _ctx = new PlayerInputContext
         {
             Controller = this,
             Input = input,
             Dispatcher = dispatcher,
-            Renderer = Highlights,
+            Renderer = renderer,
             Grid = grid
         };
 

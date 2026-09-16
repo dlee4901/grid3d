@@ -21,7 +21,7 @@ public class TargetingState : PlayerInputStateBase
     public override void OnEnter()
     {
         Ctx.Renderer.ClearHighlights();
-        Ctx.Renderer.HighlightPositions(_selectable, GridHighlightType.SelectableTargets);
+        Ctx.Renderer.HighlightPositions(_selectable, HighlightType.AvailableTargets);
     }
 
     public override void OnPositionSelected(GridSource clicked)
@@ -39,10 +39,10 @@ public class TargetingState : PlayerInputStateBase
     public override void OnHover(GridSource? hovered)
     {
         Ctx.Renderer.ClearHighlights();
-        Ctx.Renderer.HighlightPositions(_selectable, GridHighlightType.SelectableTargets);
+        Ctx.Renderer.HighlightPositions(_selectable, HighlightType.AvailableTargets);
         if (!hovered.HasValue || !_selectable.Contains(hovered.Value.Position)) return;
         if (_ability.Targeting.GetEffectSteps(_source, hovered.Value.Position, out var list))
-            Ctx.Renderer.HighlightPositions(list, GridHighlightType.EffectPreview);
+            Ctx.Renderer.HighlightPositions(list, HighlightType.EffectArea);
     }
 
     public override void OnAbilityActivate(Ability ability, GridSource source)

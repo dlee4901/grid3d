@@ -446,7 +446,7 @@ MonoBehaviour:
   _grid: {fileID: 8838476909848342511}
   _gridLines: {fileID: 8463856003356838673}
   _pressOutline: {fileID: 920977426797182568}
-  _cubePrefab: {fileID: 5605170146761424364, guid: 4fb39e8c28a6243c195aee201830d8d5, type: 3}
+  _cubePrefab: {fileID: 7124638055138895009, guid: 010a17d53ca1d458a92c7faf8f55ca9f, type: 3}
   _entityRenderer: {fileID: 0}
   _directionalArrowSprites:
   - {fileID: 1971738423993067291, guid: 313f213a99e3e43a9b4c5f6346c1eb51, type: 3}

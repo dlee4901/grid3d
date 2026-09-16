@@ -12,7 +12,7 @@ public class SelectedState : PlayerInputStateBase
     {
         Ctx.Renderer.ClearHighlights();
         if (!Actionable)
-            Ctx.Renderer.HighlightPositions(Ctx.Grid.GetControllableEntityPositions(), GridHighlightType.AvailableEntities);
+            Ctx.Renderer.HighlightPositions(Ctx.Grid.GetControllableEntityPositions(), HighlightType.AvailableSources);
     }
     public override void OnPositionSelected(GridSource clicked) => Ctx.Controller.TransitionTo(new SelectedState(Ctx, clicked));
 
@@ -27,7 +27,7 @@ public class SelectedState : PlayerInputStateBase
         if (!Actionable) return;
         var steps = ability.Targeting.GetSelectableSteps(source);
         Ctx.Renderer.ClearHighlights();
-        Ctx.Renderer.HighlightPositions(steps, GridHighlightType.AbilityRange);
+        Ctx.Renderer.HighlightPositions(steps, HighlightType.SelectionArea);
     }
     public override void OnAbilityCancelPreview() => Ctx.Renderer.ClearHighlights();
 
