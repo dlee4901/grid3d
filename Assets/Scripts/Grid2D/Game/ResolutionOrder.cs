@@ -1,23 +1,18 @@
 using System.Collections.Generic;
 
-public interface IReadOnlyResolutionOrder
+public class ResolutionOrder
 {
-    IReadOnlyList<IReadOnlyEntity> Entities { get; }
-}
-
-public class ResolutionOrder : IReadOnlyResolutionOrder
-{
-    public IReadOnlyList<IReadOnlyEntity> Entities => _entities;
+    public IReadOnlyList<Entity> Entities => _entities;
     
     private List<Entity> _entities = new();
     
-    public void Add(Entity entity)
+    internal void Add(Entity entity)
     {
         if (_entities.Contains(entity)) return;
         _entities.Add(entity);
     }
     
-    public void Remove(Entity entity)
+    internal void Remove(Entity entity)
     {
         _entities.Remove(entity);
     }
@@ -27,7 +22,7 @@ public class ResolutionOrder : IReadOnlyResolutionOrder
         return _entities.Contains(entity);
     }
     
-    public void MoveToFront(Entity entity)
+    internal void MoveToFront(Entity entity)
     {
         Move(entity, 0);
     }

@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-public class Entity : INameId, IReadOnlyEntity
+public class Entity : INameId
 {
     public string Id { get; }
     public int Cost { get; }
@@ -32,7 +32,7 @@ public class Entity : INameId, IReadOnlyEntity
         return entity;
     }
     
-    public void AddComponent<T>(T component) where T : class, IEntityComponent
+    internal void AddComponent<T>(T component) where T : class, IEntityComponent
         => _components[typeof(T)] = component;
     
     public bool TryGetComponent<T>(out T component) where T : class, IEntityComponent
@@ -42,7 +42,7 @@ public class Entity : INameId, IReadOnlyEntity
         return success;
     }
     
-    public void SetPosition(GridPosition position)
+    internal void SetPosition(GridPosition position)
     {
         Position = position;
     }

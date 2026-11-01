@@ -2,8 +2,10 @@ using System.Collections.Generic;
 
 public class AbilityComponent : IEntityComponent
 {
-    public List<Ability> List { get; set; } = new List<Ability>();
-    public Dictionary<string, Ability> Dictionary { get; set; } = new Dictionary<string, Ability>();
+    private readonly List<Ability> _list = new();
+    private readonly Dictionary<string, Ability> _dictionary = new();
+    public IReadOnlyList<Ability> List => _list;
+    public IReadOnlyDictionary<string, Ability> Dictionary => _dictionary;
     
     public AbilityComponent(List<string> abilityIds)
     {
@@ -11,8 +13,8 @@ public class AbilityComponent : IEntityComponent
         {
             if (!IdRegistry<AbilityConfig>.TryGet(abilityId, out var config)) continue;
             var ability = Ability.Create(config);
-            List.Add(ability);
-            Dictionary.Add(abilityId, ability);
+            _list.Add(ability);
+            _dictionary.Add(abilityId, ability);
         }
     }
 }

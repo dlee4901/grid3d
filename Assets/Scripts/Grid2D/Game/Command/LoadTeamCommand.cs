@@ -1,10 +1,10 @@
-public sealed class LoadTeamCommand : ICommand
+public sealed class LoadTeamCommand : Command
 {
     public int Player { get; }
     public TeamData TeamData { get; }
 
-    public int IssuingPlayer => Player;
-    public bool RequiresActiveTurn => false;
+    public override int IssuingPlayer => Player;
+    public override bool RequiresActiveTurn => false;
 
     public LoadTeamCommand(int player, TeamData teamData)
     {
@@ -12,7 +12,7 @@ public sealed class LoadTeamCommand : ICommand
         TeamData = teamData;
     }
 
-    public bool ApplyTo(GridState state)
+    internal override bool ApplyTo(GridState state)
     {
         state.LoadPlayerTeam(Player, TeamData);
         return true;

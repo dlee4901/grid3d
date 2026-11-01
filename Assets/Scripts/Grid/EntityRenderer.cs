@@ -16,7 +16,7 @@ public class EntityRenderer : LoggableBehaviour
     private Camera _camera;
     private bool _showHealthCounters;
 
-    private IReadOnlyGridState GridState => _gridManager.GridState;
+    private GridState GridState => _gridManager.GridState;
 
     public bool ShowHealthCounters
     {
@@ -143,7 +143,7 @@ public class EntityRenderer : LoggableBehaviour
         }
     }
 
-    private void RefreshCounter(IReadOnlyEntity entity, HealthCounter counter)
+    private void RefreshCounter(Entity entity, HealthCounter counter)
     {
         if (entity.TryGetComponent<HealthComponent>(out HealthComponent health))
             counter.SetHealthCount(health.Current);

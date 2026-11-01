@@ -1,7 +1,7 @@
 using UnityEngine;
 
 public enum CubeFace { Top, Side, Bottom }
-public enum HighlightType { AvailableSources, AvailableTargets, SelectionArea, EffectArea }
+public enum HighlightType { AvailableSources, AvailableTargets, SelectionArea, EffectArea, Focus }
 
 public class PositionCube : LoggableBehaviour
 {

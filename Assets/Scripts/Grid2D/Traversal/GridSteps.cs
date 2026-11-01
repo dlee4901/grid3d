@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 
 public struct GridStep : IEquatable<GridStep>
 {
@@ -197,9 +196,7 @@ public class GridSteps
         {
             var group = groups[i];
             if (group == 0) continue;
-            Debug.Log(i + " " + group);
             var grouping = groupings[group];
-            Debug.Log(grouping);
             foreach (var direction in grouping)
             {
                 if (!map.TryGetValue((GridDirection)i, out var steps))

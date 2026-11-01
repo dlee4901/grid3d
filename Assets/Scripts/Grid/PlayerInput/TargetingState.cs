@@ -48,7 +48,7 @@ public class TargetingState : PlayerInputStateBase
     public override void OnAbilityActivate(Ability ability, GridSource source)
     {
         if (ability.Id == _ability.Id) OnCancel();
-        else Ctx.Controller.TransitionTo(new TargetingState(Ctx, ability, source));
+        else if (Ctx.Grid.CanCast(ability, Ctx.Dispatcher.LocalSeat)) Ctx.Controller.TransitionTo(new TargetingState(Ctx, ability, source));
     }
     
     public override void OnAbilityPreview(Ability ability, GridSource source) {}
@@ -61,13 +61,9 @@ public class TargetingState : PlayerInputStateBase
 
     private void Confirm()
     {
-        var issuer = 0;
-        if (_source.Entity != null && _source.Entity.TryGetComponent<ControlComponent>(out var ctrl))
-            issuer = ctrl.PlayerController;
-            
         var targets1D = new int[_targets.Count];
         for (var i = 0; i < _targets.Count; i++) targets1D[i] = _targets[i].Dim1;
-        var ok = Ctx.Dispatcher.Submit(new AbilityCommand(issuer, _ability.Id, _source.Position.Dim1, targets1D));
+        var ok = Ctx.Dispatcher.Submit(seat => new AbilityCommand(seat, _ability.Id, _source.Position.Dim1, targets1D));
         
         Ctx.Controller.LogState($"AbilityCommand: {_ability.Id} ok={ok}");
         Ctx.Controller.TransitionTo(new IdleState(Ctx));

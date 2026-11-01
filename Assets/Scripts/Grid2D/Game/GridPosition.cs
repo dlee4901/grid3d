@@ -32,14 +32,14 @@ public readonly struct GridPosition : IEquatable<GridPosition>
         Dim1 = dim2.y * _gridX + dim2.x;
     }
     
-    public GridPosition(IReadOnlyGridState grid, int dim1) : this(grid.X, grid.Y, dim1)
+    public GridPosition(GridState grid, int dim1) : this(grid.X, grid.Y, dim1)
     {
         if (!IsValidPosition(dim1)) return;
         Dim1 = dim1;
         Dim2 = (dim1 % _gridX, dim1 / _gridX);
     }
     
-    public GridPosition(IReadOnlyGridState grid, (int x, int y) dim2) : this(grid.X, grid.Y, dim2)
+    public GridPosition(GridState grid, (int x, int y) dim2) : this(grid.X, grid.Y, dim2)
     {
         if (!IsValidPosition(dim2)) return;
         Dim2 = dim2;
@@ -51,6 +51,8 @@ public readonly struct GridPosition : IEquatable<GridPosition>
     
     public bool Equals(GridPosition other) 
     => Dim1 == other.Dim1 && Dim2 == other.Dim2 && _gridX == other._gridX && _gridY == other._gridY;
+
+    public override int GetHashCode() => HashCode.Combine(Dim1, _gridX, _gridY);
     
     public GridPosition Add(int dim1)
     {

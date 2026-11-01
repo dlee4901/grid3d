@@ -4,10 +4,13 @@ using UnityEngine.InputSystem;
 
 public class GameBootstrap : LoggableBehaviour
 {
+    private enum StartMode { Local, Steam }
+
     [SerializeField] private GridManager _gridManager;
     [SerializeField] private List<EntityAssets> _entityAssets;
     [SerializeField] private bool _autoStart = true;
     [SerializeField] private string _mapId = "TestMap1";
+    [SerializeField] private StartMode _startMode = StartMode.Local;
 
     private void Start()
     {
@@ -27,13 +30,20 @@ public class GameBootstrap : LoggableBehaviour
 
         ValidateContent(definition, teams);
 
-        var seed = new List<ICommand>
+        if (_startMode == StartMode.Steam)
         {
-            new LoadTeamCommand(1, team1), 
-            new LoadTeamCommand(2, team2), 
-            new SpawnTeamsCommand()
-        };
-        _gridManager.StartGame(definition, seed);
+            gameObject.AddComponent<SteamMatchController>().Init(_gridManager, definition, team1, team2);
+            return;
+        }
+
+        var setup = new MatchSetup(definition.Id, new[] { "local-1", "local-2" }, teams);
+        var issue = setup.Validate(definition);
+        if (issue != null)
+        {
+            LogError($"Match setup invalid: {issue}");
+            return;
+        }
+        _gridManager.StartGame(definition, setup.SeedCommands());
     }
 
     private void ValidateContent(GridDefinition map, IReadOnlyList<TeamData> teams)
@@ -55,7 +65,7 @@ public class GameBootstrap : LoggableBehaviour
             && Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
         {
             var state = _gridManager.GridState;
-            _gridManager.Submit(new EndTurnCommand(state.ActivePlayer));
+            _gridManager.Turns.EndTurn();
             Log($"[debug] end turn -> active={state.ActivePlayer}, turn={state.Turn}, mana={state.GetMana(state.ActivePlayer)}");
         }
     }

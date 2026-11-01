@@ -4,21 +4,21 @@ public enum AbilityType { Default, Move, Passive }
 
 public class AbilityConfig : INameId
 {
-    public string Id { get; set; }
-    public AbilityType Type { get; set; } = AbilityType.Default;
-    public int ManaCost { get; set; } = 1;
-    public AbilityTargeting Targeting { get; set; }
-    public List<AbilityEffect> Effects { get; set; } = new();
-    //public List<AbilityBindings> Bindings { get; set; }
+    public string Id { get; init; }
+    public AbilityType Type { get; init; } = AbilityType.Default;
+    public int ManaCost { get; init; } = 1;
+    public AbilityTargeting Targeting { get; init; }
+    public List<AbilityEffect> Effects { get; init; } = new();
+    //public List<AbilityBindings> Bindings { get; init; }
 
-    public int Warmup { get; set; } = 0;
-    public int Cooldown { get; set; } = 0;
-    public int Delay { get; set; } = 0;
-    public bool Locked { get; set; } = false;
+    public int Warmup { get; init; } = 0;
+    public int Cooldown { get; init; } = 0;
+    public int Delay { get; init; } = 0;
+    public bool Locked { get; init; } = false;
 }
 
 // public class AbilityBindings
 // {
-//     List<AbilityTrigger> Triggers { get; set; }
-//     List<AbilityEffect> Effects { get; set; }
+//     List<AbilityTrigger> Triggers { get; init; }
+//     List<AbilityEffect> Effects { get; init; }
 // }

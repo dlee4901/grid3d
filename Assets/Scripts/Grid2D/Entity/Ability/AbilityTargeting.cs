@@ -1,12 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 
 
 public abstract class AbilityTargeting
 {
-    public GridSelection EffectArea { get; set; } = null;
-    public int Targets { get; set; } = 1;
+    public GridSelection EffectArea { get; init; } = null;
+    public int Targets { get; init; } = 1;
     
     public bool GetEffectSteps(GridSource source, GridPosition target, out GridSteps gridSteps)
     {
@@ -41,8 +40,8 @@ public class FillTargeting : AbilityTargeting
 
 public class PositionTargeting : AbilityTargeting
 {
-    public GridSelection SelectableArea { get; set; }
-    public DirectionTargeting Chain { get; set; } = null;
+    public GridSelection SelectableArea { get; init; }
+    public DirectionTargeting Chain { get; init; } = null;
 
     //public GridSteps GetSelectablePositions(QueryContext ctx) => SelectableArea.GetPositions(ctx);
     
@@ -51,6 +50,7 @@ public class PositionTargeting : AbilityTargeting
     public override bool GetEffectSteps(GridSource source, List<GridPosition> targets, out GridSteps steps)
     {
         steps = new GridSteps();
+        if (targets.Count != Targets) return false;
         var selectableSteps = GetSelectableSteps(source);
         for (var i = 0; i < Targets; i++)
         {
@@ -67,7 +67,7 @@ public class PositionTargeting : AbilityTargeting
 
 public class DirectionTargeting : AbilityTargeting
 {
-    public int[] Grouping { get; set; } = new int[GridTraversal.UnidirectionalCount];
+    public int[] Grouping { get; init; } = new int[GridTraversal.UnidirectionalCount];
     
     public override GridSteps GetSelectableSteps(GridSource source)
     {

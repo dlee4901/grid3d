@@ -1,52 +1,27 @@
+using System;
 using System.Collections.Generic;
 
-public interface IReadOnlyGridState
-{
-    GridDefinition Definition { get; }
-    int X { get; }
-    int Y { get; }
-    int Size { get; }
-    int Turn { get; }
-    int ActivePlayer { get; }
-    IReadOnlyResolutionOrder ResolutionOrder { get; }
+public enum GameOutcome { InProgress, Draw, Victory }
 
-    bool CanPlayerAct(int player);
-    int GetMana(int player);
-    int GetTimeMs(int player);
-    int GetSpawnPlayer(GridPosition position);
-    Entity GetEntity(int position);
-    Entity GetEntity(GridPosition position);
-    bool TryGetEntity(GridPosition position, out Entity entity);
-    bool TryGetTerrain(GridPosition position, out TerrainType terrainType);
-    bool IsTraversable(GridPosition position);
-
-    HashSet<GridPosition> GetControllableEntityPositions(bool available=false);
-    HashSet<GridPosition> GetControllableEntityPositions(int player, bool available=false);
-    HashSet<GridPosition> GetOccupiedEntityPositions();
-    
-    bool IsAvailableControllable(GridPosition position);
-    
-    //HashSet<int> GetOccupiedTilesPositionSet();
-
-    string PrintGrid();
-}
-
-public sealed class GridState : IReadOnlyGridState
+public sealed class GridState
 {
     public GridDefinition Definition { get; }
     public int Turn { get; private set; } = 1;
     public int ActivePlayer { get; private set; } = 1;
-    public bool CanPlayerAct(int player) => ActivePlayer == player;
+    public GameOutcome Outcome { get; private set; } = GameOutcome.InProgress;
+    public int Winner { get; private set; }
+    public bool IsGameOver => Outcome != GameOutcome.InProgress;
+    public bool CanPlayerAct(int player) => !IsGameOver && ActivePlayer == player;
 
     public int X => Definition.X;
     public int Y => Definition.Y;
     public int Size => Definition.Size;
     public ResolutionOrder ResolutionOrder { get; } = new();
-    IReadOnlyResolutionOrder IReadOnlyGridState.ResolutionOrder => ResolutionOrder;
     
     private readonly Entity[] _entities;
     private readonly int[] _mana;
     private readonly int[] _timeMs;
+    private int _consecutivePasses;
     
     private readonly TeamData[] _loadedTeams;
     
@@ -65,7 +40,36 @@ public sealed class GridState : IReadOnlyGridState
         SeedStartingEntities();
     }
     
-    public void AdvanceTurn()
+    internal void AdvanceTurn()
+    {
+        _consecutivePasses = 0;
+        StartNextTurn();
+        ResolveForcedPasses();
+    }
+
+    internal void ResolveForcedPasses()
+    {
+        while (!IsGameOver && GetAvailableEntityPositions().Count == 0)
+        {
+            _consecutivePasses++;
+            if (_consecutivePasses >= Definition.PlayerCount)
+            {
+                Outcome = GameOutcome.Draw;
+                return;
+            }
+            StartNextTurn();
+        }
+    }
+
+    internal bool Forfeit(int player)
+    {
+        if (IsGameOver || player < 1 || player > Definition.PlayerCount || Definition.PlayerCount != 2) return false;
+        Outcome = GameOutcome.Victory;
+        Winner = player % Definition.PlayerCount + 1;
+        return true;
+    }
+
+    private void StartNextTurn()
     {
         ActivePlayer = ActivePlayer % Definition.PlayerCount + 1;
         Turn++;
@@ -77,7 +81,7 @@ public sealed class GridState : IReadOnlyGridState
 
     public bool HasMana(int player, int cost) => GetMana(player) >= cost;
 
-    public bool SpendMana(int player, int cost)
+    internal bool SpendMana(int player, int cost)
     {
         if (!HasMana(player, cost)) return false;
         _mana[player] -= cost;
@@ -88,7 +92,7 @@ public sealed class GridState : IReadOnlyGridState
 
     public int GetTimeMs(int player) => player < 1 || player > Definition.PlayerCount ? 0 : _timeMs[player];
 
-    public void SpendTime(int player, int elapsedMs)
+    internal void SpendTime(int player, int elapsedMs)
     {
         if (player < 1 || player > Definition.PlayerCount) return;
         _timeMs[player] = System.Math.Max(0, _timeMs[player] - System.Math.Max(0, elapsedMs));
@@ -123,7 +127,7 @@ public sealed class GridState : IReadOnlyGridState
         }
     }
     
-    public void SpawnTeams()
+    internal void SpawnTeams()
     {
         var maxUnits = 0;
         for (var player = 1; player <= Definition.PlayerCount; player++)
@@ -145,7 +149,7 @@ public sealed class GridState : IReadOnlyGridState
         }
     }
     
-    public void LoadPlayerTeam(int player, TeamData teamData)
+    internal void LoadPlayerTeam(int player, TeamData teamData)
     {
         if (player < 1 || player > Definition.PlayerCount) return;
         if (!ValidatePlayerTeam(player, teamData)) return;
@@ -199,15 +203,21 @@ public sealed class GridState : IReadOnlyGridState
         return true;
     }
     
-    public HashSet<GridPosition> GetControllableEntityPositions(bool available=false) => GetControllableEntityPositions(ActivePlayer, available);
-    
-    public HashSet<GridPosition> GetControllableEntityPositions(int player, bool available=false)
+    public HashSet<GridPosition> GetControllableEntityPositions() => GetControllableEntityPositions(ActivePlayer);
+
+    public HashSet<GridPosition> GetControllableEntityPositions(int player) => CollectPositions(p => IsControllable(p, player));
+
+    public HashSet<GridPosition> GetAvailableEntityPositions() => GetAvailableEntityPositions(ActivePlayer);
+
+    public HashSet<GridPosition> GetAvailableEntityPositions(int player) => CollectPositions(p => IsAvailable(p, player));
+
+    private HashSet<GridPosition> CollectPositions(Func<GridPosition, bool> predicate)
     {
         var positions = new HashSet<GridPosition>();
         for (var i = 0; i < _entities.Length; i++)
         {
             var gridPosition = new GridPosition(this, i);
-            if (IsControllable(gridPosition, player, available)) positions.Add(gridPosition);
+            if (predicate(gridPosition)) positions.Add(gridPosition);
         }
         return positions;
     }
@@ -219,18 +229,28 @@ public sealed class GridState : IReadOnlyGridState
         return positions;
     }
 
-    public bool IsControllable(GridPosition position, int player, bool available = false)
+    public bool IsControllable(GridPosition position, int player)
     {
         if (!position.IsValid()) return false;
         var entity = _entities[position.Dim1];
         if (entity == null) return false;
         if (!entity.TryGetComponent<ControlComponent>(out var control)) return false;
-        if (control.PlayerController != player) return false;
-        // TODO: filter units that already acted / lack mana
-        return true;
+        return control.PlayerController == player;
     }
-    
-    public bool IsAvailableControllable(GridPosition position) => IsControllable(position, ActivePlayer, available: true);
+
+    public bool IsAvailable(GridPosition position, int player)
+        => CanPlayerAct(player) && IsControllable(position, player) && HasCastableAbility(_entities[position.Dim1], player);
+
+    public bool CanCast(Ability ability, int player)
+        => !ability.Locked && ability.Cooldown == 0 && HasMana(player, ability.ManaCost);
+
+    public bool HasCastableAbility(Entity entity, int player)
+    {
+        if (!entity.TryGetComponent<AbilityComponent>(out var abilities)) return false;
+        foreach (var ability in abilities.List)
+            if (CanCast(ability, player)) return true;
+        return false;
+    }
     
     public HashSet<int> GetOccupiedTilesPositionSet()
     {
@@ -242,25 +262,25 @@ public sealed class GridState : IReadOnlyGridState
         return indices;
     }
     
-    public bool SetEntityPosition(GridPosition position, Entity entity)
+    internal bool SetEntityPosition(GridPosition position, Entity entity)
     {
-        if (!position.IsValid() || entity == null) return false;
+        if (entity == null || !IsTraversable(position)) return false;
         _entities[position.Dim1] = entity;
         entity.SetPosition(position);
         ResolutionOrder.Add(entity);
         return true;
     }
     
-    public bool ChangeEntityPosition(GridPosition startPosition, GridPosition targetPosition)
+    internal bool ChangeEntityPosition(GridPosition startPosition, GridPosition targetPosition)
     {
-        if (!startPosition.IsValid() || !targetPosition.IsValid() || !TryGetEntity(startPosition, out var entity)) return false;
+        if (!TryGetEntity(startPosition, out var entity) || !IsTraversable(targetPosition)) return false;
         _entities[targetPosition.Dim1] = entity;
         _entities[startPosition.Dim1] = null;
         entity.SetPosition(targetPosition);
         return true;
     }
     
-    public bool RemoveEntity(GridPosition position)
+    internal bool RemoveEntity(GridPosition position)
     {
         if (!position.IsValid()) return false;
         var entity = _entities[position.Dim1];
@@ -270,21 +290,62 @@ public sealed class GridState : IReadOnlyGridState
         return true;
     }
 
-    public bool PerformAction(int action, GridPosition sourcePosition, GridPosition targetPosition)
-    {
-        var entity = GetEntity(sourcePosition);
-        return entity != null;
-    }
-
-    public bool PerformAction(int action, GridPosition sourcePosition, List<GridPosition> targetPosition)
-    {
-        return false;
-    }
-
     // TODO: Terrain check
     public bool IsTraversable(GridPosition position)
     {
         return position.IsValid() && _entities[position.Dim1] == null && Definition.TerrainMap[position.Dim1] != TerrainType.Void; 
+    }
+
+    public ulong ComputeHash()
+    {
+        var hash = StateHasher.Create();
+        hash.Add(Turn);
+        hash.Add(ActivePlayer);
+        hash.Add((int)Outcome);
+        hash.Add(Winner);
+        hash.Add(_consecutivePasses);
+        for (var player = 1; player <= Definition.PlayerCount; player++)
+        {
+            hash.Add(_mana[player]);
+            hash.Add(_timeMs[player]);
+        }
+        foreach (var entity in _entities) AddEntity(ref hash, entity);
+        hash.Add(ResolutionOrder.Entities.Count);
+        foreach (var entity in ResolutionOrder.Entities) hash.Add(entity.Position.Dim1);
+        return hash.Value;
+    }
+
+    private static void AddEntity(ref StateHasher hash, Entity entity)
+    {
+        hash.Add(entity != null);
+        if (entity == null) return;
+        hash.Add(entity.Id);
+        hash.Add(entity.Position.Dim1);
+        hash.Add((int)entity.Facing);
+
+        var hasHealth = entity.TryGetComponent<HealthComponent>(out var health);
+        hash.Add(hasHealth);
+        if (hasHealth)
+        {
+            hash.Add(health.Starting);
+            hash.Add(health.Current);
+        }
+
+        var hasControl = entity.TryGetComponent<ControlComponent>(out var control);
+        hash.Add(hasControl);
+        if (hasControl) hash.Add(control.PlayerController);
+
+        var hasAbilities = entity.TryGetComponent<AbilityComponent>(out var abilities);
+        hash.Add(hasAbilities);
+        if (!hasAbilities) return;
+        hash.Add(abilities.List.Count);
+        foreach (var ability in abilities.List)
+        {
+            hash.Add(ability.Id);
+            hash.Add(ability.Cooldown);
+            hash.Add(ability.Delay);
+            hash.Add(ability.Locked);
+        }
     }
 
     public string PrintGrid()

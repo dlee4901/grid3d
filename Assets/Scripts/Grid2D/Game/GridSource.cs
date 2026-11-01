@@ -4,11 +4,11 @@ using System;
 
 public readonly struct GridSource : IEquatable<GridSource>
 {
-    public readonly IReadOnlyGridState Grid;
+    public readonly GridState Grid;
     public readonly GridPosition Position;
-    public readonly IReadOnlyEntity? Entity;
+    public readonly Entity? Entity;
 
-    public GridSource(IReadOnlyGridState grid, GridPosition position, IReadOnlyEntity? entity = null)
+    public GridSource(GridState grid, GridPosition position, Entity? entity = null)
     {
         Grid = grid;
         Position = position;

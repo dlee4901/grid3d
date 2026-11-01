@@ -1,22 +1,33 @@
+using System.Collections.Generic;
+
 public sealed class TurnExecutor
 {
     private readonly GridState _state;
-    public IReadOnlyGridState State => _state;
+    private readonly List<Command> _log = new();
+
+    public GridState State => _state;
+    public IReadOnlyList<Command> Log => _log;
+    public ulong StateHash { get; private set; }
 
     private TurnExecutor(GridState state)
     {
         _state = state;
+        StateHash = state.ComputeHash();
     }
 
     public static TurnExecutor ForDefinition(GridDefinition definition)
         => new TurnExecutor(new GridState(definition));
 
-    private int _sequence;
+    public event System.Action<Command> CommandApplied;
 
-    public event System.Action<ICommand> CommandApplied;
-
-    public bool Apply(ICommand command)
+    public bool Apply(Command command)
     {
+        var current = _state.ComputeHash();
+        if (current != StateHash)
+        {
+            GridLog.Error($"[TurnExecutor] state changed outside a command after #{_log.Count}");
+            StateHash = current;
+        }
         if (command.RequiresActiveTurn && !_state.CanPlayerAct(command.IssuingPlayer))
         {
             GridLog.Warning($"[TurnExecutor] off-turn command from player {command.IssuingPlayer} " +
@@ -25,8 +36,8 @@ public sealed class TurnExecutor
         }
         if (!command.ApplyTo(_state)) return false;
 
-        _sequence++;
-        // divergence-detection seam (later): var hash = _state.ComputeHash(); StateHashed?.Invoke(_sequence, hash);
+        _log.Add(command);
+        StateHash = _state.ComputeHash();
         CommandApplied?.Invoke(command);
         return true;
     }

@@ -8,8 +8,8 @@ public class ResolutionOrderIcon : LoggableBehaviour
     [SerializeField] private Image _image;
     [SerializeField] private HealthCounter _healthCounter;
     
-    public IReadOnlyEntity Entity { get; private set; }
-    public event Action<IReadOnlyEntity> OnSelectRequested;
+    public Entity Entity { get; private set; }
+    public event Action<Entity> OnSelectRequested;
     
     private InteractableUI _interactableUI;
     
@@ -24,7 +24,7 @@ public class ResolutionOrderIcon : LoggableBehaviour
         _image.preserveAspect = true;
     }
     
-    public void Bind(IReadOnlyEntity entity, int viewerPlayer)
+    public void Bind(Entity entity, int viewerPlayer)
     {
         Entity = entity;
         _image.sprite = IdRegistry<EntityAssets>.TryGet(entity.Id, out var assets) ? assets.Model2D : null;
@@ -35,7 +35,7 @@ public class ResolutionOrderIcon : LoggableBehaviour
         _healthCounter.SetColor(HeartColor(entity, viewerPlayer));
     }
 
-    private Color HeartColor(IReadOnlyEntity entity, int viewerPlayer)
+    private Color HeartColor(Entity entity, int viewerPlayer)
     {
         if (!entity.TryGetComponent<ControlComponent>(out var control) || control.PlayerController == 0)
             return _neutralColor;

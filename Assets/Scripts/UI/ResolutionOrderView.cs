@@ -72,7 +72,7 @@ public class ResolutionOrderView : StateView
         }
     }
   
-    private Color OutlineColor(IReadOnlyEntity entity, IReadOnlyEntity selected)
+    private Color OutlineColor(Entity entity, Entity selected)
     {
         if (ReferenceEquals(entity, selected)) return _selectedColor;
         if (_gridManager.Renderer.TryGetHighlight(entity.Position, out var type) && SyncsToStrip(type))
@@ -83,7 +83,7 @@ public class ResolutionOrderView : StateView
     private static bool SyncsToStrip(HighlightType type) 
         => type is HighlightType.AvailableSources or HighlightType.EffectArea;
 
-    private void OnIconSelected(IReadOnlyEntity entity)
+    private void OnIconSelected(Entity entity)
     {
         if (entity == null) return;
         _gridManager.Player.OnPositionSelected(new GridSource(_gridManager.GridState, entity.Position, entity));

@@ -1980,7 +1980,7 @@ MonoBehaviour:
   m_StreamingVersion: 20241001
   m_LegacyPriority: 0
   Target:
-    TrackingTarget: {fileID: 1936289546}
+    TrackingTarget: {fileID: 2142585461}
     LookAtTarget: {fileID: 0}
     CustomLookAtTarget: 0
   Lens:
@@ -2424,7 +2424,6 @@ MonoBehaviour:
   - {fileID: 157908080}
   - {fileID: 1258348441}
   _timerMode: 0
-  _localSeat: 1
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -2684,6 +2683,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _debug: 1
   _renderer: {fileID: 2142585460}
+  _seatMode: 0
+  _fixedSeat: 1
 --- !u!1 &1004667721
 GameObject:
   m_ObjectHideFlags: 0
@@ -2759,7 +2760,7 @@ MonoBehaviour:
   m_StreamingVersion: 20241001
   m_LegacyPriority: 0
   Target:
-    TrackingTarget: {fileID: 1936289546}
+    TrackingTarget: {fileID: 2142585461}
     LookAtTarget: {fileID: 0}
     CustomLookAtTarget: 0
   Lens:
@@ -5241,11 +5242,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1835809500}
   m_CullTransparentMesh: 1
---- !u!4 &1936289546 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 3471632054955808968, guid: 5db4261fbd3a14849afbfe4b9726cfa4, type: 3}
-  m_PrefabInstance: {fileID: 629940872486110478}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1948915943
 GameObject:
   m_ObjectHideFlags: 0
@@ -5924,6 +5920,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86210d78c008d4390968d5b2463eacdd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GridRenderer
+--- !u!4 &2142585461 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5687910053383182440, guid: 5db4261fbd3a14849afbfe4b9726cfa4, type: 3}
+  m_PrefabInstance: {fileID: 629940872486110478}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &629940872486110478
 PrefabInstance:
   m_ObjectHideFlags: 0

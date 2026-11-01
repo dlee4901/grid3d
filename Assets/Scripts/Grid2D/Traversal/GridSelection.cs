@@ -1,18 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.VisualScripting;
 
 public class GridSelection
 {
-    public List<GridTraversal> Traversals { get; set; }
-    public int MinDistance { get; set; } = 0;
-    public int MaxDistance { get; set; } = 0;
-    public List<IntRange> ExcludedDistanceRanges { get; set; } = new();
-    public IntRangePattern ExcludedDistRangePattern { get; set; }
+    public List<GridTraversal> Traversals { get; init; }
+    public int MinDistance { get; init; } = 0;
+    public int MaxDistance { get; init; } = 0;
+    public List<IntRange> ExcludedDistanceRanges { get; init; } = new();
+    public IntRangePattern ExcludedDistRangePattern { get; init; }
 
-    public PredicateConfig EntityAllowlist { get; set; }
-    public PredicateConfig EntityDenylist { get; set; }
+    public PredicateConfig EntityAllowlist { get; init; }
+    public PredicateConfig EntityDenylist { get; init; }
 
     public GridSteps GetGridSteps(GridSource source, bool filterEntities=true)
     {
@@ -56,7 +55,7 @@ public class GridSelection
         if (ExcludedDistRangePattern != null)
             intRanges.AddRange(ExcludedDistRangePattern.GetIntRanges(maxDistance));
         foreach (var range in intRanges)
-            excludedDistances.AddRange(range.GetValues());
+            excludedDistances.UnionWith(range.GetValues());
         return excludedDistances;
     }
 }

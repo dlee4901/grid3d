@@ -80,3 +80,19 @@ Assembly-CSharp.csproj.DotSettings
 /Assets/_Recovery.meta
 /Assets/Imports/*
 /Assets/Imports.meta
+
+# Rider per-project settings (all generated .csproj variants)
+*.DotSettings
+
+# Mono/Unity crash dumps
+mono_crash.*.json
+
+# UI Toolkit generated schema
+/UIElementsSchema/
+
+# Local tool configs
+.mcp.json
+/.claude/settings.local.json
+
+# Unity Test Runner command-line results
+/TestResults*.xml

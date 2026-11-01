@@ -5,33 +5,33 @@ public enum TerrainType { Default, Void }
 
 public class PositionConfig
 {
-    public List<int> PositionValues { get; set; } = new();
-    public List<IntRange> PositionRanges { get; set; } = new();
+    public List<int> PositionValues { get; init; } = new();
+    public List<IntRange> PositionRanges { get; init; } = new();
 }
 
 public class TerrainConfig : PositionConfig
 {
-    public string TerrainType { get; set; }
+    public string TerrainType { get; init; }
 }
 
 public class EntityStartConfig : PositionConfig
 {
-    public string EntityId { get; set; }
+    public string EntityId { get; init; }
 }
 
 public sealed class GridDefinition : INameId
 {
-    public string Id { get; set; }
-    public int X { get; set; }
-    public int Y { get; set; }
-    public int MaxTeamCost { get; set; }
-    public int PlayerCount { get; set; } = 2;
-    public int ManaPerTurn { get; set; } = 3;
-    public int PlayerStartingTimeSeconds { get; set; } = 600;
+    public string Id { get; init; }
+    public int X { get; init; }
+    public int Y { get; init; }
+    public int MaxTeamCost { get; init; }
+    public int PlayerCount { get; init; } = 2;
+    public int ManaPerTurn { get; init; } = 3;
+    public int PlayerStartingTimeSeconds { get; init; } = 600;
 
-    public List<TerrainConfig> Terrain { get; set; }
-    public List<PositionConfig> PlayerStartPositions { get; set; }
-    public List<EntityStartConfig> EntityStartPositions { get; set; }
+    public List<TerrainConfig> Terrain { get; init; }
+    public List<PositionConfig> PlayerStartPositions { get; init; }
+    public List<EntityStartConfig> EntityStartPositions { get; init; }
 
     public TerrainType[] TerrainMap { get; private set; }
     public IReadOnlyDictionary<int, int> SpawnPlayers => _spawnPlayers;
@@ -42,7 +42,7 @@ public sealed class GridDefinition : INameId
 
     public int Size => X * Y;
 
-    public void Init()
+    internal void Init()
     {
         TerrainMap = new TerrainType[Size];
         if (Terrain != null)
@@ -98,7 +98,7 @@ public sealed class GridDefinition : INameId
     public int GetSpawnPlayer(GridPosition position) => _spawnPlayers.GetValueOrDefault(position.Dim1, 0);
     public HashSet<int> GetPlayerSpawnsOrNull(int player) => _playerSpawns.GetValueOrDefault(player, null);
 
-    public bool SetSpawnPlayer(GridPosition position, int player)
+    private bool SetSpawnPlayer(GridPosition position, int player)
     {
         if (GetSpawnPlayer(position) != 0) return false;
         _spawnPlayers[position.Dim1] = player;
@@ -108,7 +108,7 @@ public sealed class GridDefinition : INameId
         return true;
     }
 
-    public bool SetTileTerrain(GridPosition position, TerrainType terrain)
+    private bool SetTileTerrain(GridPosition position, TerrainType terrain)
     {
         if (!position.IsValid() || TerrainMap == null) return false;
         TerrainMap[position.Dim1] = terrain;

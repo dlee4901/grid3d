@@ -1,11 +1,12 @@
-public sealed class SpawnTeamsCommand : ICommand
+public sealed class SpawnTeamsCommand : Command
 {
-    public int IssuingPlayer => 0;
-    public bool RequiresActiveTurn => false;
+    public override int IssuingPlayer => 0;
+    public override bool RequiresActiveTurn => false;
 
-    public bool ApplyTo(GridState state)
+    internal override bool ApplyTo(GridState state)
     {
         state.SpawnTeams();
+        state.ResolveForcedPasses();
         return true;
     }
 }

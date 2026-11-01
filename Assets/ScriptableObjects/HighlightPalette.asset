@@ -13,18 +13,22 @@ MonoBehaviour:
   m_Name: HighlightPalette
   m_EditorClassIdentifier: Assembly-CSharp::HighlightPalette
   _availableSources:
-    Color: {r: 1, g: 1, b: 1, a: 1}
-    EdgeIntensity: 2
+    Color: {r: 1, g: 0.8509804, b: 0, a: 1}
+    EdgeIntensity: 16
     UIAlpha: 0.25
   _availableTargets:
-    Color: {r: 1, g: 0.2509804, b: 0.2509804, a: 1}
-    EdgeIntensity: 2
+    Color: {r: 1, g: 0.8509804, b: 0, a: 1}
+    EdgeIntensity: 16
     UIAlpha: 0.25
   _selectionArea:
-    Color: {r: 1, g: 1, b: 1, a: 1}
-    EdgeIntensity: 2
+    Color: {r: 1, g: 0.8509804, b: 0, a: 1}
+    EdgeIntensity: 16
     UIAlpha: 0.25
   _effectArea:
-    Color: {r: 1, g: 0.5019608, b: 0, a: 1}
-    EdgeIntensity: 2
+    Color: {r: 1, g: 0, b: 0, a: 1}
+    EdgeIntensity: 16
     UIAlpha: 0.375
+  _focus:
+    Color: {r: 1, g: 1, b: 1, a: 1}
+    EdgeIntensity: 16
+    UIAlpha: 0.25

@@ -1,7 +1,7 @@
 public class HealthComponent : IEntityComponent
 {
-    public int Starting { get; set; } = 0;
-    public int Current { get; set; } = 0;
+    public int Starting { get; internal set; } = 0;
+    public int Current { get; internal set; } = 0;
     
     public HealthComponent(int health)
     {
@@ -9,7 +9,7 @@ public class HealthComponent : IEntityComponent
         Current = health;
     }
     
-    public bool ApplyDamage(int amount)
+    internal bool ApplyDamage(int amount)
     {
         if (amount <= 0) return false;
         Current = System.Math.Max(0, Current - amount);

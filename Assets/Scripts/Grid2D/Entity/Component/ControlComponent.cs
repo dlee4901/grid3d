@@ -13,7 +13,7 @@ public enum EntityRelation
 
 public class ControlComponent : IEntityComponent
 {
-    public int PlayerController { get; set; } = 0;
+    public int PlayerController { get; internal set; } = 0;
     
     public ControlComponent(int playerController)
     {

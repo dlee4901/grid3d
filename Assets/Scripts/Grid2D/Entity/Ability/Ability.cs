@@ -34,7 +34,7 @@ public class Ability : INameId
         Locked = config.Locked;
     }
 
-    public virtual bool Execute(GridState state, GridPosition sourcePosition, List<GridPosition> targetPositions)
+    internal virtual bool Execute(GridState state, GridPosition sourcePosition, List<GridPosition> targetPositions)
     {
         var source = state.GetEntity(sourcePosition);
         if (source == null) return false;
@@ -51,20 +51,23 @@ public class Ability : INameId
                     affected.Add(entity);
   
             var ordered = state.ResolutionOrder.GetOrderByPriority(affected);
-            foreach (var effect in Effects) foreach (var target in ordered) effect.Apply(ctx, target);
+            foreach (var effect in Effects)
+            foreach (var target in ordered)
+                if (state.GetEntity(target.Position) == target && effect.Affects(source, target))
+                    effect.Apply(ctx, target);
         }
 
         return true;
     }
 
 
-    public void Trigger()
+    internal void Trigger()
     {
         if (Cooldown != 0) return;
         Cooldown = Config.Cooldown;
     }
 
-    public void TurnUpdate()
+    internal void TurnUpdate()
     {
         if (Cooldown > 0) Cooldown--;
     }

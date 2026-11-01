@@ -4,5 +4,5 @@ public class PlayerInputContext
     public GridInput Input;
     public GridRenderer Renderer;
     public CommandDispatcher Dispatcher;
-    public IReadOnlyGridState Grid;
+    public GridState Grid;
 }

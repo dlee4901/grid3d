@@ -7,7 +7,7 @@ public class GridInput : LoggableBehaviour
 {
     private Grid _grid;
     private Camera _camera;
-    private IReadOnlyGridState _state;
+    private GridState _state;
     private InputAction _selectAction;
     private bool _initialized;
 
@@ -23,7 +23,7 @@ public class GridInput : LoggableBehaviour
     // public event Action<bool> OnLockChanged;
     // public bool IsLocked => _isLocked;
 
-    public void Init(Grid grid, Camera camera, IReadOnlyGridState state, InputAction selectAction)
+    public void Init(Grid grid, Camera camera, GridState state, InputAction selectAction)
     {
         _grid = grid;
         _camera = camera;

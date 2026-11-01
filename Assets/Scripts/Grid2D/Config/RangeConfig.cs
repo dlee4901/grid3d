@@ -2,8 +2,8 @@ using System.Collections.Generic;
 
 public class IntRange
 {
-    public int Start { get; set; }
-    public int End { get; set; }
+    public int Start { get; init; }
+    public int End { get; init; }
     
     public IntRange(int start, int end)
     {
@@ -24,9 +24,9 @@ public class IntRange
 
 public class IntRangePattern
 {
-    public int Start { get; set; } = 0;
-    public int Span { get; set; }
-    public int Gap { get; set; }
+    public int Start { get; init; } = 0;
+    public int Span { get; init; }
+    public int Gap { get; init; }
     
     public IntRangePattern(int start, int span, int gap)
     {

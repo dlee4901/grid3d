@@ -6,16 +6,16 @@ public enum ConditionValueType { Int, Bool, String }
 
 public sealed class PredicateConfig
 {
-    public ConditionOperation Operation { get; set; }
+    public ConditionOperation Operation { get; init; }
 
-    public string? Field { get; set; }
-    public string? Comparison { get; set; }
+    public string? Field { get; init; }
+    public string? Comparison { get; init; }
 
-    public ConditionValueType ValueType { get; set; }
+    public ConditionValueType ValueType { get; init; }
 
-    public int IntValue { get; set; }
-    public bool BoolValue { get; set; }
-    public string? StringValue { get; set; }
+    public int IntValue { get; init; }
+    public bool BoolValue { get; init; }
+    public string? StringValue { get; init; }
 
-    public List<PredicateConfig>? Children { get; set; }
+    public List<PredicateConfig>? Children { get; init; }
 }

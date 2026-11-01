@@ -21,21 +21,21 @@ public class GridTraversal
 {
     public const int UnidirectionalCount = 8;
     
-    public GridDirection Direction { get; set; }
-    public bool[] CustomDirection { get; set; } = new bool[UnidirectionalCount];
+    public GridDirection Direction { get; init; }
+    public bool[] CustomDirection { get; init; } = new bool[UnidirectionalCount];
 
-    public int MaxDistance { get; set; } = 0;
-    public bool Linear { get; set; } = true;
-    public bool AbsoluteDirection { get; set; } = false;
+    public int MaxDistance { get; init; } = 0;
+    public bool Linear { get; init; } = true;
+    public bool AbsoluteDirection { get; init; } = false;
 
-    public int StartWidth { get; set; } = 0;
-    public bool DiagonalWidth { get; set; } = false;
+    public int StartWidth { get; init; } = 0;
+    public bool DiagonalWidth { get; init; } = false;
 
-    public EntityRelation Passthrough { get; set; } = EntityRelation.None;
-    public PredicateConfig? PassthroughQuery { get; set; }
+    public EntityRelation Passthrough { get; init; } = EntityRelation.None;
+    public PredicateConfig? PassthroughQuery { get; init; }
 
-    public GridTraversal? Chain { get; set; }
-    public int ChainOffset { get; set; } = 0; // IF (n > 0) n ~ distance ELSE maxDistReached + n ~ maxDistReached
+    public GridTraversal? Chain { get; init; }
+    public int ChainOffset { get; init; } = 0; // IF (n > 0) n ~ distance ELSE maxDistReached + n ~ maxDistReached
 
     public List<GridStep> GetSteps(GridSource source)
     {
@@ -126,7 +126,7 @@ public class GridTraversal
         }
     }
 
-    private bool IsColliding(Entity targetEntity, IReadOnlyEntity? sourceEntity=null)
+    private bool IsColliding(Entity targetEntity, Entity? sourceEntity=null)
     {
         Func<Entity, bool>? predicate = null;
         if (PassthroughQuery != null) predicate = PredicateFactory<Entity>.Create(PassthroughQuery);

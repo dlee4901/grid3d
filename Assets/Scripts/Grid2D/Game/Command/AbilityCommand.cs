@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 
-public sealed class AbilityCommand : ICommand
+public sealed class AbilityCommand : Command
 {
-    public int IssuingPlayer { get; }
-    public bool RequiresActiveTurn => true;
+    public override int IssuingPlayer { get; }
+    public override bool RequiresActiveTurn => true;
     public string AbilityId { get; }
     public int SourcePosition { get; }
     public int[] TargetPositions { get; }
@@ -16,7 +16,7 @@ public sealed class AbilityCommand : ICommand
         TargetPositions = targetPositions;
     }
 
-    public bool ApplyTo(GridState state)
+    internal override bool ApplyTo(GridState state)
     {
         var sourcePosition = new GridPosition(state, SourcePosition);
         var targetPositions = new List<GridPosition>();
@@ -40,15 +40,11 @@ public sealed class AbilityCommand : ICommand
             GridLog.Warning($"[AbilityCommand] entity {entity.Id} has no ability {AbilityId}");
             return false;
         }
-        if (ability.Cooldown != 0)
+        if (!state.CanCast(ability, IssuingPlayer))
         {
-            GridLog.Warning($"[AbilityCommand] {AbilityId} on cooldown ({ability.Cooldown})");
-            return false;
-        }
-        if (!state.HasMana(IssuingPlayer, ability.ManaCost))
-        {
-            GridLog.Warning($"[AbilityCommand] player {IssuingPlayer} lacks mana for {AbilityId} " +
-                            $"(have {state.GetMana(IssuingPlayer)}, need {ability.ManaCost})");
+            GridLog.Warning($"[AbilityCommand] {AbilityId} not castable by player {IssuingPlayer} " +
+                            $"(locked {ability.Locked}, cooldown {ability.Cooldown}, " +
+                            $"mana {state.GetMana(IssuingPlayer)}/{ability.ManaCost})");
             return false;
         }
         if (!ability.Execute(state, sourcePosition, targetPositions)) return false;

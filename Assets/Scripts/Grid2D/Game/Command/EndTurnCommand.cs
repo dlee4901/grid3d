@@ -1,8 +1,8 @@
-public sealed class EndTurnCommand : ICommand
+public sealed class EndTurnCommand : Command
 {
-    public int IssuingPlayer { get; }
+    public override int IssuingPlayer { get; }
     public int ElapsedMs { get; }
-    public bool RequiresActiveTurn => true;
+    public override bool RequiresActiveTurn => true;
 
     public EndTurnCommand(int issuingPlayer, int elapsedMs = 0)
     {
@@ -10,7 +10,7 @@ public sealed class EndTurnCommand : ICommand
         ElapsedMs = elapsedMs;
     }
 
-    public bool ApplyTo(GridState state)
+    internal override bool ApplyTo(GridState state)
     {
         state.SpendTime(state.ActivePlayer, ElapsedMs);
         state.AdvanceTurn();

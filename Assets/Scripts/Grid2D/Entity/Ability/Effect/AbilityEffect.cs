@@ -17,6 +17,19 @@ public readonly struct EffectContext
 
 public abstract class AbilityEffect
 {
-    public EntityRelation Relation { get; set; } = EntityRelation.Any;
-    public abstract void Apply(EffectContext ctx, Entity target);
+    public EntityRelation Relation { get; init; } = EntityRelation.Any;
+    internal abstract void Apply(EffectContext ctx, Entity target);
+
+    internal bool Affects(Entity source, Entity target) => Relation.HasFlag(RelationBetween(source, target));
+
+    private static EntityRelation RelationBetween(Entity source, Entity target)
+    {
+        if (ReferenceEquals(source, target)) return EntityRelation.Self;
+        if (!source.TryGetComponent<ControlComponent>(out var sourceControl)
+            || !target.TryGetComponent<ControlComponent>(out var targetControl)
+            || sourceControl.PlayerController == 0
+            || targetControl.PlayerController == 0)
+            return EntityRelation.Neutral;
+        return sourceControl.IsAlly(targetControl) ? EntityRelation.Ally : EntityRelation.Enemy;
+    }
 }

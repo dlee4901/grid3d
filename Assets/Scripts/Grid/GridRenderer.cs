@@ -10,7 +10,6 @@ public class GridRenderer : LoggableBehaviour
 
     [SerializeField] private CinemachineCamera _cinemachineCamera;
     [SerializeField] private Grid _grid;
-    [SerializeField] private LineRenderer _pressOutline;
     [SerializeField] private PositionCube _positionCubePrefab;
     [SerializeField] private EntityRenderer _entityRenderer;
     [SerializeField] private List<Sprite> _directionalArrowSprites;
@@ -19,10 +18,12 @@ public class GridRenderer : LoggableBehaviour
     private SpriteRenderer[] _directionalArrows;
 
     private readonly Dictionary<int, HighlightType> _highlights = new();
+    private int? _hoveredIndex;
+    private int? _selectedIndex;
 
     private float _gridGroundLevel;
 
-    private IReadOnlyGridState GridState => _gridManager.GridState;
+    private GridState GridState => _gridManager.GridState;
 
     private const float UnidirectionalArrowPositionOffset = 0.02f;
 
@@ -44,7 +45,8 @@ public class GridRenderer : LoggableBehaviour
     {
         if (_gridManager == null) return;
         _gridManager.GameStarted -= OnGameStarted;
-        if (_gridManager.Player != null) _gridManager.Player.SelectionChanged -= MovePressOutline;
+        if (_gridManager.Input != null) _gridManager.Input.OnHoverChanged -= OnHoverChanged;
+        if (_gridManager.Player != null) _gridManager.Player.SelectionChanged -= OnSelectionChanged;
     }
 
     private void OnGameStarted() => Build();
@@ -53,28 +55,52 @@ public class GridRenderer : LoggableBehaviour
     {
         if (_positionCubes != null) return;
         _grid.gameObject.SetActive(true);
-        InitCamera();
         InitRendering();
+        InitCamera();
         _entityRenderer.Build();
-        _gridManager.Player.SelectionChanged += MovePressOutline;
+        _gridManager.Input.OnHoverChanged += OnHoverChanged;
+        _gridManager.Player.SelectionChanged += OnSelectionChanged;
     }
 
-    private void MovePressOutline(GridSource? source)
+    private void OnHoverChanged(GridSource? source)
     {
-        if (!source.HasValue)
-        {
-            _pressOutline.gameObject.SetActive(false);
-            return;
-        }
-        var position = source.Value.Position;
-        var worldPos = _grid.CellToWorld(new Vector3Int(position.Dim2.x, position.Dim2.y, 0));
-        _pressOutline.transform.position = new Vector3(worldPos.x, _gridGroundLevel + 0.05f, worldPos.z);
-        _pressOutline.gameObject.SetActive(true);
+        var previous = _hoveredIndex;
+        _hoveredIndex = source?.Position.Dim1;
+        RefreshCube(previous);
+        RefreshCube(_hoveredIndex);
+    }
+
+    private void OnSelectionChanged(GridSource? source)
+    {
+        var previous = _selectedIndex;
+        _selectedIndex = source?.Position.Dim1;
+        RefreshCube(previous);
+        RefreshCube(_selectedIndex);
+        RefreshCube(_hoveredIndex);
+    }
+
+    private bool IsFocused(int index)
+        => _selectedIndex.HasValue ? index == _selectedIndex : index == _hoveredIndex;
+
+    private void RefreshCube(int? index)
+    {
+        if (!index.HasValue) return;
+        var cube = _positionCubes[index.Value];
+        if (_highlights.TryGetValue(index.Value, out var type)) cube.SetHighlight(type);
+        else if (IsFocused(index.Value)) cube.SetHighlight(HighlightType.Focus);
+        else cube.ClearHighlight();
     }
 
     private void InitCamera()
     {
         var targetScreenHeight = Math.Max(GridState.X / 2.0f, GridState.Y);
+        var min = CellCenter(new GridPosition(GridState, (0, 0)));
+        var max = CellCenter(new GridPosition(GridState, (GridState.X - 1, GridState.Y - 1)));
+        var cameraTarget = new GameObject("CameraTarget").transform;
+        cameraTarget.SetParent(transform);
+        cameraTarget.position = (min + max) / 2f;
+        _cinemachineCamera.Target.TrackingTarget = cameraTarget;
+        _cinemachineCamera.PreviousStateIsValid = false;
         // if (_cinemachineCamera.Target.TrackingTarget.Equals(_gridLines.transform))
         // {
         //     _cinemachineCamera.GetComponent<CinemachineFollow>().FollowOffset = new Vector3(0f, targetScreenHeight, 0f);
@@ -109,6 +135,8 @@ public class GridRenderer : LoggableBehaviour
         foreach (var cube in _positionCubes) cube.ClearHighlight();
         foreach (var arrow in _directionalArrows) arrow.gameObject.SetActive(false);
         _highlights.Clear();
+        RefreshCube(_hoveredIndex);
+        RefreshCube(_selectedIndex);
         HighlightsChanged?.Invoke();
     }
 

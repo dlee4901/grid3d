@@ -65,7 +65,8 @@ public class UnitView : StateView
         if (!entity.TryGetComponent<AbilityComponent>(out var abilities))
             return;
         Log($"Selection info: {entity.Id}, abilities={abilities.List.Count}");
-        var actionable = source.Grid.IsAvailableControllable(source.Position);
+        var seat = _gridManager.LocalSeat;
+        var actionable = source.Grid.IsAvailable(source.Position, seat);
         var abilityIcons = entityAssets.AbilityIcons;
         for (var i = 0; i < abilities.List.Count; i++)
         {
@@ -76,7 +77,7 @@ public class UnitView : StateView
             icon.OnPreviewRequested  += _gridManager.Player.OnAbilityPreview;
             icon.OnPreviewCancelled  += _gridManager.Player.OnAbilityCancelPreview;
             icon.OnActivateRequested += _gridManager.Player.OnAbilityActivate;
-            icon.SetInteractable(actionable);
+            icon.SetInteractable(actionable && source.Grid.CanCast(abilities.List[i], seat));
             _icons.Add(icon);
         }
         var activeId = _gridManager.Player.ActiveAbilityId;
