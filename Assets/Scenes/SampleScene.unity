@@ -2423,7 +2423,6 @@ MonoBehaviour:
   _playerTimerViews:
   - {fileID: 157908080}
   - {fileID: 1258348441}
-  _timerMode: 0
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -2685,6 +2684,7 @@ MonoBehaviour:
   _renderer: {fileID: 2142585460}
   _seatMode: 0
   _fixedSeat: 1
+  _timersEnabled: 1
 --- !u!1 &1004667721
 GameObject:
   m_ObjectHideFlags: 0
@@ -2999,6 +2999,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 3ba3968f451e84546a1c6e6fe9751c06, type: 2}
   _autoStart: 1
   _mapId: TestMap1
+  _startMode: 1
 --- !u!4 &1104472039
 Transform:
   m_ObjectHideFlags: 0
