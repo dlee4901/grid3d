@@ -31,7 +31,7 @@ public class ResolutionOrderView : StateView
     
     protected override void Refresh()
     {
-        var state = _gridManager.GridState;
+        var state = _gridManager.DisplayedState;
         var entities = state.ResolutionOrder.Entities;
 
         while (_icons.Count < entities.Count)
@@ -74,7 +74,7 @@ public class ResolutionOrderView : StateView
   
     private Color OutlineColor(Entity entity, Entity selected)
     {
-        if (ReferenceEquals(entity, selected)) return _selectedColor;
+        if (selected != null && entity.Uid == selected.Uid) return _selectedColor;
         if (_gridManager.Renderer.TryGetHighlight(entity.Position, out var type) && SyncsToStrip(type))
             return _palette.UIColorFor(type);
         return _unhighlightedColor;
@@ -85,7 +85,8 @@ public class ResolutionOrderView : StateView
 
     private void OnIconSelected(Entity entity)
     {
-        if (entity == null) return;
-        _gridManager.Player.OnPositionSelected(new GridSource(_gridManager.GridState, entity.Position, entity));
+        var real = entity == null ? null : _gridManager.GridState.GetEntityByUid(entity.Uid);
+        if (real == null) return;
+        _gridManager.Player.OnPositionSelected(new GridSource(_gridManager.GridState, real.Position, real));
     }
 }

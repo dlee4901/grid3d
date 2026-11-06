@@ -28,7 +28,11 @@ MonoBehaviour:
     Color: {r: 1, g: 0, b: 0, a: 1}
     EdgeIntensity: 16
     UIAlpha: 0.375
-  _focus:
+  _selected:
     Color: {r: 1, g: 1, b: 1, a: 1}
     EdgeIntensity: 16
     UIAlpha: 0.25
+  _hover:
+    Color: {r: 1, g: 1, b: 1, a: 1}
+    EdgeIntensity: 4
+    UIAlpha: 0.125

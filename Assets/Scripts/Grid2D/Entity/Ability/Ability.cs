@@ -14,12 +14,6 @@ public class Ability : INameId
     public int Delay { get; private set; }
     public bool Locked { get; private set; }
 
-    static Ability()
-    {
-        MemberRegistry<Ability>.Register<string>("Id", e => e.Id);
-        MemberRegistry<Ability>.Register<int>("Cost", e => e.ManaCost);
-    }
-
     public static Ability Create(AbilityConfig config) => config.Type switch
     {
         AbilityType.Move => new MoveAbility(config),

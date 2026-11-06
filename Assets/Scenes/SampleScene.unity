@@ -2999,7 +2999,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 3ba3968f451e84546a1c6e6fe9751c06, type: 2}
   _autoStart: 1
   _mapId: TestMap1
-  _startMode: 1
+  _startMode: 0
 --- !u!4 &1104472039
 Transform:
   m_ObjectHideFlags: 0
@@ -5963,9 +5963,17 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 477549196}
     - target: {fileID: 2964121792516583410, guid: 5db4261fbd3a14849afbfe4b9726cfa4, type: 3}
-      propertyPath: _cinemachineCamera
+      propertyPath: _cinemachineCameras.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2964121792516583410, guid: 5db4261fbd3a14849afbfe4b9726cfa4, type: 3}
+      propertyPath: _cinemachineCameras.Array.data[0]
       value: 
       objectReference: {fileID: 1006811931}
+    - target: {fileID: 2964121792516583410, guid: 5db4261fbd3a14849afbfe4b9726cfa4, type: 3}
+      propertyPath: _cinemachineCameras.Array.data[1]
+      value: 
+      objectReference: {fileID: 566683138}
     - target: {fileID: 2964121792516583410, guid: 5db4261fbd3a14849afbfe4b9726cfa4, type: 3}
       propertyPath: _positionCubePrefab
       value: 

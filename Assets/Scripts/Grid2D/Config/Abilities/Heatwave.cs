@@ -17,28 +17,28 @@ public static partial class AbilityConfigs
                         Direction = GridDirection.NorthCone,
                         MaxDistance = 2,
                         Linear = false,
-                        Passthrough = EntityRelation.Any
+                        Passthrough = Occupant.Any
                     },
                     new GridTraversal()
                     {
                         Direction = GridDirection.EastCone,
                         MaxDistance = 2,
                         Linear = false,
-                        Passthrough = EntityRelation.Any
+                        Passthrough = Occupant.Any
                     },
                     new GridTraversal()
                     {
                         Direction = GridDirection.SouthCone,
                         MaxDistance = 2,
                         Linear = false,
-                        Passthrough = EntityRelation.Any
+                        Passthrough = Occupant.Any
                     },
                     new GridTraversal()
                     {
                         Direction = GridDirection.WestCone,
                         MaxDistance = 2,
                         Linear = false,
-                        Passthrough = EntityRelation.Any
+                        Passthrough = Occupant.Any
                     }
                 }
             }

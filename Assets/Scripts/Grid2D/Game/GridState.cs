@@ -22,6 +22,7 @@ public sealed class GridState
     private readonly int[] _mana;
     private readonly int[] _timeMs;
     private int _consecutivePasses;
+    private int _nextUid;
     
     private readonly TeamData[] _loadedTeams;
     
@@ -181,6 +182,13 @@ public sealed class GridState
         return position.IsValid() ? _entities[position.Dim1] : null;
     }
 
+    public Entity GetEntityByUid(int uid)
+    {
+        foreach (var entity in _entities)
+            if (entity != null && entity.Uid == uid) return entity;
+        return null;
+    }
+
     public bool TryGetEntity(GridPosition position, out Entity entity)
     {
         if (!position.IsValid() || _entities[position.Dim1] == null)
@@ -265,6 +273,7 @@ public sealed class GridState
     internal bool SetEntityPosition(GridPosition position, Entity entity)
     {
         if (entity == null || !IsTraversable(position)) return false;
+        entity.Uid = ++_nextUid;
         _entities[position.Dim1] = entity;
         entity.SetPosition(position);
         ResolutionOrder.Add(entity);
@@ -304,6 +313,7 @@ public sealed class GridState
         hash.Add((int)Outcome);
         hash.Add(Winner);
         hash.Add(_consecutivePasses);
+        hash.Add(_nextUid);
         for (var player = 1; player <= Definition.PlayerCount; player++)
         {
             hash.Add(_mana[player]);
@@ -320,6 +330,7 @@ public sealed class GridState
         hash.Add(entity != null);
         if (entity == null) return;
         hash.Add(entity.Id);
+        hash.Add(entity.Uid);
         hash.Add(entity.Position.Dim1);
         hash.Add((int)entity.Facing);
 

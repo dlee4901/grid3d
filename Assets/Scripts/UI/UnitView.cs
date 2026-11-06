@@ -10,18 +10,24 @@ public class UnitView : StateView
     [FormerlySerializedAs("_abilityIcon")] [SerializeField] private AbilityIcon _abilityIconPrefab;
 
     private readonly List<AbilityIcon> _icons = new();
+    private UnitLabel _unitLabel;
+    private int _labelUid;
+
+    protected override bool ShowsPreview => false;
 
     protected override void Start()
     {
         base.Start();
         _gridManager.Player.SelectionChanged += OnInputChanged;
         _gridManager.Player.OnActiveAbilityChanged += OnActiveAbilityChanged;
+        _gridManager.DisplayChanged += RefreshLabelHealth;
     }
 
     protected override void OnDestroy()
     {
         base.OnDestroy();
         if (_gridManager == null) return;
+        _gridManager.DisplayChanged -= RefreshLabelHealth;
         if (_gridManager.Player != null)
         {
             _gridManager.Player.SelectionChanged -= OnInputChanged;
@@ -60,7 +66,9 @@ public class UnitView : StateView
             return;
         var unitLabel = Instantiate(_unitLabelPrefab, _container.transform);
         unitLabel.SetName(entity.Id);
-        if (entity.TryGetComponent<HealthComponent>(out var health)) unitLabel.HealthCounter.SetHealthCount(health.Current);
+        _unitLabel = unitLabel;
+        _labelUid = entity.Uid;
+        RefreshLabelHealth();
         
         if (!entity.TryGetComponent<AbilityComponent>(out var abilities))
             return;
@@ -84,8 +92,20 @@ public class UnitView : StateView
         foreach (var icon in _icons) icon.SetActiveVisual(icon.AbilityId == activeId);
     }
 
+    private void RefreshLabelHealth()
+    {
+        if (_unitLabel == null) return;
+        var real = _gridManager.GridState.GetEntityByUid(_labelUid);
+        if (real == null || !real.TryGetComponent<HealthComponent>(out var health)) return;
+        var shown = _gridManager.DisplayedState.GetEntityByUid(_labelUid);
+        var next = shown != null && shown.TryGetComponent<HealthComponent>(out var shownHealth) ? shownHealth.Current : 0;
+        _unitLabel.HealthCounter.SetHealthCount(next);
+        _unitLabel.HealthCounter.SetChange(next - health.Current);
+    }
+
     private void ClearMenu()
     {
+        _unitLabel = null;
         _icons.Clear();
         UnityUtil.DestroyAllChildren(_container.gameObject);
     }

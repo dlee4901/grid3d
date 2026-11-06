@@ -15,10 +15,14 @@ public class TestContent
     public const string CountAllies = "Test.CountAllies";
     public const string BlastAll = "Test.BlastAll";
     public const string BlastNotSelf = "Test.BlastNotSelf";
+    public const string Bolt = "Test.Bolt";
+    public const string Pair = "Test.Pair";
+    public const string StabEnemy = "Test.StabEnemy";
+    public const string SelfHeal = "Test.SelfHeal";
 
     public static readonly CountingEffect Counter = new();
-    public static readonly CountingEffect AllyCounter = new() { Relation = EntityRelation.Ally };
-    public static readonly CountingEffect NotSelfCounter = new() { Relation = EntityRelation.Any & ~EntityRelation.Self };
+    public static readonly CountingEffect AllyCounter = new() { Relation = Occupant.Ally };
+    public static readonly CountingEffect NotSelfCounter = new() { Relation = Occupant.Any & ~Occupant.Self };
 
     public static void ResetCounters()
     {
@@ -42,17 +46,17 @@ public class TestContent
         RegisterUnit(new AbilityConfig { Id = Poke, ManaCost = 1, Targeting = AdjacentTile() });
         RegisterUnit(new AbilityConfig
         {
-            Id = Count, ManaCost = 1, Targeting = AdjacentTile(EntityRelation.Any),
+            Id = Count, ManaCost = 1, Targeting = AdjacentTile(Occupant.Any),
             Effects = new List<AbilityEffect> { Counter }
         });
         RegisterUnit(new AbilityConfig
         {
-            Id = KillThenCount, ManaCost = 1, Targeting = AdjacentTile(EntityRelation.Any),
+            Id = KillThenCount, ManaCost = 1, Targeting = AdjacentTile(Occupant.Any),
             Effects = new List<AbilityEffect> { new DamageEffect { Amount = 1 }, Counter }
         });
         RegisterUnit(new AbilityConfig
         {
-            Id = CountAllies, ManaCost = 1, Targeting = AdjacentTile(EntityRelation.Any),
+            Id = CountAllies, ManaCost = 1, Targeting = AdjacentTile(Occupant.Any),
             Effects = new List<AbilityEffect> { AllyCounter }
         });
         RegisterUnit(new AbilityConfig
@@ -65,8 +69,87 @@ public class TestContent
             Id = BlastNotSelf, ManaCost = 1, Targeting = AdjacentBlast(),
             Effects = new List<AbilityEffect> { NotSelfCounter }
         });
+        RegisterUnit(new AbilityConfig
+        {
+            Id = Bolt, ManaCost = 1, Targeting = StraightBolt(),
+            Effects = new List<AbilityEffect> { Counter }
+        });
+        RegisterUnit(new AbilityConfig
+        {
+            Id = Pair, ManaCost = 1, Targeting = DistinctPair(),
+            Effects = new List<AbilityEffect> { Counter }
+        });
+        RegisterUnit(new AbilityConfig
+        {
+            Id = StabEnemy, ManaCost = 1, Targeting = AdjacentEnemy(),
+            Effects = new List<AbilityEffect> { Counter }
+        });
+        RegisterUnit(new AbilityConfig
+        {
+            Id = SelfHeal, ManaCost = 1, Targeting = SelfTile(),
+            Effects = new List<AbilityEffect> { new HealEffect { Relation = Occupant.Self, Amount = 1 } }
+        }, health: 3);
         RegisterCostlyUnit();
     }
+
+    private static FillTargeting SelfTile() => new()
+    {
+        EffectArea = new GridSelection
+        {
+            Traversals = new List<GridTraversal>
+            {
+                new GridTraversal { Direction = GridDirection.Straight, MaxDistance = 0 }
+            }
+        }
+    };
+
+    private static PositionTargeting AdjacentEnemy() => new()
+    {
+        SelectableArea = new GridSelection
+        {
+            MinDistance = 1,
+            Selectable = Occupant.Enemy,
+            Traversals = new List<GridTraversal>
+            {
+                new GridTraversal
+                {
+                    Direction = GridDirection.Straight, MaxDistance = 1, Linear = false, Passthrough = Occupant.Any
+                }
+            }
+        }
+    };
+
+    private static DirectionTargeting StraightBolt() => new()
+    {
+        Grouping = new[] { 1, 0, 2, 0, 3, 0, 4, 0 },
+        MaxHits = 1,
+        EffectArea = new GridSelection
+        {
+            Traversals = new List<GridTraversal>
+            {
+                new GridTraversal
+                {
+                    Direction = GridDirection.Straight, MaxDistance = 4, Linear = true, Passthrough = Occupant.Any
+                }
+            }
+        }
+    };
+
+    private static PositionTargeting DistinctPair() => new()
+    {
+        Targets = 2,
+        SelectableArea = new GridSelection
+        {
+            Selectable = Occupant.Units,
+            Traversals = new List<GridTraversal>
+            {
+                new GridTraversal
+                {
+                    Direction = GridDirection.Line, MaxDistance = 4, Linear = false, Passthrough = Occupant.Any
+                }
+            }
+        }
+    };
 
     private static void RegisterCostlyUnit()
     {
@@ -79,20 +162,20 @@ public class TestContent
 
     private static PositionTargeting AdjacentBlast() => new()
     {
-        SelectableArea = AdjacentTile(EntityRelation.Any).SelectableArea,
+        SelectableArea = AdjacentTile(Occupant.Any).SelectableArea,
         EffectArea = new GridSelection
         {
             Traversals = new List<GridTraversal>
             {
                 new GridTraversal
                 {
-                    Direction = GridDirection.Straight, MaxDistance = 1, Linear = false, Passthrough = EntityRelation.Any
+                    Direction = GridDirection.Straight, MaxDistance = 1, Linear = false, Passthrough = Occupant.Any
                 }
             }
         }
     };
 
-    private static PositionTargeting AdjacentTile(EntityRelation passthrough = EntityRelation.None) => new()
+    private static PositionTargeting AdjacentTile(Occupant passthrough = Occupant.Empty) => new()
     {
         SelectableArea = new GridSelection
         {
@@ -107,14 +190,14 @@ public class TestContent
         }
     };
 
-    private static void RegisterUnit(AbilityConfig ability)
+    private static void RegisterUnit(AbilityConfig ability, int health = 1)
     {
         if (!IdRegistry<AbilityConfig>.TryGet(ability.Id, out _)) IdRegistry<AbilityConfig>.Register(ability);
         var unitId = UnitWith(ability.Id);
         if (IdRegistry<EntityConfig>.TryGet(unitId, out _)) return;
         IdRegistry<EntityConfig>.Register(new EntityConfig
         {
-            Id = unitId, Health = 1, Abilities = new List<string> { ability.Id }
+            Id = unitId, Health = health, Abilities = new List<string> { ability.Id }
         });
     }
 }

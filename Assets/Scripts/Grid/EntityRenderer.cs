@@ -1,22 +1,33 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
 
 public class EntityRenderer : LoggableBehaviour
 {
+    private sealed class EntityView
+    {
+        public GameObject Model;
+        public HealthCounter Counter;
+        public Entity Entity;
+        public bool Shown;
+        public float Height;
+    }
+
     [SerializeField] private GridManager _gridManager;
     [SerializeField] private GridRenderer _gridRenderer;
     [SerializeField] private HealthCounter _healthCounterPrefab;
     [SerializeField] private float _overlayHeight = 1.5f;
     [SerializeField] private int _overlaySortingOrder = -1;
+    [SerializeField] private float _referenceDistance = 10f;
+    [SerializeField] private float _minScale = 0.6f;
 
-    private GameObject[] _entityModels;
-    private HealthCounter[] _healthCounters;
+    private readonly Dictionary<int, EntityView> _views = new();
     private Canvas _overlayCanvas;
     private Camera _camera;
     private bool _showHealthCounters;
 
-    private GridState GridState => _gridManager.GridState;
+    private GridState Displayed => _gridManager.DisplayedState;
 
     public bool ShowHealthCounters
     {
@@ -25,26 +36,24 @@ public class EntityRenderer : LoggableBehaviour
         {
             if (_showHealthCounters == value) return;
             _showHealthCounters = value;
-            RefreshCounterVisibility();
+            foreach (var view in _views.Values) ApplyCounterVisibility(view);
         }
     }
 
     public void SetHealthCounterVisible(GridPosition position, bool visible)
     {
-        if (!position.IsValid()) return;
-        var counter = _healthCounters[position.Dim1];
-        if (counter == null) return;
-        counter.ForceVisible = visible;
-        ApplyCounterVisibility(position.Dim1);
+        var entity = Displayed.GetEntity(position);
+        if (entity == null || !_views.TryGetValue(entity.Uid, out var view)) return;
+        view.Counter.ForceVisible = visible;
+        ApplyCounterVisibility(view);
     }
 
     public void ClearHealthCounterOverrides()
     {
-        for (var i = 0; i < _healthCounters.Length; i++)
+        foreach (var view in _views.Values)
         {
-            if (_healthCounters[i] == null) continue;
-            _healthCounters[i].ForceVisible = false;
-            ApplyCounterVisibility(i);
+            view.Counter.ForceVisible = false;
+            ApplyCounterVisibility(view);
         }
     }
 
@@ -52,18 +61,15 @@ public class EntityRenderer : LoggableBehaviour
     {
         _camera = _gridManager.MainCamera;
         _overlayCanvas = CreateOverlayCanvas();
-        _entityModels = new GameObject[GridState.Size];
-        _healthCounters = new HealthCounter[GridState.Size];
-        foreach (var position in GridState.GetOccupiedEntityPositions())
-            CreateEntity(GridState.GetEntity(position), position);
-        _gridManager.StateChanged += RefreshEntities;
+        RefreshEntities();
+        _gridManager.DisplayChanged += RefreshEntities;
         RenderPipelineManager.beginCameraRendering += ProjectCounters;
     }
 
     private void OnDestroy()
     {
         RenderPipelineManager.beginCameraRendering -= ProjectCounters;
-        if (_gridManager != null) _gridManager.StateChanged -= RefreshEntities;
+        if (_gridManager != null) _gridManager.DisplayChanged -= RefreshEntities;
         if (_overlayCanvas != null) Destroy(_overlayCanvas.gameObject);
     }
 
@@ -78,89 +84,100 @@ public class EntityRenderer : LoggableBehaviour
     private void ProjectCounters(ScriptableRenderContext context, Camera renderingCamera)
     {
         if (renderingCamera != _camera) return;
-        for (var i = 0; i < _healthCounters.Length; i++)
+        foreach (var view in _views.Values)
         {
-            var counter = _healthCounters[i];
-            if (counter == null || !counter.gameObject.activeSelf) continue;
-            var world = _gridRenderer.CellCenter(new GridPosition(GridState, i), _overlayHeight);
+            if (!view.Counter.gameObject.activeSelf) continue;
+            var world = view.Model.transform.position + Vector3.up * (view.Height + _overlayHeight);
             var screen = renderingCamera.WorldToScreenPoint(world);
-            counter.transform.position = new Vector3(screen.x, screen.y, 0f);
-            counter.SetAlpha(0.5f);
+            var counterTransform = (RectTransform)view.Counter.transform;
+            if (screen.z <= 0f)
+            {
+                counterTransform.localScale = Vector3.zero;
+                continue;
+            }
+            var steepness = Mathf.Abs(Vector3.Dot((world - renderingCamera.transform.position).normalized, Vector3.down));
+            counterTransform.pivot = new Vector2(0.5f, 0.5f * steepness);
+            counterTransform.position = new Vector3(screen.x, screen.y, 0f);
+            counterTransform.localScale = Vector3.one * Mathf.Clamp(_referenceDistance / screen.z, _minScale, 1f);
+            view.Counter.SetAlpha(view.Counter.Change != 0 ? 1f : 0.5f);
         }
-    }
-
-    private void CreateEntity(Entity entity, GridPosition position)
-    {
-        if (!IdRegistry<EntityAssets>.TryGet(entity.Id, out var assets)) return;
-        if (assets.Model3D == null) return;
-
-        var rotation = Quaternion.identity;
-        if (entity.TryGetComponent<ControlComponent>(out ControlComponent control)
-            && control.PlayerController == 2)
-            rotation = Quaternion.Euler(0, 180f, 0);
-
-        _entityModels[position.Dim1] =
-            Instantiate(assets.Model3D, _gridRenderer.CellCenter(position), rotation, transform);
-
-        var counter = Instantiate(_healthCounterPrefab, _overlayCanvas.transform);
-        _healthCounters[position.Dim1] = counter;
-
-        RefreshCounter(entity, counter);
     }
 
     public void RefreshEntities()
     {
-        var carried = new Dictionary<Entity, (GameObject model, HealthCounter counter)>();
-        for (var i = 0; i < _entityModels.Length; i++)
+        var shown = new HashSet<int>();
+        foreach (var position in Displayed.GetOccupiedEntityPositions())
         {
-            if (_entityModels[i] == null) continue;
-            var entity = GridState.GetEntity(i);
-            if (entity == null)
+            var entity = Displayed.GetEntity(position);
+            if (!_views.TryGetValue(entity.Uid, out var view) && !TryCreateView(entity, out view)) continue;
+            view.Entity = entity;
+            view.Shown = true;
+            view.Model.SetActive(true);
+            view.Model.transform.position = _gridRenderer.CellCenter(position);
+            if (entity.TryGetComponent<HealthComponent>(out var health))
             {
-                Destroy(_entityModels[i]);
-                Destroy(_healthCounters[i].gameObject);
-                _entityModels[i] = null;
-                _healthCounters[i] = null;
+                view.Counter.SetHealthCount(health.Current);
+                view.Counter.SetChange(health.Current - RealHealth(entity.Uid, health.Current));
+            }
+            ApplyCounterVisibility(view);
+            shown.Add(entity.Uid);
+        }
+        foreach (var uid in _views.Keys.ToList())
+        {
+            if (shown.Contains(uid)) continue;
+            var view = _views[uid];
+            if (_gridManager.IsPreviewing)
+            {
+                view.Shown = false;
+                view.Model.SetActive(false);
+                ApplyCounterVisibility(view);
                 continue;
             }
-            carried[entity] = (_entityModels[i], _healthCounters[i]);
-            _entityModels[i] = null;
-            _healthCounters[i] = null;
+            Destroy(view.Model);
+            Destroy(view.Counter.gameObject);
+            _views.Remove(uid);
         }
-        foreach (var (entity, carriedEntity) in carried)
+    }
+
+    private int RealHealth(int uid, int fallback)
+    {
+        if (!_gridManager.IsPreviewing) return fallback;
+        var real = _gridManager.GridState.GetEntityByUid(uid);
+        return real != null && real.TryGetComponent<HealthComponent>(out var health) ? health.Current : fallback;
+    }
+
+    private bool TryCreateView(Entity entity, out EntityView view)
+    {
+        view = null;
+        if (!IdRegistry<EntityAssets>.TryGet(entity.Id, out var assets) || assets.Model3D == null) return false;
+
+        var rotation = Quaternion.identity;
+        if (entity.TryGetComponent<ControlComponent>(out var control) && control.PlayerController == 2)
+            rotation = Quaternion.Euler(0, 180f, 0);
+
+        view = new EntityView
         {
-            var position = entity.Position;
-            var (model, counter) = carriedEntity;
-            model.transform.position = _gridRenderer.CellCenter(position);
-            _entityModels[position.Dim1] = model;
-            _healthCounters[position.Dim1] = counter;
-            RefreshCounter(entity, counter);
-        }
-        foreach (var position in GridState.GetOccupiedEntityPositions())
-        {
-            if (_entityModels[position.Dim1] != null) continue;
-            CreateEntity(GridState.GetEntity(position), position);
-        }
+            Model = Instantiate(assets.Model3D, _gridRenderer.CellCenter(entity.Position), rotation, transform),
+            Counter = Instantiate(_healthCounterPrefab, _overlayCanvas.transform),
+            Entity = entity
+        };
+        view.Height = ModelHeight(view.Model);
+        _views[entity.Uid] = view;
+        return true;
     }
 
-    private void RefreshCounter(Entity entity, HealthCounter counter)
+    private static float ModelHeight(GameObject model)
     {
-        if (entity.TryGetComponent<HealthComponent>(out HealthComponent health))
-            counter.SetHealthCount(health.Current);
-        ApplyCounterVisibility(entity.Position.Dim1);
+        var renderers = model.GetComponentsInChildren<Renderer>();
+        if (renderers.Length == 0) return 0f;
+        var bounds = renderers[0].bounds;
+        for (var i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
+        return bounds.max.y - model.transform.position.y;
     }
 
-    private void RefreshCounterVisibility()
+    private void ApplyCounterVisibility(EntityView view)
     {
-        for (var i = 0; i < _healthCounters.Length; i++) ApplyCounterVisibility(i);
-    }
-
-    private void ApplyCounterVisibility(int index)
-    {
-        var counter = _healthCounters[index];
-        if (counter == null) return;
-        var entity = GridState.GetEntity(index);
-        var hasHealth = entity != null && entity.TryGetComponent<HealthComponent>(out HealthComponent _);
-        counter.gameObject.SetActive(hasHealth && (_showHealthCounters || counter.ForceVisible));
+        var hasHealth = view.Entity.TryGetComponent<HealthComponent>(out HealthComponent _);
+        view.Counter.gameObject.SetActive(view.Shown && hasHealth && (_showHealthCounters || view.Counter.ForceVisible || view.Counter.Change != 0));
     }
 }

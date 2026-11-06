@@ -31,8 +31,7 @@ public class GridTraversal
     public int StartWidth { get; init; } = 0;
     public bool DiagonalWidth { get; init; } = false;
 
-    public EntityRelation Passthrough { get; init; } = EntityRelation.None;
-    public PredicateConfig? PassthroughQuery { get; init; }
+    public Occupant Passthrough { get; init; } = Occupant.Empty;
 
     public GridTraversal? Chain { get; init; }
     public int ChainOffset { get; init; } = 0; // IF (n > 0) n ~ distance ELSE maxDistReached + n ~ maxDistReached
@@ -113,8 +112,7 @@ public class GridTraversal
             if (position.Equals(currentPosition)) continue;
 
             if (!position.IsValid()) continue;
-            Entity entity;
-            if ((entity = grid.GetEntity(position)) != null && IsColliding(entity, source.Entity)) continue;
+            if (!CanEnter(grid, position, source.Entity)) continue;
             //if (collideMask != null && (entity = grid.GetEntity(tile)) != null && collideMask(entity)) continue;
 
             if (Linear) yield return new GridStep(position, (GridDirection)i, curDistance);
@@ -126,21 +124,8 @@ public class GridTraversal
         }
     }
 
-    private bool IsColliding(Entity targetEntity, Entity? sourceEntity=null)
-    {
-        Func<Entity, bool>? predicate = null;
-        if (PassthroughQuery != null) predicate = PredicateFactory<Entity>.Create(PassthroughQuery);
-
-        if (sourceEntity != null && sourceEntity.TryGetComponent<ControlComponent>(out var sourceControl) && targetEntity.TryGetComponent<ControlComponent>(out var targetControl))
-        {
-            if ((!Passthrough.HasFlag(EntityRelation.Enemy) && !sourceControl.IsAlly(targetControl))
-            || (!Passthrough.HasFlag(EntityRelation.Ally) && sourceControl.IsAlly(targetControl)))
-                return predicate?.Invoke(targetEntity) ?? true;
-        }
-        //if (!Passthrough.HasFlag(EntityPassthrough.Unit) && targetEntity.GetType() == typeof(Unit)) return true;
-        //if (!Passthrough.HasFlag(EntityPassthrough.Obstacle) && targetEntity.GetType() != typeof(Unit)) return true;
-        return false;
-    }
+    private bool CanEnter(GridState grid, GridPosition position, Entity? sourceEntity)
+        => (Passthrough & Occupants.At(grid, position, sourceEntity)) != 0;
 
     private List<GridPosition> GetWidthPositions(GridSource source, int width, GridPosition startPosition, GridDirection gridDirection)//(int, int)[] directionVectors)
     {

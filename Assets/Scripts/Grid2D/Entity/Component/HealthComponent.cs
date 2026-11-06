@@ -16,6 +16,12 @@ public class HealthComponent : IEntityComponent
         return Current == 0;
     }
 
+    internal void ApplyHeal(int amount)
+    {
+        if (amount <= 0) return;
+        Current = System.Math.Min(Starting, Current + amount);
+    }
+
     
     static HealthComponent()
     {

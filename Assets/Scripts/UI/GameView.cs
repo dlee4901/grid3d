@@ -31,7 +31,7 @@ public class GameView : StateView
     protected override void Refresh()
     {
         if (!_gridManager.IsGameStarted) return;
-        var state = _gridManager.GridState;
+        var state = _gridManager.DisplayedState;
         var turns = _gridManager.Turns;
         var players = state.Definition.PlayerCount;
 
@@ -50,8 +50,11 @@ public class GameView : StateView
 
         _endTurnText.text = EndTurnLabel(state);
         if (_endTurn != null)
+        {
+            _endTurn.enabled = !_gridManager.IsPreviewing;
             _endTurn.gameObject.SetActive(state.IsGameOver || _gridManager.StopReason != null
                                           || state.ActivePlayer == _gridManager.LocalSeat);
+        }
     }
 
     private void Update()
@@ -63,6 +66,7 @@ public class GameView : StateView
 
     private string EndTurnLabel(GridState state)
     {
+        if (_gridManager.IsPreviewing) return "PREVIEW";
         if (state.Outcome == GameOutcome.Draw) return "DRAW";
         if (state.Outcome == GameOutcome.Victory)
         {

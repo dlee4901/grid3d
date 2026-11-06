@@ -8,7 +8,7 @@ public class GridRenderer : LoggableBehaviour
 {
     [SerializeField] private GridManager _gridManager;
 
-    [SerializeField] private CinemachineCamera _cinemachineCamera;
+    [SerializeField] private CinemachineCamera[] _cinemachineCameras;
     [SerializeField] private Grid _grid;
     [SerializeField] private PositionCube _positionCubePrefab;
     [SerializeField] private EntityRenderer _entityRenderer;
@@ -46,7 +46,6 @@ public class GridRenderer : LoggableBehaviour
         if (_gridManager == null) return;
         _gridManager.GameStarted -= OnGameStarted;
         if (_gridManager.Input != null) _gridManager.Input.OnHoverChanged -= OnHoverChanged;
-        if (_gridManager.Player != null) _gridManager.Player.SelectionChanged -= OnSelectionChanged;
     }
 
     private void OnGameStarted() => Build();
@@ -59,7 +58,6 @@ public class GridRenderer : LoggableBehaviour
         InitCamera();
         _entityRenderer.Build();
         _gridManager.Input.OnHoverChanged += OnHoverChanged;
-        _gridManager.Player.SelectionChanged += OnSelectionChanged;
     }
 
     private void OnHoverChanged(GridSource? source)
@@ -70,24 +68,22 @@ public class GridRenderer : LoggableBehaviour
         RefreshCube(_hoveredIndex);
     }
 
-    private void OnSelectionChanged(GridSource? source)
+    public void SetSelected(GridPosition? position)
     {
         var previous = _selectedIndex;
-        _selectedIndex = source?.Position.Dim1;
+        _selectedIndex = position?.Dim1;
+        if (previous == _selectedIndex) return;
         RefreshCube(previous);
         RefreshCube(_selectedIndex);
-        RefreshCube(_hoveredIndex);
     }
-
-    private bool IsFocused(int index)
-        => _selectedIndex.HasValue ? index == _selectedIndex : index == _hoveredIndex;
 
     private void RefreshCube(int? index)
     {
         if (!index.HasValue) return;
         var cube = _positionCubes[index.Value];
         if (_highlights.TryGetValue(index.Value, out var type)) cube.SetHighlight(type);
-        else if (IsFocused(index.Value)) cube.SetHighlight(HighlightType.Focus);
+        else if (index == _selectedIndex) cube.SetHighlight(HighlightType.Selected);
+        else if (index == _hoveredIndex) cube.SetHighlight(HighlightType.Hover);
         else cube.ClearHighlight();
     }
 
@@ -99,8 +95,11 @@ public class GridRenderer : LoggableBehaviour
         var cameraTarget = new GameObject("CameraTarget").transform;
         cameraTarget.SetParent(transform);
         cameraTarget.position = (min + max) / 2f;
-        _cinemachineCamera.Target.TrackingTarget = cameraTarget;
-        _cinemachineCamera.PreviousStateIsValid = false;
+        foreach (var cinemachineCamera in _cinemachineCameras)
+        {
+            cinemachineCamera.Target.TrackingTarget = cameraTarget;
+            cinemachineCamera.PreviousStateIsValid = false;
+        }
         // if (_cinemachineCamera.Target.TrackingTarget.Equals(_gridLines.transform))
         // {
         //     _cinemachineCamera.GetComponent<CinemachineFollow>().FollowOffset = new Vector3(0f, targetScreenHeight, 0f);
@@ -135,8 +134,8 @@ public class GridRenderer : LoggableBehaviour
         foreach (var cube in _positionCubes) cube.ClearHighlight();
         foreach (var arrow in _directionalArrows) arrow.gameObject.SetActive(false);
         _highlights.Clear();
-        RefreshCube(_hoveredIndex);
         RefreshCube(_selectedIndex);
+        RefreshCube(_hoveredIndex);
         HighlightsChanged?.Invoke();
     }
 

@@ -42,6 +42,7 @@ public class PositionTargeting : AbilityTargeting
 {
     public GridSelection SelectableArea { get; init; }
     public DirectionTargeting Chain { get; init; } = null;
+    public bool Distinct { get; init; } = true;
 
     //public GridSteps GetSelectablePositions(QueryContext ctx) => SelectableArea.GetPositions(ctx);
     
@@ -51,6 +52,7 @@ public class PositionTargeting : AbilityTargeting
     {
         steps = new GridSteps();
         if (targets.Count != Targets) return false;
+        if (Distinct && targets.Distinct().Count() != targets.Count) return false;
         var selectableSteps = GetSelectableSteps(source);
         for (var i = 0; i < Targets; i++)
         {
@@ -68,6 +70,7 @@ public class PositionTargeting : AbilityTargeting
 public class DirectionTargeting : AbilityTargeting
 {
     public int[] Grouping { get; init; } = new int[GridTraversal.UnidirectionalCount];
+    public int MaxHits { get; init; } = 0;
     
     public override GridSteps GetSelectableSteps(GridSource source)
     {
@@ -83,7 +86,7 @@ public class DirectionTargeting : AbilityTargeting
                     Direction = GridDirection.Custom,
                     CustomDirection = mask,
                     MaxDistance = 1,
-                    Passthrough = EntityRelation.Any
+                    Passthrough = Occupant.Any
                 }
             }
         };
@@ -103,15 +106,31 @@ public class DirectionTargeting : AbilityTargeting
         if (effectSteps.GroupCount == 1)
         {
             var groupMapSingle = effectSteps.GetGroupMapSingle(Grouping);
-            foreach (var targetStep in targetSteps) steps.Add(groupMapSingle[targetStep.Direction]);
+            foreach (var targetStep in targetSteps) steps.Add(LimitHits(source.Grid, groupMapSingle[targetStep.Direction]));
         }
         else if (effectSteps.GroupCount > 1)
         {
             var groupMap = effectSteps.GetGroupMap(Grouping);
-            foreach (var targetStep in targetSteps) steps.Add(groupMap[targetStep.Direction]);
+            foreach (var targetStep in targetSteps) steps.Add(LimitHits(source.Grid, groupMap[targetStep.Direction]));
         }
         
         return true;
+    }
+
+    private HashSet<GridStep> LimitHits(GridState grid, HashSet<GridStep> steps)
+    {
+        if (MaxHits <= 0) return steps;
+        var limited = new HashSet<GridStep>();
+        foreach (var ray in steps.GroupBy(step => step.Direction))
+        {
+            var hits = 0;
+            foreach (var step in ray.OrderBy(step => step.Distance))
+            {
+                limited.Add(step);
+                if (grid.GetEntity(step.Position) != null && ++hits >= MaxHits) break;
+            }
+        }
+        return limited;
     }
 
     // public override bool GetEffectSteps(QueryContext ctx, (int, int)[] targets, out GridSteps steps)

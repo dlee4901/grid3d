@@ -17,8 +17,11 @@ public class GridManager : LoggableBehaviour
 
     private TurnExecutor _executor;
     private CommandDispatcher _dispatcher;
+    private GridState _preview;
 
     public GridState GridState => _executor.State;
+    public GridState DisplayedState => _preview ?? GridState;
+    public bool IsPreviewing => _preview != null;
     public GridInput Input { get; private set; }
     public PlayerInputController Player { get; private set; }
     public TurnController Turns { get; private set; }
@@ -29,10 +32,27 @@ public class GridManager : LoggableBehaviour
     public string StopReason { get; private set; }
 
     public event Action StateChanged;
+    public event Action DisplayChanged;
     public event Action GameStarted;
     public bool IsGameStarted { get; private set; }
 
     public bool Submit(Func<int, Command> build) => _dispatcher.Submit(build);
+
+    public bool Preview(Func<int, Command> build)
+    {
+        var preview = _dispatcher.Preview(build);
+        if (preview == null) return false;
+        _preview = preview;
+        DisplayChanged?.Invoke();
+        return true;
+    }
+
+    public void ClearPreview()
+    {
+        if (_preview == null) return;
+        _preview = null;
+        DisplayChanged?.Invoke();
+    }
 
     private void Awake()
     {
@@ -59,15 +79,14 @@ public class GridManager : LoggableBehaviour
 
         _executor = TurnExecutor.ForDefinition(definition);
         _dispatcher = new CommandDispatcher(_executor, () => LocalSeat);
-        if (seedCommands != null)
-            foreach (var command in seedCommands) _executor.Apply(command);
+        if (seedCommands != null) foreach (var command in seedCommands) _executor.Apply(command);
 
         _lastActivePlayer = GridState.ActivePlayer;
         _executor.CommandApplied += OnCommandApplied;
 
         Input.Init(_renderer.Grid, _mainCamera, GridState, _selectAction);
         _renderer.Build();
-        Player.Init(Input, _dispatcher, _renderer, GridState);
+        Player.Init(this, Input, _dispatcher, _renderer, GridState);
         Turns.Init(this, _timersEnabled);
 
         IsGameStarted = true;
@@ -91,11 +110,13 @@ public class GridManager : LoggableBehaviour
 
     private void OnCommandApplied(Command command)
     {
+        _preview = null;
         if (GridState.ActivePlayer != _lastActivePlayer)
         {
             _lastActivePlayer = GridState.ActivePlayer;
             Player.ResetToIdle();
         }
         StateChanged?.Invoke();
+        DisplayChanged?.Invoke();
     }
 }

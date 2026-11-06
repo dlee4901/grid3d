@@ -5,17 +5,12 @@ using System.Collections.Generic;
 public class Entity : INameId
 {
     public string Id { get; }
+    public int Uid { get; internal set; }
     public int Cost { get; }
     
     public GridPosition Position { get; private set; }
     public GridDirectionFacing Facing { get; private set; } = GridDirectionFacing.North;
     private Dictionary<Type, IEntityComponent> _components { get; } = new();
-    
-    static Entity()
-    {
-        MemberRegistry<Entity>.Register<string>("Id", e => e.Id);
-        MemberRegistry<Entity>.Register<int>("Cost", e => e.Cost);
-    }
     
     private Entity(string id, int cost)
     {

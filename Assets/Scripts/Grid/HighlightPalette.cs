@@ -16,7 +16,8 @@ public class HighlightPalette : ScriptableObject
     [SerializeField] private HighlightStyle _availableTargets;
     [SerializeField] private HighlightStyle _selectionArea;
     [SerializeField] private HighlightStyle _effectArea;
-    [SerializeField] private HighlightStyle _focus;
+    [SerializeField] private HighlightStyle _selected;
+    [SerializeField] private HighlightStyle _hover;
 
     public HighlightStyle StyleFor(HighlightType type) => type switch
     {
@@ -24,7 +25,8 @@ public class HighlightPalette : ScriptableObject
         HighlightType.AvailableTargets => _availableTargets,
         HighlightType.SelectionArea    => _selectionArea,
         HighlightType.EffectArea       => _effectArea,
-        HighlightType.Focus            => _focus,
+        HighlightType.Selected         => _selected,
+        HighlightType.Hover            => _hover,
         _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
     };
 

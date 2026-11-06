@@ -10,10 +10,9 @@ public class GridSelection
     public List<IntRange> ExcludedDistanceRanges { get; init; } = new();
     public IntRangePattern ExcludedDistRangePattern { get; init; }
 
-    public PredicateConfig EntityAllowlist { get; init; }
-    public PredicateConfig EntityDenylist { get; init; }
+    public Occupant Selectable { get; init; } = Occupant.Any;
 
-    public GridSteps GetGridSteps(GridSource source, bool filterEntities=true)
+    public GridSteps GetGridSteps(GridSource source)
     {
         var gridSteps = new GridSteps();
         for (var i = 0; i < Traversals.Count; i++)
@@ -27,20 +26,7 @@ public class GridSelection
             foreach (var step in steps)
             {
                 if (step.Distance < MinDistance || step.Distance > maxDistance || excludedDistances.Contains(step.Distance) || gridSteps.Contains(step)) continue;
-                if (filterEntities)
-                {
-                    Entity entity;
-                    if (EntityAllowlist != null && (entity = source.Grid.GetEntity(step.Position)) != null)
-                    {
-                        var predicate = PredicateFactory<Entity>.Create(EntityAllowlist);
-                        if (!predicate(entity)) continue;
-                    }
-                    if (EntityDenylist != null && (entity = source.Grid.GetEntity(step.Position)) != null)
-                    {
-                        var predicate = PredicateFactory<Entity>.Create(EntityDenylist);
-                        if (predicate(entity)) continue;
-                    }
-                }
+                if ((Selectable & Occupants.At(source.Grid, step.Position, source.Entity)) == 0) continue;
                 gridSteps.Add(step, i);
             }
         }

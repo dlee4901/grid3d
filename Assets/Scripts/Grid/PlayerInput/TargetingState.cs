@@ -21,8 +21,11 @@ public class TargetingState : PlayerInputStateBase
     public override void OnEnter()
     {
         Ctx.Renderer.ClearHighlights();
+        Ctx.Renderer.SetSelected(_source.Position);
         Ctx.Renderer.HighlightPositions(_selectable, HighlightType.AvailableTargets);
     }
+
+    public override void OnExit() => Ctx.Manager.ClearPreview();
 
     public override void OnPositionSelected(GridSource clicked)
     {
@@ -31,6 +34,7 @@ public class TargetingState : PlayerInputStateBase
             Ctx.Controller.TransitionTo(new SelectedState(Ctx, clicked));
             return;
         }
+        if (_ability.Targeting is PositionTargeting { Distinct: true } && _targets.Contains(clicked.Position)) return;
         _targets.Add(clicked.Position);
         Ctx.Controller.LogState($"Target added: {clicked.Position} ({_targets.Count}/{_ability.Targeting.Targets})");
         if (_targets.Count >= _ability.Targeting.Targets) Confirm();
@@ -40,10 +44,24 @@ public class TargetingState : PlayerInputStateBase
     {
         Ctx.Renderer.ClearHighlights();
         Ctx.Renderer.HighlightPositions(_selectable, HighlightType.AvailableTargets);
-        if (!hovered.HasValue || !_selectable.Contains(hovered.Value.Position)) return;
+        if (!hovered.HasValue || !_selectable.Contains(hovered.Value.Position))
+        {
+            Ctx.Manager.ClearPreview();
+            return;
+        }
         if (_ability.Targeting.GetEffectSteps(_source, hovered.Value.Position, out var list))
             Ctx.Renderer.HighlightPositions(list, HighlightType.EffectArea);
+        if (!TryPreview(hovered.Value.Position)) Ctx.Manager.ClearPreview();
     }
+
+    private bool TryPreview(GridPosition hovered)
+    {
+        if (_targets.Count + 1 != _ability.Targeting.Targets) return false;
+        var targets = ToIndices(_targets.Append(hovered));
+        return Ctx.Manager.Preview(seat => new AbilityCommand(seat, _ability.Id, _source.Position.Dim1, targets));
+    }
+
+    private static int[] ToIndices(IEnumerable<GridPosition> positions) => positions.Select(p => p.Dim1).ToArray();
 
     public override void OnAbilityActivate(Ability ability, GridSource source)
     {
@@ -61,8 +79,7 @@ public class TargetingState : PlayerInputStateBase
 
     private void Confirm()
     {
-        var targets1D = new int[_targets.Count];
-        for (var i = 0; i < _targets.Count; i++) targets1D[i] = _targets[i].Dim1;
+        var targets1D = ToIndices(_targets);
         var ok = Ctx.Dispatcher.Submit(seat => new AbilityCommand(seat, _ability.Id, _source.Position.Dim1, targets1D));
         
         Ctx.Controller.LogState($"AbilityCommand: {_ability.Id} ok={ok}");

@@ -8,11 +8,15 @@ public class HealthCounter : LoggableBehaviour
     [SerializeField] private TMP_Text _counterText;
     
     [SerializeField] private float _size = 48f;
+    [SerializeField] private Color _lossColor = new Color32(255, 80, 80, 255);
+    [SerializeField] private Color _gainColor = new Color32(80, 220, 120, 255);
 
     private int _current = int.MinValue;
     private Transform _counterTextTransform;
+    private Color? _textColor;
     
     public bool ForceVisible { get; set; }
+    public int Change { get; private set; }
 
     private void Start()
     {
@@ -39,6 +43,14 @@ public class HealthCounter : LoggableBehaviour
         _counterText.text = health.ToString();
     }
     
+    public void SetChange(int change)
+    {
+        if (change == Change) return;
+        _textColor ??= _counterText.color;
+        Change = change;
+        _counterText.color = change < 0 ? _lossColor : change > 0 ? _gainColor : _textColor.Value;
+    }
+
     public void SetColor(Color color)
     {
         color.a = _healthIcon.color.a;

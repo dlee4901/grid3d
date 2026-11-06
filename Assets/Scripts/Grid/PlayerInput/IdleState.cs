@@ -5,6 +5,7 @@ public class IdleState : PlayerInputStateBase
     public override void OnEnter()
     {
         Ctx.Renderer.ClearHighlights();
+        Ctx.Renderer.SetSelected(null);
         Ctx.Renderer.HighlightPositions(Ctx.Grid.GetAvailableEntityPositions(Ctx.Dispatcher.LocalSeat), HighlightType.AvailableSources);
     }
 

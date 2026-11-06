@@ -442,7 +442,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GridRenderer
   _debug: 0
   _gridManager: {fileID: 0}
-  _cinemachineCamera: {fileID: 0}
+  _cinemachineCameras: []
   _grid: {fileID: 8838476909848342511}
   _gridLines: {fileID: 8463856003356838673}
   _pressOutline: {fileID: 920977426797182568}

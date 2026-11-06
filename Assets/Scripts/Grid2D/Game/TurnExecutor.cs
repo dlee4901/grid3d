@@ -20,6 +20,14 @@ public sealed class TurnExecutor
 
     public event System.Action<Command> CommandApplied;
 
+    public GridState Preview(Command command)
+    {
+        var state = new GridState(_state.Definition);
+        foreach (var logged in _log) logged.ApplyTo(state);
+        if (command.RequiresActiveTurn && !state.CanPlayerAct(command.IssuingPlayer)) return null;
+        return command.ApplyTo(state) ? state : null;
+    }
+
     public bool Apply(Command command)
     {
         var current = _state.ComputeHash();

@@ -8,10 +8,11 @@ public class PlayerInputController : LoggableBehaviour
     
     private PlayerInputContext _ctx;
 
-    public void Init(GridInput input, CommandDispatcher dispatcher, GridRenderer renderer, GridState grid)
+    public void Init(GridManager manager, GridInput input, CommandDispatcher dispatcher, GridRenderer renderer, GridState grid)
     {
         _ctx = new PlayerInputContext
         {
+            Manager = manager,
             Controller = this,
             Input = input,
             Dispatcher = dispatcher,

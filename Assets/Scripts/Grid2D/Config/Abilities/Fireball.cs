@@ -10,7 +10,7 @@ public static partial class AbilityConfigs
         {
             new DamageEffect()
             {
-                Relation = EntityRelation.Any & ~EntityRelation.Self,
+                Relation = Occupant.Any & ~Occupant.Self,
                 Amount = 3
             }
         },
@@ -25,7 +25,7 @@ public static partial class AbilityConfigs
                         Direction = GridDirection.Straight,
                         Linear = false,
                         MaxDistance = 2,
-                        Passthrough = EntityRelation.Any
+                        Passthrough = Occupant.Any
                     }
                 }
             },
@@ -38,7 +38,7 @@ public static partial class AbilityConfigs
                         Direction = GridDirection.Straight,
                         Linear = false,
                         MaxDistance = 2,
-                        Passthrough = EntityRelation.Any
+                        Passthrough = Occupant.Any
                     }
                 }
             }
