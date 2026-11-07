@@ -2,9 +2,9 @@ using System.Collections.Generic;
 
 public static partial class UnitConfigs
 {
-    public static readonly EntityConfig Flameweaver = new()
+    public static readonly EntityConfig FireMage = new()
     {
-        Id = "Flameweaver",
+        Id = "Fire Mage",
         Cost = 4,
         Health = 12,
         Abilities = new List<string> {"MoveStraight3Step", "Fireball", "Heatwave", "Flame Burst"}//, "Wildfire"}

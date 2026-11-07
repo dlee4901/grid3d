@@ -2997,6 +2997,9 @@ MonoBehaviour:
   _gridManager: {fileID: 998935874}
   _entityAssets:
   - {fileID: 11400000, guid: 3ba3968f451e84546a1c6e6fe9751c06, type: 2}
+  - {fileID: 11400000, guid: df135c9c644bc4891a83e7c6f2075023, type: 2}
+  - {fileID: 11400000, guid: a9a4886851e4644e9bdab1ebad0386f7, type: 2}
+  - {fileID: 11400000, guid: c9211b7775db54a3e830f38c6659bdaf, type: 2}
   _autoStart: 1
   _mapId: TestMap1
   _startMode: 0

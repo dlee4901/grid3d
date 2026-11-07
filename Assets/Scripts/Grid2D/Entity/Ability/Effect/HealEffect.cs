@@ -1,9 +1,9 @@
 public sealed class HealEffect : AbilityEffect
 {
-    public int Amount { get; init; }
+    public Value Amount { get; init; } = 0;
 
-    internal override void Apply(EffectContext ctx, Entity target)
+    internal override void Apply(in EffectContext ctx)
     {
-        if (target.TryGetComponent<HealthComponent>(out var health)) health.ApplyHeal(Amount);
+        if (ctx.Target.TryGetComponent<HealthComponent>(out var health)) health.ApplyHeal(Amount.Eval(ctx));
     }
 }

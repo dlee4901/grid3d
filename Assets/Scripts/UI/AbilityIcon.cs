@@ -9,6 +9,7 @@ public class AbilityIcon : LoggableBehaviour
     
     [SerializeField] private Image _icon;
     [SerializeField] private GameObject _cooldown;
+    [SerializeField] private TMP_Text _cooldownText;
     [SerializeField] private GameObject _activeHighlight;
     [SerializeField] private Color _disabledTint = new Color(1f, 1f, 1f, 0.4f);
     [SerializeField] private ManaCounter _manaCounter;
@@ -16,7 +17,6 @@ public class AbilityIcon : LoggableBehaviour
     [SerializeField] private float _manaCounterTransformOffset = 64f;
 
     private InteractableUI _interactableUI;
-    private TextMeshPro _cooldownText;
     private TextMeshPro _manaCostText;
     private RectTransform _manaCounterTransform;
     
@@ -32,7 +32,6 @@ public class AbilityIcon : LoggableBehaviour
     private void Start()
     {
         _interactableUI = UnityUtil.GetOrAddComponent<InteractableUI>(gameObject);
-        _cooldownText = _cooldown.GetComponentInChildren<TextMeshPro>();
         _manaCounterTransform = _manaCounter.GetComponent<RectTransform>();
         SetManaCounterPosition();
         

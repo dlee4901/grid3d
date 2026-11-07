@@ -66,7 +66,7 @@ public class TargetingState : PlayerInputStateBase
     public override void OnAbilityActivate(Ability ability, GridSource source)
     {
         if (ability.Id == _ability.Id) OnCancel();
-        else if (Ctx.Grid.CanCast(ability, Ctx.Dispatcher.LocalSeat)) Ctx.Controller.TransitionTo(new TargetingState(Ctx, ability, source));
+        else if (Ctx.Grid.CanCast(source.Entity, ability, Ctx.Dispatcher.LocalSeat)) Ctx.Controller.TransitionTo(new TargetingState(Ctx, ability, source));
     }
     
     public override void OnAbilityPreview(Ability ability, GridSource source) {}

@@ -80,7 +80,9 @@ public class GridTraversal
                 queue.Enqueue(widthStep);
             }
         }
-            
+
+        yield return steps;
+
         while (queue.Count > 0)
         {
             var currentStep = queue.Dequeue();

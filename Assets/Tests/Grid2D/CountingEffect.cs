@@ -4,5 +4,5 @@ public sealed class CountingEffect : AbilityEffect
 
     public void Reset() => Hits = 0;
 
-    internal override void Apply(EffectContext ctx, Entity target) => Hits++;
+    internal override void Apply(in EffectContext ctx) => Hits++;
 }

@@ -110,6 +110,7 @@ public sealed class GridState
             if (!entity.TryGetComponent<ControlComponent>(out var control) 
                 || control.PlayerController != player) continue;
             if (!entity.TryGetComponent<AbilityComponent>(out var abilities)) continue;
+            abilities.ResetTurn();
             foreach (var ability in abilities.List) ability.TurnUpdate();
         }
     }
@@ -249,14 +250,15 @@ public sealed class GridState
     public bool IsAvailable(GridPosition position, int player)
         => CanPlayerAct(player) && IsControllable(position, player) && HasCastableAbility(_entities[position.Dim1], player);
 
-    public bool CanCast(Ability ability, int player)
-        => !ability.Locked && ability.Cooldown == 0 && HasMana(player, ability.ManaCost);
+    public bool CanCast(Entity entity, Ability ability, int player)
+        => !ability.Locked && ability.Cooldown == 0 && HasMana(player, ability.ManaCost)
+           && !(entity.TryGetComponent<AbilityComponent>(out var abilities) && abilities.HasActed);
 
     public bool HasCastableAbility(Entity entity, int player)
     {
         if (!entity.TryGetComponent<AbilityComponent>(out var abilities)) return false;
         foreach (var ability in abilities.List)
-            if (CanCast(ability, player)) return true;
+            if (CanCast(entity, ability, player)) return true;
         return false;
     }
     
@@ -350,6 +352,7 @@ public sealed class GridState
         hash.Add(hasAbilities);
         if (!hasAbilities) return;
         hash.Add(abilities.List.Count);
+        hash.Add(abilities.HasActed);
         foreach (var ability in abilities.List)
         {
             hash.Add(ability.Id);

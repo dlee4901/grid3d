@@ -40,7 +40,7 @@ public sealed class AbilityCommand : Command
             GridLog.Warning($"[AbilityCommand] entity {entity.Id} has no ability {AbilityId}");
             return false;
         }
-        if (!state.CanCast(ability, IssuingPlayer))
+        if (!state.CanCast(entity, ability, IssuingPlayer))
         {
             GridLog.Warning($"[AbilityCommand] {AbilityId} not castable by player {IssuingPlayer} " +
                             $"(locked {ability.Locked}, cooldown {ability.Cooldown}, " +
@@ -50,6 +50,7 @@ public sealed class AbilityCommand : Command
         if (!ability.Execute(state, sourcePosition, targetPositions)) return false;
         state.SpendMana(IssuingPlayer, ability.ManaCost);
         ability.Trigger();
+        abilities.MarkActed();
         state.ResolutionOrder.MoveToFront(entity);
         return true;
     }

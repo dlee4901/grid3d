@@ -36,19 +36,26 @@ public class Ability : INameId
         var gridSource = new GridSource(state, sourcePosition, source);
         if (!Targeting.GetEffectSteps(gridSource, targetPositions, out var steps)) return false;
         
-        var ctx = new EffectContext(state, source, sourcePosition);
+        var cast = new EffectContext(state, source, sourcePosition, this);
         for (var group = 0; group < steps.GroupCount; group++)
         {
             var affected = new HashSet<Entity>();
+            var distances = new Dictionary<Entity, int>();
             foreach (var position in steps.GetPositions(group))
                 if (state.TryGetEntity(position, out var entity))
+                {
                     affected.Add(entity);
+                    distances[entity] = steps.GetShortestDistance(position, group);
+                }
   
             var ordered = state.ResolutionOrder.GetOrderByPriority(affected);
             foreach (var effect in Effects)
             foreach (var target in ordered)
-                if (state.GetEntity(target.Position) == target && effect.Affects(source, target))
-                    effect.Apply(ctx, target);
+            {
+                if (state.GetEntity(target.Position) != target) continue;
+                var ctx = cast.For(target, distances[target]);
+                if (effect.Affects(ctx)) effect.Apply(ctx);
+            }
         }
 
         return true;
@@ -59,6 +66,11 @@ public class Ability : INameId
     {
         if (Cooldown != 0) return;
         Cooldown = Config.Cooldown;
+    }
+
+    internal void ApplyCooldown(int turns)
+    {
+        if (turns > Cooldown) Cooldown = turns;
     }
 
     internal void TurnUpdate()

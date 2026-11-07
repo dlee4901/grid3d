@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e8e8c085ecec47d19bf5cbcfc1e9124a, type: 3}
-  m_Name: Flameweaver
+  m_Name: FireMage
   m_EditorClassIdentifier: Assembly-CSharp::EntityAssets
-  <Id>k__BackingField: Flameweaver
+  <Id>k__BackingField: Fire Mage
   Model3D: {fileID: 6769735443732236303, guid: 27ff49a3e50e14f79989e456f85b39dc, type: 3}
   Model2D: {fileID: 21300000, guid: 98f43eab6214444269cf3f7fb096a27b, type: 3}
   AbilityIcons:

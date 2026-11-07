@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-public enum AbilityType { Default, Move, Passive }
+public enum AbilityType { Default, Move }
 
 public class AbilityConfig : INameId
 {

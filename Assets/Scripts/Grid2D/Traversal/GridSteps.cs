@@ -76,6 +76,15 @@ public class GridSteps
     {
         return _positions[index][position];
     }
+
+    public int GetShortestDistance(GridPosition position, int index=0)
+    {
+        if (index >= _positions.Count || !_positions[index].TryGetValue(position, out var steps)) return -1;
+        var shortest = int.MaxValue;
+        foreach (var step in steps)
+            if (step.Distance < shortest) shortest = step.Distance;
+        return shortest;
+    }
     
     public HashSet<GridStep> GetSteps(int index=0)
     {

@@ -6,6 +6,7 @@ public class AbilityComponent : IEntityComponent
     private readonly Dictionary<string, Ability> _dictionary = new();
     public IReadOnlyList<Ability> List => _list;
     public IReadOnlyDictionary<string, Ability> Dictionary => _dictionary;
+    public bool HasActed { get; private set; }
     
     public AbilityComponent(List<string> abilityIds)
     {
@@ -17,4 +18,7 @@ public class AbilityComponent : IEntityComponent
             _dictionary.Add(abilityId, ability);
         }
     }
+
+    internal void MarkActed() => HasActed = true;
+    internal void ResetTurn() => HasActed = false;
 }

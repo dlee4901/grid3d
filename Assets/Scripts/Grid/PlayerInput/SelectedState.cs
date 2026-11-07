@@ -27,13 +27,13 @@ public class SelectedState : PlayerInputStateBase
 
     public override void OnAbilityActivate(Ability ability, GridSource source)
     {
-        if (!Actionable || !Ctx.Grid.CanCast(ability, Ctx.Dispatcher.LocalSeat)) return;
+        if (!Actionable || !Ctx.Grid.CanCast(source.Entity, ability, Ctx.Dispatcher.LocalSeat)) return;
         Ctx.Controller.TransitionTo(new TargetingState(Ctx, ability, source));
     }
     
     public override void OnAbilityPreview(Ability ability, GridSource source)
     {
-        if (!Actionable || !Ctx.Grid.CanCast(ability, Ctx.Dispatcher.LocalSeat)) return;
+        if (!Actionable || !Ctx.Grid.CanCast(source.Entity, ability, Ctx.Dispatcher.LocalSeat)) return;
         var steps = ability.Targeting.GetSelectableSteps(source);
         Ctx.Renderer.ClearHighlights();
         Ctx.Renderer.HighlightPositions(steps, HighlightType.SelectionArea);

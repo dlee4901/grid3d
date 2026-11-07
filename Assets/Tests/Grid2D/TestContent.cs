@@ -19,6 +19,8 @@ public class TestContent
     public const string Pair = "Test.Pair";
     public const string StabEnemy = "Test.StabEnemy";
     public const string SelfHeal = "Test.SelfHeal";
+    public const string Axe = "Test.Axe";
+    public const string Tough = "Test.Tough";
 
     public static readonly CountingEffect Counter = new();
     public static readonly CountingEffect AllyCounter = new() { Relation = Occupant.Ally };
@@ -89,8 +91,34 @@ public class TestContent
             Id = SelfHeal, ManaCost = 1, Targeting = SelfTile(),
             Effects = new List<AbilityEffect> { new HealEffect { Relation = Occupant.Self, Amount = 1 } }
         }, health: 3);
+        RegisterUnit(new AbilityConfig
+        {
+            Id = Axe, ManaCost = 1, Targeting = StraightAxe(),
+            Effects = new List<AbilityEffect>
+            {
+                new CooldownEffect { Relation = Occupant.Any & ~Occupant.Self, Turns = 2, When = Var.Distance >= 2 },
+                new DamageEffect { Relation = Occupant.Any & ~Occupant.Self, Amount = Value.If(Var.Distance <= 1, 5, 3) }
+            }
+        });
+        RegisterUnit(new AbilityConfig { Id = Tough, ManaCost = 1 }, health: 10);
         RegisterCostlyUnit();
     }
+
+    private static DirectionTargeting StraightAxe() => new()
+    {
+        Grouping = new[] { 1, 0, 2, 0, 3, 0, 4, 0 },
+        MaxHits = 1,
+        EffectArea = new GridSelection
+        {
+            Traversals = new List<GridTraversal>
+            {
+                new GridTraversal
+                {
+                    Direction = GridDirection.Straight, MaxDistance = 3, Linear = true, Passthrough = Occupant.Any
+                }
+            }
+        }
+    };
 
     private static FillTargeting SelfTile() => new()
     {

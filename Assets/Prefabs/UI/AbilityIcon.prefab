@@ -480,6 +480,7 @@ MonoBehaviour:
   _debug: 0
   _icon: {fileID: 1817995219631574406}
   _cooldown: {fileID: 6974447589929159388}
+  _cooldownText: {fileID: 8641954176398722878}
   _activeHighlight: {fileID: 0}
   _disabledTint: {r: 1, g: 1, b: 1, a: 0.4}
   _manaCounter: {fileID: 5295675333675445194}
