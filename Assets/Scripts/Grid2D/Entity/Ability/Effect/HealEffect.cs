@@ -4,6 +4,6 @@ public sealed class HealEffect : AbilityEffect
 
     internal override void Apply(in EffectContext ctx)
     {
-        if (ctx.Target.TryGetComponent<HealthComponent>(out var health)) health.ApplyHeal(Amount.Eval(ctx));
+        if (ctx.Target != null && ctx.Target.TryGetComponent<HealthComponent>(out var health)) health.ApplyHeal(Amount.Eval(ctx));
     }
 }

@@ -8,8 +8,8 @@ public static partial class AbilityConfigs
         ManaCost = 1,
         Effects = new List<AbilityEffect>
         {
-            new CooldownEffect { Relation = Occupant.Any & ~Occupant.Self, Turns = 2, When = Var.Distance >= 2 },
-            new DamageEffect { Relation = Occupant.Any & ~Occupant.Self, Amount = Value.If(Var.Distance <= 1, 5, 3) }
+            new CooldownEffect { Relation = Occupant.Units & ~Occupant.Self, Turns = 2, When = Var.Distance >= 2 },
+            new DamageEffect { Relation = Occupant.Units & ~Occupant.Self, Amount = Value.If(Var.Distance <= 1, 5, 3) }
         },
         Targeting = new DirectionTargeting
         {

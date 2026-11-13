@@ -8,7 +8,7 @@ public static partial class AbilityConfigs
         ManaCost = 1,
         Effects = new List<AbilityEffect>
         {
-            new DamageEffect { Relation = Occupant.Any & ~Occupant.Self, Amount = 2 }
+            new DamageEffect { Relation = Occupant.Units & ~Occupant.Self, Amount = 2 }
         },
         Targeting = new DirectionTargeting
         {

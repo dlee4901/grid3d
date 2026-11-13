@@ -5,7 +5,7 @@ public static partial class AbilityConfigs
     public static readonly AbilityConfig MoveStraight3Step = new()
     {
         Id = "MoveStraight3Step",
-        Type = AbilityType.Move,
+        Effects = new List<AbilityEffect> { new MoveEffect() },
         Targeting = new PositionTargeting()
         {
             SelectableArea = new GridSelection()

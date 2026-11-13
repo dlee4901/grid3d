@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -13,6 +14,12 @@ public class GridInput : LoggableBehaviour
 
     private GridSource? _hovered;
     private bool _isLocked;
+
+    private readonly List<RaycastResult> _uiHits = new();
+    private PointerEventData _pointerData;
+
+    [SerializeField] private float _cancelClickMaxSeconds = 1f;
+    private float? _cancelPressTime;
 
     public GridSource? Hovered => _hovered;
 
@@ -35,13 +42,29 @@ public class GridInput : LoggableBehaviour
     private void Update()
     {
         if (!_initialized) return;
-        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+        if (IsPointerOverInteractableUI())
         {
             SetHover(null);
+            _cancelPressTime = null;
             return;
         }
         UpdateHover();
-        if (_selectAction.triggered) HandleClick();
+        if (_selectAction.WasPressedThisFrame()) HandlePress();
+        if (_selectAction.WasReleasedThisFrame()) HandleRelease();
+    }
+
+    private bool IsPointerOverInteractableUI()
+    {
+        var eventSystem = EventSystem.current;
+        if (eventSystem == null || Mouse.current == null) return false;
+        _pointerData ??= new PointerEventData(eventSystem);
+        _pointerData.position = Mouse.current.position.ReadValue();
+        _uiHits.Clear();
+        eventSystem.RaycastAll(_pointerData, _uiHits);
+        if (_uiHits.Count == 0) return false;
+        var top = _uiHits[0].gameObject;
+        return ExecuteEvents.GetEventHandler<IPointerDownHandler>(top) != null
+            || ExecuteEvents.GetEventHandler<IPointerClickHandler>(top) != null;
     }
 
     private void UpdateHover()
@@ -54,15 +77,25 @@ public class GridInput : LoggableBehaviour
         SetHover(new GridSource(_state, gridPosition, _state.GetEntity(gridPosition)));
     }
 
-    private void HandleClick()
+    private void HandlePress()
     {
         if (!_hovered.HasValue)
         {
-            OnCancelClicked?.Invoke();
+            _cancelPressTime = Time.unscaledTime;
             return;
         }
         Log($"Click: {Describe(_hovered)}");
         OnPositionSelected?.Invoke(_hovered.Value);
+    }
+
+    private void HandleRelease()
+    {
+        var pressTime = _cancelPressTime;
+        _cancelPressTime = null;
+        if (pressTime == null || _hovered.HasValue) return;
+        if (Time.unscaledTime - pressTime.Value > _cancelClickMaxSeconds) return;
+        Log("Click: off map");
+        OnCancelClicked?.Invoke();
     }
     
     public void SetHover(GridSource? source)

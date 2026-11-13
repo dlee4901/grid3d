@@ -13,7 +13,7 @@ public class AbilityComponent : IEntityComponent
         foreach (var abilityId in abilityIds)
         {
             if (!IdRegistry<AbilityConfig>.TryGet(abilityId, out var config)) continue;
-            var ability = Ability.Create(config);
+            var ability = new Ability(config);
             _list.Add(ability);
             _dictionary.Add(abilityId, ability);
         }

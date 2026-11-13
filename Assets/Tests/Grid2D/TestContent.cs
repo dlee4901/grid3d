@@ -21,10 +21,25 @@ public class TestContent
     public const string SelfHeal = "Test.SelfHeal";
     public const string Axe = "Test.Axe";
     public const string Tough = "Test.Tough";
+    public const string BurnTouch = "Test.BurnTouch";
+    public const string Hit3 = "Test.Hit3";
+    public const string PowerHit = "Test.PowerHit";
+    public const string Shove = "Test.Shove";
+    public const string Blazing = "Test.Blazing";
+    public const string Armored = "Test.Armored";
+    public const string Retaliator = "Test.Retaliator";
+    public const string Avenger = "Test.Avenger";
+    public const string Vengeance = "Test.Vengeance";
+    public const string Volatile = "Test.Volatile";
+    public const string Explode = "Test.Explode";
+    public const string Scavenger = "Test.Scavenger";
+    public const string Feast = "Test.Feast";
+    public const string SwordSlash = "Sword Slash";
+    public const string ShieldBash = "Shield Bash";
 
     public static readonly CountingEffect Counter = new();
     public static readonly CountingEffect AllyCounter = new() { Relation = Occupant.Ally };
-    public static readonly CountingEffect NotSelfCounter = new() { Relation = Occupant.Any & ~Occupant.Self };
+    public static readonly CountingEffect NotSelfCounter = new() { Relation = Occupant.Units & ~Occupant.Self };
 
     public static void ResetCounters()
     {
@@ -40,11 +55,39 @@ public class TestContent
     [OneTimeSetUp]
     public void Register()
     {
+        Register(StatusConfigs.Burn);
+        Register(StatusConfigs.Power);
+        Register(TraitConfigs.Armored);
+        Register(TraitConfigs.Blaze);
+        Register(TraitConfigs.Retaliate);
+        Register(new TraitConfig
+        {
+            Id = Vengeance,
+            Trigger = new Trigger { On = GameEvent.Died },
+            Effects = new List<AbilityEffect> { new DamageEffect { Relation = Occupant.Enemy, Amount = 3 } }
+        });
+        Register(new TraitConfig
+        {
+            Id = Explode,
+            Trigger = new Trigger { On = GameEvent.Died },
+            Area = WithinSteps(1),
+            Effects = new List<AbilityEffect> { new DamageEffect { Relation = Occupant.Units, Amount = 2 } }
+        });
+        Register(new TraitConfig
+        {
+            Id = Feast,
+            Trigger = new Trigger { On = GameEvent.Died, Subject = Occupant.Units & ~Occupant.Self, Range = WithinSteps(3) },
+            Effects = new List<AbilityEffect> { new StatusEffect { Relation = Occupant.Self, Status = "Power", Amount = 1 } }
+        });
         RegisterUnit(new AbilityConfig { Id = Cheap, ManaCost = 1 });
         RegisterUnit(new AbilityConfig { Id = Expensive, ManaCost = 5 });
         RegisterUnit(new AbilityConfig { Id = Locked, ManaCost = 1, Locked = true });
         RegisterUnit(new AbilityConfig { Id = WarmingUp, ManaCost = 1, Warmup = 1 });
-        RegisterUnit(new AbilityConfig { Id = Step, Type = AbilityType.Move, ManaCost = 1, Targeting = AdjacentTile() });
+        RegisterUnit(new AbilityConfig
+        {
+            Id = Step, ManaCost = 1, Targeting = AdjacentTile(),
+            Effects = new List<AbilityEffect> { new MoveEffect() }
+        });
         RegisterUnit(new AbilityConfig { Id = Poke, ManaCost = 1, Targeting = AdjacentTile() });
         RegisterUnit(new AbilityConfig
         {
@@ -96,13 +139,58 @@ public class TestContent
             Id = Axe, ManaCost = 1, Targeting = StraightAxe(),
             Effects = new List<AbilityEffect>
             {
-                new CooldownEffect { Relation = Occupant.Any & ~Occupant.Self, Turns = 2, When = Var.Distance >= 2 },
-                new DamageEffect { Relation = Occupant.Any & ~Occupant.Self, Amount = Value.If(Var.Distance <= 1, 5, 3) }
+                new CooldownEffect { Relation = Occupant.Units & ~Occupant.Self, Turns = 2, When = Var.Distance >= 2 },
+                new DamageEffect { Relation = Occupant.Units & ~Occupant.Self, Amount = Value.If(Var.Distance <= 1, 5, 3) }
             }
         });
         RegisterUnit(new AbilityConfig { Id = Tough, ManaCost = 1 }, health: 10);
+        RegisterUnit(new AbilityConfig
+        {
+            Id = BurnTouch, ManaCost = 1, Targeting = AdjacentTile(Occupant.Any),
+            Effects = new List<AbilityEffect> { new StatusEffect { Status = "Burn" } }
+        });
+        RegisterUnit(new AbilityConfig
+        {
+            Id = Hit3, ManaCost = 1, Targeting = AdjacentTile(Occupant.Any),
+            Effects = new List<AbilityEffect> { new DamageEffect { Amount = 3 } }
+        });
+        RegisterUnit(new AbilityConfig
+        {
+            Id = PowerHit, ManaCost = 1, Targeting = AdjacentBlast(),
+            Effects = new List<AbilityEffect>
+            {
+                new StatusEffect { Relation = Occupant.Self, Status = "Power", Amount = 2 },
+                new DamageEffect { Relation = Occupant.Enemy, Amount = 1 }
+            }
+        });
+        RegisterUnit(new AbilityConfig
+        {
+            Id = Shove, ManaCost = 1, Targeting = AdjacentTile(Occupant.Any),
+            Effects = new List<AbilityEffect> { new PushEffect { Distance = 5 } }
+        });
+        RegisterUnit(AbilityConfigs.SwordSlash, health: 10);
+        RegisterUnit(AbilityConfigs.ShieldBash, health: 10);
+        RegisterUnit(new AbilityConfig { Id = Blazing, ManaCost = 1 }, health: 10, traits: new List<string> { "Blaze" });
+        RegisterUnit(new AbilityConfig { Id = Armored, ManaCost = 1 }, health: 10, traits: new List<string> { "Armored" });
+        RegisterUnit(new AbilityConfig { Id = Retaliator, ManaCost = 1 }, health: 10, traits: new List<string> { "Retaliate" });
+        RegisterUnit(new AbilityConfig
+        {
+            Id = Avenger, ManaCost = 1, Targeting = AdjacentTile(Occupant.Any),
+            Effects = new List<AbilityEffect> { new DamageEffect { Amount = 3 } }
+        }, traits: new List<string> { Vengeance });
+        RegisterUnit(new AbilityConfig { Id = Volatile, ManaCost = 1 }, traits: new List<string> { Explode });
+        RegisterUnit(new AbilityConfig { Id = Scavenger, ManaCost = 1 }, health: 10, traits: new List<string> { Feast });
         RegisterCostlyUnit();
     }
+
+    private static GridSelection WithinSteps(int steps) => new()
+    {
+        MinDistance = 1,
+        Traversals = new List<GridTraversal>
+        {
+            new GridTraversal { Direction = GridDirection.Straight, MaxDistance = steps, Linear = false, Passthrough = Occupant.Any }
+        }
+    };
 
     private static DirectionTargeting StraightAxe() => new()
     {
@@ -218,14 +306,19 @@ public class TestContent
         }
     };
 
-    private static void RegisterUnit(AbilityConfig ability, int health = 1)
+    private static void Register<T>(T item) where T : INameId
+    {
+        if (!IdRegistry<T>.TryGet(item.Id, out _)) IdRegistry<T>.Register(item);
+    }
+
+    private static void RegisterUnit(AbilityConfig ability, int health = 1, List<string> traits = null)
     {
         if (!IdRegistry<AbilityConfig>.TryGet(ability.Id, out _)) IdRegistry<AbilityConfig>.Register(ability);
         var unitId = UnitWith(ability.Id);
         if (IdRegistry<EntityConfig>.TryGet(unitId, out _)) return;
         IdRegistry<EntityConfig>.Register(new EntityConfig
         {
-            Id = unitId, Health = health, Abilities = new List<string> { ability.Id }
+            Id = unitId, Health = health, Abilities = new List<string> { ability.Id }, Traits = traits ?? new List<string>()
         });
     }
 }

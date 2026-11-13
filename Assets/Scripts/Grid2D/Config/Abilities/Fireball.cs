@@ -10,7 +10,7 @@ public static partial class AbilityConfigs
         {
             new DamageEffect()
             {
-                Relation = Occupant.Any & ~Occupant.Self,
+                Relation = Occupant.Units & ~Occupant.Self,
                 Amount = 3
             }
         },

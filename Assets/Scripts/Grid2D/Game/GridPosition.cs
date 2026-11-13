@@ -54,6 +54,9 @@ public readonly struct GridPosition : IEquatable<GridPosition>
 
     public override int GetHashCode() => HashCode.Combine(Dim1, _gridX, _gridY);
     
+    public int StepsTo(GridPosition other)
+        => Math.Abs(Dim2.x - other.Dim2.x) + Math.Abs(Dim2.y - other.Dim2.y);
+
     public GridPosition Add(int dim1)
     {
         return new GridPosition(_gridX, _gridY, Dim1 + dim1);

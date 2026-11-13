@@ -2,6 +2,8 @@
   <assembly fullname="Grid2D">
     <type fullname="UnitConfigs" preserve="all"/>
     <type fullname="AbilityConfigs" preserve="all"/>
+    <type fullname="TraitConfigs" preserve="all"/>
+    <type fullname="StatusConfigs" preserve="all"/>
     <type fullname="MapConfigs" preserve="all"/>
   </assembly>
 </linker>

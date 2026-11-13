@@ -1,28 +1,34 @@
-// public enum AbilityEffectType { ReplaceAbility, AddAbility, Damage, InflictStatus, GainShield }
-// public enum Effect {Position, Health, Shield, Damage, Counter}
-
 public readonly struct EffectContext
 {
-    public readonly GridState State;
-    public readonly Entity Source;
-    public readonly GridPosition SourcePosition;
+    public readonly GridSource Origin;
     public readonly Ability Ability;
+    public readonly Trait Trait;
+    public readonly TriggerEvent Event;
+    public readonly GridPosition Position;
     public readonly Entity Target;
     public readonly int Distance;
 
-    public EffectContext(GridState state, Entity source, GridPosition sourcePosition, Ability ability,
-                         Entity target = null, int distance = 0)
+    public GridState State => Origin.Grid;
+    public Entity Source => Origin.Entity;
+    public DamageRoll Damage => Event?.Damage;
+
+    internal EffectContext(GridSource origin, Ability ability, Trait trait = null, TriggerEvent evt = null)
+        : this(origin, ability, trait, evt, origin.Position, origin.Entity, 0) { }
+
+    private EffectContext(GridSource origin, Ability ability, Trait trait, TriggerEvent evt,
+                          GridPosition position, Entity target, int distance)
     {
-        State = state;
-        Source = source;
-        SourcePosition = sourcePosition;
+        Origin = origin;
         Ability = ability;
+        Trait = trait;
+        Event = evt;
+        Position = position;
         Target = target;
         Distance = distance;
     }
 
-    public EffectContext For(Entity target, int distance)
-        => new(State, Source, SourcePosition, Ability, target, distance);
+    internal EffectContext At(GridPosition position, Entity target, int distance)
+        => new(Origin, Ability, Trait, Event, position, target, distance);
 }
 
 public abstract class AbilityEffect
@@ -32,5 +38,5 @@ public abstract class AbilityEffect
     internal abstract void Apply(in EffectContext ctx);
 
     internal bool Affects(in EffectContext ctx)
-        => (Relation & Occupants.Between(ctx.Source, ctx.Target)) != 0 && When.Eval(ctx);
+        => (Relation & Occupants.Of(ctx.Source, ctx.Target)) != 0 && When.Eval(ctx);
 }

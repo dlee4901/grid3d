@@ -15,8 +15,12 @@ public enum Occupant
 
 public static class Occupants
 {
+    public static Occupant Of(Entity source, Entity target)
+        => target == null ? Occupant.Empty : Between(source, target);
+
     public static Occupant Between(Entity source, Entity target)
     {
+        if (source == null) return Occupant.Neutral;
         if (ReferenceEquals(source, target)) return Occupant.Self;
         if (!source.TryGetComponent<ControlComponent>(out var sourceControl)
             || !target.TryGetComponent<ControlComponent>(out var targetControl)
@@ -27,10 +31,5 @@ public static class Occupants
     }
 
     public static Occupant At(GridState grid, GridPosition position, Entity source)
-    {
-        var entity = grid.GetEntity(position);
-        if (entity == null) return Occupant.Empty;
-        if (source == null) return Occupant.Neutral;
-        return Between(source, entity);
-    }
+        => Of(source, grid.GetEntity(position));
 }

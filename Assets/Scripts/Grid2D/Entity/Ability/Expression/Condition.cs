@@ -20,3 +20,10 @@ internal sealed class CompareCondition : Condition
     public CompareCondition(Value a, Value b, Func<int, int, bool> op) { _a = a; _b = b; _op = op; }
     internal override bool Eval(in EffectContext ctx) => _op(_a.Eval(ctx), _b.Eval(ctx));
 }
+
+internal sealed class FuncCondition : Condition
+{
+    private readonly Func<EffectContext, bool> _test;
+    public FuncCondition(Func<EffectContext, bool> test) => _test = test;
+    internal override bool Eval(in EffectContext ctx) => _test(ctx);
+}

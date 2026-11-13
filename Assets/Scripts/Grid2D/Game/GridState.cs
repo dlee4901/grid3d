@@ -17,6 +17,7 @@ public sealed class GridState
     public int Y => Definition.Y;
     public int Size => Definition.Size;
     public ResolutionOrder ResolutionOrder { get; } = new();
+    internal TriggerSystem Triggers { get; }
     
     private readonly Entity[] _entities;
     private readonly int[] _mana;
@@ -31,6 +32,7 @@ public sealed class GridState
     public GridState(GridDefinition definition)
     {
         Definition = definition;
+        Triggers = new TriggerSystem(this);
         _entities = new Entity[definition.Size];
         _mana = new int[PlayerSlots];
         _loadedTeams = new TeamData[PlayerSlots];
@@ -76,6 +78,10 @@ public sealed class GridState
         Turn++;
         RefillMana(ActivePlayer);
         TickAbilityCooldowns(ActivePlayer);
+        foreach (var entity in ResolutionOrder.Entities)
+            if (entity.TryGetComponent<ControlComponent>(out var control) && control.PlayerController == ActivePlayer)
+                Triggers.Emit(new TriggerEvent(GameEvent.TurnStart, entity));
+        Triggers.Resolve();
     }
 
     public int GetMana(int player) => player < 1 || player > Definition.PlayerCount ? 0 : _mana[player];
@@ -250,6 +256,9 @@ public sealed class GridState
     public bool IsAvailable(GridPosition position, int player)
         => CanPlayerAct(player) && IsControllable(position, player) && HasCastableAbility(_entities[position.Dim1], player);
 
+    public bool CanCastAt(GridPosition position, Ability ability, int player)
+        => CanPlayerAct(player) && IsControllable(position, player) && CanCast(_entities[position.Dim1], ability, player);
+
     public bool CanCast(Entity entity, Ability ability, int player)
         => !ability.Locked && ability.Cooldown == 0 && HasMana(player, ability.ManaCost)
            && !(entity.TryGetComponent<AbilityComponent>(out var abilities) && abilities.HasActed);
@@ -347,6 +356,18 @@ public sealed class GridState
         var hasControl = entity.TryGetComponent<ControlComponent>(out var control);
         hash.Add(hasControl);
         if (hasControl) hash.Add(control.PlayerController);
+
+        var hasTraits = entity.TryGetComponent<TraitComponent>(out var traits);
+        hash.Add(hasTraits);
+        if (hasTraits)
+        {
+            hash.Add(traits.Statuses.Count);
+            foreach (var status in traits.Statuses)
+            {
+                hash.Add(status.Id);
+                hash.Add(status.Count);
+            }
+        }
 
         var hasAbilities = entity.TryGetComponent<AbilityComponent>(out var abilities);
         hash.Add(hasAbilities);

@@ -29,5 +29,9 @@ public static class RegistryValidator
         foreach (var abilityId in config.Abilities)
             if (!IdRegistry<AbilityConfig>.TryGet(abilityId, out _))
                 issues.Add($"Entity '{entityId}' references unregistered ability '{abilityId}'");
+        if (config.Traits == null) return;
+        foreach (var traitId in config.Traits)
+            if (!IdRegistry<TraitConfig>.TryGet(traitId, out _))
+                issues.Add($"Entity '{entityId}' references unregistered trait '{traitId}'");
     }
 }

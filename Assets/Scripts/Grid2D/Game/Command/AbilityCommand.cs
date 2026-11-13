@@ -28,8 +28,7 @@ public sealed class AbilityCommand : Command
             GridLog.Warning($"[AbilityCommand] no entity at {sourcePosition}");
             return false;
         }
-        if (!entity.TryGetComponent<ControlComponent>(out var control)
-            || control.PlayerController != IssuingPlayer)
+        if (!state.IsControllable(sourcePosition, IssuingPlayer))
         {
             GridLog.Warning($"[AbilityCommand] player {IssuingPlayer} can't command entity at {sourcePosition}");
             return false;
@@ -52,6 +51,7 @@ public sealed class AbilityCommand : Command
         ability.Trigger();
         abilities.MarkActed();
         state.ResolutionOrder.MoveToFront(entity);
+        state.Triggers.Resolve();
         return true;
     }
 }
