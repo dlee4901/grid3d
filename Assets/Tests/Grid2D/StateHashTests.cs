@@ -73,7 +73,7 @@ public class StateHashTests
 
     [Test]
     public void Hash_CoversCooldowns() => AssertChangesHash(state =>
-        TestGame.FirstAbilityAt(state, TestGame.Player1Position).TurnUpdate());
+        TestGame.FirstAbilityAt(state, TestGame.Player1Position).ApplyCooldown(1));
 
     [Test]
     public void Hash_CoversPositions() => AssertChangesHash(state =>

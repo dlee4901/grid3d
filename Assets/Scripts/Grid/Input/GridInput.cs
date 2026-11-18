@@ -20,9 +20,12 @@ public class GridInput : LoggableBehaviour
 
     [SerializeField] private float _cancelClickMaxSeconds = 1f;
     private float? _cancelPressTime;
+    private bool _pressedOnGrid;
 
     public GridSource? Hovered => _hovered;
+    public bool IsPointerOverUI { get; private set; }
 
+    public event Action<GridSource> OnPositionPressed;
     public event Action<GridSource> OnPositionSelected;
     public event Action OnCancelClicked;
     public event Action<GridSource?> OnHoverChanged;
@@ -42,10 +45,12 @@ public class GridInput : LoggableBehaviour
     private void Update()
     {
         if (!_initialized) return;
-        if (IsPointerOverInteractableUI())
+        IsPointerOverUI = IsPointerOverInteractableUI();
+        if (IsPointerOverUI)
         {
             SetHover(null);
             _cancelPressTime = null;
+            _pressedOnGrid = false;
             return;
         }
         UpdateHover();
@@ -84,12 +89,21 @@ public class GridInput : LoggableBehaviour
             _cancelPressTime = Time.unscaledTime;
             return;
         }
-        Log($"Click: {Describe(_hovered)}");
-        OnPositionSelected?.Invoke(_hovered.Value);
+        _pressedOnGrid = true;
+        Log($"Press: {Describe(_hovered)}");
+        OnPositionPressed?.Invoke(_hovered.Value);
     }
 
     private void HandleRelease()
     {
+        var pressedOnGrid = _pressedOnGrid;
+        _pressedOnGrid = false;
+        if (pressedOnGrid && _hovered.HasValue)
+        {
+            Log($"Click: {Describe(_hovered)}");
+            OnPositionSelected?.Invoke(_hovered.Value);
+            return;
+        }
         var pressTime = _cancelPressTime;
         _cancelPressTime = null;
         if (pressTime == null || _hovered.HasValue) return;

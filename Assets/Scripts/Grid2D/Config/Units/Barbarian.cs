@@ -7,6 +7,6 @@ public static partial class UnitConfigs
         Id = "Barbarian",
         Cost = 1,
         Health = 9,
-        Abilities = new List<string> {"MoveStraight3Step", "Axe Swing", "Ham Snack"}
+        Abilities = new List<string> {"MoveStraight3Step", "Axe Swing", "Snack"}
     };
 }

@@ -1,4 +1,4 @@
-public class SelectedState : PlayerInputStateBase
+public class SelectedState : PlayerInputState
 {
     private readonly GridSource _selected;
     public GridSource Selected => _selected;
@@ -10,10 +10,10 @@ public class SelectedState : PlayerInputStateBase
     
     public override void OnEnter()
     {
-        Ctx.Renderer.ClearHighlights();
-        Ctx.Renderer.SetSelected(_selected.Position);
+        Ctx.Highlights.Clear();
+        Ctx.Highlights.SetSelected(_selected.Position);
         if (!Actionable)
-            Ctx.Renderer.HighlightPositions(Ctx.Grid.GetAvailableEntityPositions(Ctx.Dispatcher.LocalSeat), HighlightType.AvailableSources);
+            Ctx.Highlights.Highlight(Ctx.Grid.GetAvailableEntityPositions(Ctx.Dispatcher.LocalSeat), HighlightType.AvailableSources);
     }
     public override void OnExit() => Ctx.Manager.ClearPreview();
 
@@ -35,14 +35,14 @@ public class SelectedState : PlayerInputStateBase
     {
         if (!Ctx.Grid.CanCastAt(source.Position, ability, Ctx.Dispatcher.LocalSeat)) return;
         var steps = ability.Targeting.GetSelectableSteps(source);
-        Ctx.Renderer.ClearHighlights();
-        Ctx.Renderer.HighlightPositions(steps, HighlightType.SelectionArea);
+        Ctx.Highlights.Clear();
+        Ctx.Highlights.Highlight(steps, HighlightType.SelectionArea);
         PreviewSelfCast(ability, source, steps);
     }
 
     public override void OnAbilityCancelPreview()
     {
-        Ctx.Renderer.ClearHighlights();
+        Ctx.Highlights.Clear();
         Ctx.Manager.ClearPreview();
     }
 

@@ -130,30 +130,4 @@ public class TargetingShapeTests
         Assert.IsTrue(executor.Apply(new AbilityCommand(1, TestContent.StabEnemy, TestGame.Player1Position, new[] { 1 })));
         Assert.AreEqual(1, TestContent.Counter.Hits);
     }
-
-    private static int HealthAt(TurnExecutor executor, int position)
-    {
-        executor.State.GetEntity(position).TryGetComponent<HealthComponent>(out var health);
-        return health.Current;
-    }
-
-    [Test]
-    public void SelfHeal_RestoresHealth()
-    {
-        var executor = TestGame.Start(TestContent.SelfHeal, TestContent.KillThenCount, player2Position: 1);
-        Assert.IsTrue(executor.Apply(new EndTurnCommand(1)));
-        Assert.IsTrue(executor.Apply(new AbilityCommand(2, TestContent.KillThenCount, 1, new[] { TestGame.Player1Position })));
-        Assert.AreEqual(2, HealthAt(executor, TestGame.Player1Position));
-        Assert.IsTrue(executor.Apply(new EndTurnCommand(2)));
-        Assert.IsTrue(executor.Apply(new AbilityCommand(1, TestContent.SelfHeal, TestGame.Player1Position, new[] { TestGame.Player1Position })));
-        Assert.AreEqual(3, HealthAt(executor, TestGame.Player1Position));
-    }
-
-    [Test]
-    public void SelfHeal_CapsAtStarting()
-    {
-        var executor = TestGame.Start(TestContent.SelfHeal, TestContent.Cheap);
-        Assert.IsTrue(executor.Apply(new AbilityCommand(1, TestContent.SelfHeal, TestGame.Player1Position, new[] { TestGame.Player1Position })));
-        Assert.AreEqual(3, HealthAt(executor, TestGame.Player1Position));
-    }
 }

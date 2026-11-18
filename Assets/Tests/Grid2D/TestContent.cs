@@ -18,7 +18,6 @@ public class TestContent
     public const string Bolt = "Test.Bolt";
     public const string Pair = "Test.Pair";
     public const string StabEnemy = "Test.StabEnemy";
-    public const string SelfHeal = "Test.SelfHeal";
     public const string Axe = "Test.Axe";
     public const string Tough = "Test.Tough";
     public const string BurnTouch = "Test.BurnTouch";
@@ -34,6 +33,12 @@ public class TestContent
     public const string Explode = "Test.Explode";
     public const string Scavenger = "Test.Scavenger";
     public const string Feast = "Test.Feast";
+    public const string Dash = "Test.Dash";
+    public const string Double = "Test.Double";
+    public const string DashKit = "Test.DashKit";
+    public const string DoubleKit = "Test.DoubleKit";
+    public const string NimbleKit = "Test.NimbleKit";
+    public const string GroundedKit = "Test.GroundedKit";
     public const string SwordSlash = "Sword Slash";
     public const string ShieldBash = "Shield Bash";
 
@@ -131,15 +136,10 @@ public class TestContent
         });
         RegisterUnit(new AbilityConfig
         {
-            Id = SelfHeal, ManaCost = 1, Targeting = SelfTile(),
-            Effects = new List<AbilityEffect> { new HealEffect { Relation = Occupant.Self, Amount = 1 } }
-        }, health: 3);
-        RegisterUnit(new AbilityConfig
-        {
             Id = Axe, ManaCost = 1, Targeting = StraightAxe(),
             Effects = new List<AbilityEffect>
             {
-                new CooldownEffect { Relation = Occupant.Units & ~Occupant.Self, Turns = 2, When = Var.Distance >= 2 },
+                new CooldownEffect { Relation = Occupant.Units & ~Occupant.Self, Turns = 1, When = Var.Distance >= 2 },
                 new DamageEffect { Relation = Occupant.Units & ~Occupant.Self, Amount = Value.If(Var.Distance <= 1, 5, 3) }
             }
         });
@@ -181,6 +181,37 @@ public class TestContent
         RegisterUnit(new AbilityConfig { Id = Volatile, ManaCost = 1 }, traits: new List<string> { Explode });
         RegisterUnit(new AbilityConfig { Id = Scavenger, ManaCost = 1 }, health: 10, traits: new List<string> { Feast });
         RegisterCostlyUnit();
+        RegisterKits();
+    }
+
+    private static void RegisterKits()
+    {
+        Register(AbilityConfigs.MoveNimble);
+        Register(AbilityConfigs.MoveStraight3Step);
+        Register(new AbilityConfig
+        {
+            Id = Dash, ManaCost = 1, Keywords = Keyword.Successive, Targeting = AdjacentTile(),
+            Effects = new List<AbilityEffect> { new MoveEffect() }
+        });
+        Register(new AbilityConfig
+        {
+            Id = Double, ManaCost = 1, Keywords = Keyword.Repeat, Targeting = AdjacentTile(Occupant.Any),
+            Effects = new List<AbilityEffect> { new DamageEffect { Amount = 1 } }
+        });
+        RegisterKit(DashKit, Hit3, Dash);
+        RegisterKit(DoubleKit, Hit3, Double);
+        RegisterKit(NimbleKit, AbilityConfigs.MoveNimble.Id, Hit3);
+        RegisterKit(GroundedKit, AbilityConfigs.MoveStraight3Step.Id, Hit3);
+    }
+
+    private static void RegisterKit(string kit, params string[] abilityIds)
+    {
+        var unitId = UnitWith(kit);
+        if (IdRegistry<EntityConfig>.TryGet(unitId, out _)) return;
+        IdRegistry<EntityConfig>.Register(new EntityConfig
+        {
+            Id = unitId, Health = 10, Abilities = new List<string>(abilityIds), Traits = new List<string>()
+        });
     }
 
     private static GridSelection WithinSteps(int steps) => new()
@@ -204,17 +235,6 @@ public class TestContent
                 {
                     Direction = GridDirection.Straight, MaxDistance = 3, Linear = true, Passthrough = Occupant.Any
                 }
-            }
-        }
-    };
-
-    private static FillTargeting SelfTile() => new()
-    {
-        EffectArea = new GridSelection
-        {
-            Traversals = new List<GridTraversal>
-            {
-                new GridTraversal { Direction = GridDirection.Straight, MaxDistance = 0 }
             }
         }
     };

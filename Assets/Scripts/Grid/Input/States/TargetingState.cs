@@ -1,12 +1,13 @@
 using System.Collections.Generic;
 using System.Linq;
 
-public class TargetingState : PlayerInputStateBase
+public class TargetingState : PlayerInputState
 {
     private readonly Ability _ability;
     private readonly GridSource _source;
     private readonly List<GridPosition> _targets = new();
     private readonly GridSteps _selectable;
+    private bool _holding;
 
     public TargetingState(PlayerInputContext ctx, Ability ability, GridSource source) : base(ctx)
     {
@@ -20,17 +21,32 @@ public class TargetingState : PlayerInputStateBase
 
     public override void OnEnter()
     {
-        Ctx.Renderer.ClearHighlights();
-        Ctx.Renderer.SetSelected(_source.Position);
-        Ctx.Renderer.HighlightPositions(_selectable, HighlightType.AvailableTargets);
+        Ctx.Highlights.SetSelected(_source.Position);
+        ShowSelectable();
+    }
+
+    private void ShowSelectable()
+    {
+        Ctx.Highlights.Clear();
+        Ctx.Highlights.Highlight(_selectable, HighlightType.AvailableTargets);
+        if (_ability.Targeting is DirectionTargeting) Ctx.Highlights.DirectionChevrons(_selectable);
     }
 
     public override void OnExit() => Ctx.Manager.ClearPreview();
 
+    public override void OnPress(GridSource pressed) => _holding = IsValidTarget(pressed.Position);
+
     public override void OnPositionSelected(GridSource clicked)
     {
+        var wasHolding = _holding;
+        _holding = false;
         if (!IsValidTarget(clicked.Position))
         {
+            if (wasHolding)
+            {
+                Ctx.Controller.LogState("Hold released outside selection area");
+                return;
+            }
             Ctx.Controller.TransitionTo(new SelectedState(Ctx, clicked));
             return;
         }
@@ -42,16 +58,28 @@ public class TargetingState : PlayerInputStateBase
 
     public override void OnHover(GridSource? hovered)
     {
-        Ctx.Renderer.ClearHighlights();
-        Ctx.Renderer.HighlightPositions(_selectable, HighlightType.AvailableTargets);
+        ShowSelectable();
         if (!hovered.HasValue || !_selectable.Contains(hovered.Value.Position))
         {
             Ctx.Manager.ClearPreview();
             return;
         }
         if (_ability.Targeting.GetEffectSteps(_source, hovered.Value.Position, out var list))
-            Ctx.Renderer.HighlightPositions(list, HighlightType.EffectArea);
+        {
+            if (_ability.Targeting is DirectionTargeting { MaxHits: > 0 }) ShowProjectiles(list);
+            else Ctx.Highlights.Highlight(list, HighlightType.EffectArea);
+        }
         if (!TryPreview(hovered.Value.Position)) Ctx.Manager.ClearPreview();
+    }
+
+    private void ShowProjectiles(GridSteps steps)
+    {
+        foreach (var ray in steps.GetSteps().GroupBy(step => step.Direction))
+        {
+            var impact = ray.OrderBy(step => step.Distance).Last().Position;
+            Ctx.Highlights.Highlight(new HashSet<GridPosition> { impact }, HighlightType.EffectArea);
+            Ctx.Highlights.Projectile(_source.Position, impact);
+        }
     }
 
     private bool TryPreview(GridPosition hovered)

@@ -265,4 +265,6 @@ MonoBehaviour:
   _debug: 0
   _healthIcon: {fileID: 486172036923752234}
   _counterText: {fileID: 4375948378184206316}
+  _deathSprite: {fileID: 21300000, guid: 587503b6015abc741ad5147fff8f4a06, type: 3}
+  _teamPalette: {fileID: 11400000, guid: 9e4c7b2a1d5f4c8eb3a6f0d2e8c1b570, type: 2}
   _size: 48

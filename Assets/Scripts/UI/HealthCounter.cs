@@ -6,17 +6,20 @@ public class HealthCounter : LoggableBehaviour
 {
     [SerializeField] private Image _healthIcon;
     [SerializeField] private TMP_Text _counterText;
+    [SerializeField] private Sprite _deathSprite;
     
     [SerializeField] private float _size = 48f;
-    [SerializeField] private Color _lossColor = new Color32(255, 80, 80, 255);
-    [SerializeField] private Color _gainColor = new Color32(80, 220, 120, 255);
+    [SerializeField] private TeamPalette _teamPalette;
 
     private int _current = int.MinValue;
     private Transform _counterTextTransform;
+    private Sprite _aliveSprite;
+    private Color _ownerColor = Color.white;
     private Color? _textColor;
     
     public bool ForceVisible { get; set; }
     public int Change { get; private set; }
+    public bool Dead { get; private set; }
 
     private void Start()
     {
@@ -43,16 +46,38 @@ public class HealthCounter : LoggableBehaviour
         _counterText.text = health.ToString();
     }
     
-    public void SetChange(int change)
+    public void SetPrevious(int previous)
     {
-        if (change == Change) return;
-        _textColor ??= _counterText.color;
-        Change = change;
-        _counterText.color = change < 0 ? _lossColor : change > 0 ? _gainColor : _textColor.Value;
+        Change = _current - previous;
     }
 
-    public void SetColor(Color color)
+    public void SetPulse(float amount)
     {
+        _textColor ??= _counterText.color;
+        var color = _textColor.Value;
+        color.a *= 1f - amount;
+        _counterText.color = color;
+    }
+
+    public void SetDead(bool dead)
+    {
+        if (dead == Dead) return;
+        Dead = dead;
+        if (_aliveSprite == null) _aliveSprite = _healthIcon.sprite;
+        _healthIcon.sprite = dead ? _deathSprite : _aliveSprite;
+        _counterText.gameObject.SetActive(!dead);
+        ApplyIconColor();
+    }
+
+    public void SetOwner(Entity entity, int viewerPlayer)
+    {
+        _ownerColor = _teamPalette.ColorFor(entity, viewerPlayer);
+        ApplyIconColor();
+    }
+
+    private void ApplyIconColor()
+    {
+        var color = Dead ? Color.white : _ownerColor;
         color.a = _healthIcon.color.a;
         _healthIcon.color = color;
     }

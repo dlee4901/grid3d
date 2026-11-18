@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 public class Ability : INameId
@@ -6,10 +7,13 @@ public class Ability : INameId
 
     public string Id => Config.Id;
     public int ManaCost => Config.ManaCost;
+    public Keyword Keywords => Config.Keywords;
     public AbilityTargeting Targeting => Config.Targeting;
     public List<AbilityEffect> Effects => Config.Effects;
 
     public int Cooldown { get; private set; }
+    public int PendingCooldown { get; private set; }
+    public int CastsThisTurn { get; private set; }
     public int Delay { get; private set; }
     public bool Locked { get; private set; }
 
@@ -34,17 +38,19 @@ public class Ability : INameId
 
     internal void Trigger()
     {
-        if (Cooldown != 0) return;
-        Cooldown = Config.Cooldown;
+        CastsThisTurn++;
+        ApplyCooldown(Config.Cooldown);
     }
 
     internal void ApplyCooldown(int turns)
     {
-        if (turns > Cooldown) Cooldown = turns;
+        if (turns > PendingCooldown) PendingCooldown = turns;
     }
 
     internal void TurnUpdate()
     {
-        if (Cooldown > 0) Cooldown--;
+        Cooldown = Math.Max(Cooldown - 1, PendingCooldown);
+        PendingCooldown = 0;
+        CastsThisTurn = 0;
     }
 }

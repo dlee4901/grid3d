@@ -26,7 +26,7 @@ public class CastabilityTests
     [Test]
     public void AbilityInWarmup_IsNotCastable()
     {
-        var state = TestGame.Start(TestContent.WarmingUp, TestContent.Cheap).State;
-        Assert.IsFalse(state.CanCast(state.GetEntity(TestGame.Player1Position), TestGame.FirstAbilityAt(state, TestGame.Player1Position), 1));
+        var state = TestGame.Start(TestContent.Cheap, TestContent.WarmingUp).State;
+        Assert.IsFalse(state.CanCast(state.GetEntity(TestGame.Player2Position), TestGame.FirstAbilityAt(state, TestGame.Player2Position), 2));
     }
 }

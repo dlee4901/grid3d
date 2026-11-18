@@ -13,20 +13,23 @@ public class ResolutionOrderView : StateView
         
     private readonly List<ResolutionOrderIcon> _icons = new();
     private bool _outlinesDirty;
+    private int? _hoveredIconUid;
 
     protected override void OnGameStarted()
     {
         _gridManager.Player.SelectionChanged += OnSelectionChanged;
-        _gridManager.Renderer.HighlightsChanged += MarkOutlinesDirty;
+        _gridManager.Renderer.Highlights.HighlightsChanged += MarkOutlinesDirty;
+        _gridManager.Input.OnHoverChanged += OnHoverChanged;
         base.OnGameStarted();
     }
 
     protected override void OnDestroy()
     {
         base.OnDestroy();
+        if (_gridManager != null && _gridManager.Input != null) _gridManager.Input.OnHoverChanged -= OnHoverChanged;
         if (_gridManager == null || _gridManager.Player == null) return;
         _gridManager.Player.SelectionChanged -= OnSelectionChanged;
-        if (_gridManager.Renderer != null) _gridManager.Renderer.HighlightsChanged -= MarkOutlinesDirty;
+        if (_gridManager.Renderer != null) _gridManager.Renderer.Highlights.HighlightsChanged -= MarkOutlinesDirty;
     }
     
     protected override void Refresh()
@@ -38,6 +41,7 @@ public class ResolutionOrderView : StateView
         {
             var icon = Instantiate(_iconPrefab, _container.transform);
             icon.OnSelectRequested += OnIconSelected;
+            icon.OnHoverChanged += OnIconHovered;
             _icons.Add(icon);
         }
 
@@ -45,7 +49,7 @@ public class ResolutionOrderView : StateView
         {
             var active = i < entities.Count;
             _icons[i].gameObject.SetActive(active);
-            if (active) _icons[i].Bind(entities[i], state.ActivePlayer);
+            if (active) _icons[i].Bind(entities[i], _gridManager.LocalSeat);
         }
         RefreshOutlines();
     }
@@ -61,6 +65,15 @@ public class ResolutionOrderView : StateView
 
     private void OnSelectionChanged(GridSource? selection) => _outlinesDirty = true;
 
+    private void OnHoverChanged(GridSource? hovered) => _outlinesDirty = true;
+
+    private void OnIconHovered(Entity entity)
+    {
+        _hoveredIconUid = entity?.Uid;
+        _gridManager.Renderer.Highlights.SetUIHovered(entity?.Position);
+        _outlinesDirty = true;
+    }
+
     private void RefreshOutlines()
     {
         var selected = _gridManager.Player.CurrentSelection?.Entity;
@@ -75,10 +88,14 @@ public class ResolutionOrderView : StateView
     private Color OutlineColor(Entity entity, Entity selected)
     {
         if (selected != null && entity.Uid == selected.Uid) return _selectedColor;
-        if (_gridManager.Renderer.TryGetHighlight(entity.Position, out var type) && SyncsToStrip(type))
+        if (_gridManager.Renderer.Highlights.TryGetHighlight(entity.Position, out var type) && SyncsToStrip(type))
             return _palette.UIColorFor(type);
+        if (IsHovered(entity)) return _palette.UIColorFor(HighlightType.Hover);
         return _unhighlightedColor;
     }
+
+    private bool IsHovered(Entity entity)
+        => _hoveredIconUid == entity.Uid || _gridManager.Input.Hovered?.Entity?.Uid == entity.Uid;
 
     private static bool SyncsToStrip(HighlightType type) 
         => type is HighlightType.AvailableSources or HighlightType.EffectArea;

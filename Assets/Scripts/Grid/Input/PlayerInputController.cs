@@ -2,13 +2,13 @@ using UnityEngine.InputSystem;
 
 public class PlayerInputController : LoggableBehaviour
 {
-    public IPlayerInputState State { get; private set; }
+    public PlayerInputState State { get; private set; }
     public string ActiveAbilityId { get; private set; }
     public event System.Action<string> OnActiveAbilityChanged;
     
     private PlayerInputContext _ctx;
 
-    public void Init(GridManager manager, GridInput input, CommandDispatcher dispatcher, GridRenderer renderer, GridState grid)
+    public void Init(GridManager manager, GridInput input, CommandDispatcher dispatcher, HighlightRenderer highlights, GridState grid)
     {
         _ctx = new PlayerInputContext
         {
@@ -16,13 +16,14 @@ public class PlayerInputController : LoggableBehaviour
             Controller = this,
             Input = input,
             Dispatcher = dispatcher,
-            Renderer = renderer,
+            Highlights = highlights,
             Grid = grid
         };
 
         State = new IdleState(_ctx);
         State.OnEnter();
 
+        input.OnPositionPressed += pressed => State.OnPress(pressed);
         input.OnPositionSelected += clicked => State.OnPositionSelected(clicked);
         input.OnCancelClicked += () => State.OnCancel();
         input.OnHoverChanged += hovered => State.OnHover(hovered);
@@ -70,7 +71,7 @@ public class PlayerInputController : LoggableBehaviour
     
     public void ResetToIdle() => TransitionTo(new IdleState(_ctx));
 
-    public void TransitionTo(IPlayerInputState next)
+    public void TransitionTo(PlayerInputState next)
     {
         if (ReferenceEquals(State, next)) return;
         Log($"State: {State?.GetType().Name} → {next.GetType().Name}");

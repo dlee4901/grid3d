@@ -25,12 +25,15 @@ public class AbilityRulesTests
     }
 
     [Test]
-    public void Axe_Far_Deals3_Cooldown2()
+    public void Axe_Far_Deals3_Cooldown1_StartsAtEndOfTurn()
     {
         var executor = TestGame.Start(TestContent.Axe, TestContent.Tough, player2Position: 3);
         Assert.IsTrue(executor.Apply(SwingEast()));
         Assert.AreEqual(7, HealthAt(executor, 3));
-        Assert.AreEqual(2, AxeOf(executor).Cooldown);
+        Assert.AreEqual(0, AxeOf(executor).Cooldown);
+        Assert.AreEqual(1, AxeOf(executor).PendingCooldown);
+        Assert.IsTrue(executor.Apply(new EndTurnCommand(1)));
+        Assert.AreEqual(1, AxeOf(executor).Cooldown);
     }
 
     [Test]
@@ -39,7 +42,7 @@ public class AbilityRulesTests
         var executor = TestGame.Start(TestContent.Axe, TestContent.Cheap, player2Position: 3);
         Assert.IsTrue(executor.Apply(SwingEast()));
         Assert.IsNull(executor.State.GetEntity(3));
-        Assert.AreEqual(2, AxeOf(executor).Cooldown);
+        Assert.AreEqual(1, AxeOf(executor).PendingCooldown);
     }
 
     [Test]
@@ -49,9 +52,11 @@ public class AbilityRulesTests
         Assert.IsTrue(executor.Apply(SwingEast()));
         Assert.IsTrue(executor.Apply(new EndTurnCommand(1)));
         Assert.IsTrue(executor.Apply(new EndTurnCommand(2)));
-        var state = executor.State;
-        Assert.AreEqual(1, AxeOf(executor).Cooldown);
-        Assert.IsFalse(state.CanCast(state.GetEntity(TestGame.Player1Position), AxeOf(executor), 1));
+        Assert.AreEqual(2, executor.State.ActivePlayer);
+        Assert.AreEqual(0, AxeOf(executor).Cooldown);
+        Assert.IsTrue(executor.Apply(new EndTurnCommand(2)));
+        Assert.AreEqual(1, executor.State.ActivePlayer);
+        Assert.IsTrue(executor.Apply(SwingEast()));
     }
 
     [Test]

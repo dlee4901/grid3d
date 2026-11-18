@@ -6,19 +6,21 @@ public static partial class AbilityConfigs
     {
         Id = "MoveStraight3Step",
         Effects = new List<AbilityEffect> { new MoveEffect() },
-        Targeting = new PositionTargeting()
+        Targeting = Straight3Step()
+    };
+
+    private static PositionTargeting Straight3Step() => new()
+    {
+        SelectableArea = new GridSelection()
         {
-            SelectableArea = new GridSelection()
+            MinDistance = 1,
+            Traversals = new List<GridTraversal>()
             {
-                MinDistance = 1,
-                Traversals = new List<GridTraversal>()
+                new GridTraversal()
                 {
-                    new GridTraversal()
-                    {
-                        Direction = GridDirection.Straight,
-                        MaxDistance = 3,
-                        Linear = false
-                    }
+                    Direction = GridDirection.Straight,
+                    MaxDistance = 3,
+                    Linear = false
                 }
             }
         }

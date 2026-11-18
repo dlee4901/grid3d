@@ -49,7 +49,6 @@ public sealed class AbilityCommand : Command
         if (!ability.Execute(state, sourcePosition, targetPositions)) return false;
         state.SpendMana(IssuingPlayer, ability.ManaCost);
         ability.Trigger();
-        abilities.MarkActed();
         state.ResolutionOrder.MoveToFront(entity);
         state.Triggers.Resolve();
         return true;

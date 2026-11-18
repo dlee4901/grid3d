@@ -68,6 +68,7 @@ public class UnitView : StateView
         unitLabel.SetName(entity.Id);
         _unitLabel = unitLabel;
         _labelUid = entity.Uid;
+        unitLabel.HealthCounter.SetOwner(entity, _gridManager.LocalSeat);
         RefreshLabelHealth();
         
         if (!entity.TryGetComponent<AbilityComponent>(out var abilities))
@@ -99,7 +100,8 @@ public class UnitView : StateView
         var shown = _gridManager.DisplayedState.GetEntityByUid(_labelUid);
         var next = shown != null && shown.TryGetComponent<HealthComponent>(out var shownHealth) ? shownHealth.Current : 0;
         _unitLabel.HealthCounter.SetHealthCount(next);
-        _unitLabel.HealthCounter.SetChange(next - health.Current);
+        _unitLabel.HealthCounter.SetPrevious(health.Current);
+        _unitLabel.HealthCounter.SetDead(shown == null);
     }
 
     private void ClearMenu()

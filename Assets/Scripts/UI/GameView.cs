@@ -4,6 +4,7 @@ using UnityEngine;
 public class GameView : StateView
 {
     [SerializeField] private EntityRenderer _entityRenderer;
+    [SerializeField] private CameraRig _cameraRig;
     [SerializeField] private ManaCounter _manaCounter;
     [SerializeField] private InteractableUI _toggleHealth;
     [SerializeField] private InteractableUI _cameraCenter;
@@ -19,6 +20,7 @@ public class GameView : StateView
         base.Start();
         if (_endTurn != null) _endTurn.OnClickCompleted += _gridManager.Turns.EndTurn;
         if (_toggleHealth != null) _toggleHealth.OnClickCompleted += ToggleHealth;
+        if (_cameraCenter != null) _cameraCenter.OnClickCompleted += _cameraRig.ResetView;
     }
 
     protected override void OnDestroy()
@@ -26,6 +28,7 @@ public class GameView : StateView
         base.OnDestroy();
         if (_endTurn != null && _gridManager != null) _endTurn.OnClickCompleted -= _gridManager.Turns.EndTurn;
         if (_toggleHealth != null) _toggleHealth.OnClickCompleted -= ToggleHealth;
+        if (_cameraCenter != null && _cameraRig != null) _cameraCenter.OnClickCompleted -= _cameraRig.ResetView;
     }
 
     protected override void Refresh()

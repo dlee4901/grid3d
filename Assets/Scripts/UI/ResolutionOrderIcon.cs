@@ -1,8 +1,9 @@
 using System;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class ResolutionOrderIcon : LoggableBehaviour
+public class ResolutionOrderIcon : LoggableBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
     [SerializeField] private Outline _outline;
     [SerializeField] private Image _image;
@@ -10,12 +11,9 @@ public class ResolutionOrderIcon : LoggableBehaviour
     
     public Entity Entity { get; private set; }
     public event Action<Entity> OnSelectRequested;
+    public event Action<Entity> OnHoverChanged;
     
     private InteractableUI _interactableUI;
-    
-    [SerializeField] private Color _allyColor = new Color32(255, 255, 32, 255);
-    [SerializeField] private Color _neutralColor = new Color32(255, 128, 32, 255);
-    [SerializeField] private Color _enemyColor = new Color32(255, 32, 32, 255);
     
     private void Start()
     {
@@ -32,15 +30,12 @@ public class ResolutionOrderIcon : LoggableBehaviour
         _healthCounter.gameObject.SetActive(hasHealth);
         if (!hasHealth) return;
         _healthCounter.SetHealthCount(health.Current);
-        _healthCounter.SetColor(HeartColor(entity, viewerPlayer));
+        _healthCounter.SetOwner(entity, viewerPlayer);
     }
 
-    private Color HeartColor(Entity entity, int viewerPlayer)
-    {
-        if (!entity.TryGetComponent<ControlComponent>(out var control) || control.PlayerController == 0)
-            return _neutralColor;
-        return control.PlayerController == viewerPlayer ? _allyColor : _enemyColor;
-    }
+    public void OnPointerEnter(PointerEventData eventData) => OnHoverChanged?.Invoke(Entity);
+
+    public void OnPointerExit(PointerEventData eventData) => OnHoverChanged?.Invoke(null);
 
     public void SetOutlineColor(Color color) => _outline.SetColor(color);
 }

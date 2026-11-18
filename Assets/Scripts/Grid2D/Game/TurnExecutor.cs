@@ -25,6 +25,7 @@ public sealed class TurnExecutor
         var state = new GridState(_state.Definition);
         foreach (var logged in _log) logged.ApplyTo(state);
         if (command.RequiresActiveTurn && !state.CanPlayerAct(command.IssuingPlayer)) return null;
+        state.ClearMoves();
         return command.ApplyTo(state) ? state : null;
     }
 
@@ -42,6 +43,7 @@ public sealed class TurnExecutor
                             $"(active={_state.ActivePlayer})");
             return false;
         }
+        _state.ClearMoves();
         if (!command.ApplyTo(_state)) return false;
 
         _log.Add(command);

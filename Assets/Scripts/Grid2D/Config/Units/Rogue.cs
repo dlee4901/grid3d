@@ -7,6 +7,6 @@ public static partial class UnitConfigs
         Id = "Rogue",
         Cost = 2,
         Health = 7,
-        Abilities = new List<string> {"MoveStraight3Step", "Knife Stab", "Crossbow Shot", "Nimble Cloak"}
+        Abilities = new List<string> {"MoveNimble", "Knife Stab", "Crossbow Shot"}
     };
 }

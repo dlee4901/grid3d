@@ -402,6 +402,8 @@ GameObject:
   m_Component:
   - component: {fileID: 5687910053383182440}
   - component: {fileID: 2964121792516583410}
+  - component: {fileID: 2964121792516583411}
+  - component: {fileID: 2964121792516583412}
   m_Layer: 0
   m_Name: GridRenderer
   m_TagString: Untagged
@@ -443,31 +445,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GridRenderer
   _debug: 0
   _gridManager: {fileID: 0}
-  _cinemachineCameras: []
+  _cameraRig: {fileID: 0}
   _grid: {fileID: 8838476909848342511}
   _gridLines: {fileID: 8463856003356838673}
   _pressOutline: {fileID: 920977426797182568}
   _cubePrefab: {fileID: 7124638055138895009, guid: 010a17d53ca1d458a92c7faf8f55ca9f, type: 3}
   _entityRenderer: {fileID: 0}
-  _directionalArrowSprites:
-  - {fileID: 1971738423993067291, guid: 313f213a99e3e43a9b4c5f6346c1eb51, type: 3}
-  - {fileID: -7097763755111408915, guid: 2e1c416c5112c4825b63e74161c1c9da, type: 3}
-  - {fileID: -5859064968924809791, guid: aa6a763ddc86e48f9ba0104e78294fc6, type: 3}
-  - {fileID: -1348067141474673257, guid: 74e8369cbbf2846c692c5fdc57d12ae8, type: 3}
-  - {fileID: -8273524975305245344, guid: 7b83f17712427426dad10f9b9331dc72, type: 3}
-  - {fileID: 70464959845765214, guid: 14ef75a72a2cc4d4aabcc2af0a2a92ff, type: 3}
-  - {fileID: -3646648088846649019, guid: f430ec44a35c74937bce7b53d85f76fe, type: 3}
-  - {fileID: -8087575459239908926, guid: 62190d026e72c42079992beef35bbd9b, type: 3}
-  - {fileID: 357006442158401228, guid: d188e732a7c864775882326c6020eda2, type: 3}
-  - {fileID: -2208510542369132325, guid: 0f7360166850c444d850c6a31aae5b3d, type: 3}
-  - {fileID: 5655321678828108626, guid: 95a2642f41e67440aa63c830cf8ec071, type: 3}
-  - {fileID: -4345969612696422427, guid: 37dd001a3e604450ea81d732b166cdae, type: 3}
-  - {fileID: -6135066407726741817, guid: 891cff7228b2045ef85d897a6f996489, type: 3}
-  - {fileID: 1870245304260876862, guid: 6715747cae2314fc78391a633d9912c4, type: 3}
-  - {fileID: 5839820706974066888, guid: 2e90ff077f33943c9aa1834537430c6b, type: 3}
-  - {fileID: 8230488904728474184, guid: 9c5ce5a903c604d148265d5cd21da479, type: 3}
-  - {fileID: 4815476061570213978, guid: 272cf5c7dc7a349aa8090eb36bda4272, type: 3}
-  - {fileID: 6068752714494607558, guid: 6c398e4c7feaf40799c72d1ca48c1aa9, type: 3}
+  _highlights: {fileID: 2964121792516583411}
+  _movePaths: {fileID: 2964121792516583412}
   _highlightSquare: {fileID: 2654918041755339147}
   _highlightAvailableEntities: {r: 0.2509804, g: 1, b: 0.2509804, a: 0.75}
   _highlightAbilityRange: {r: 1, g: 1, b: 1, a: 0.75}
@@ -563,3 +548,55 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &2964121792516583411
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9219465571526650938}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 21a0756ecbb3d4d08afac5657353960d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HighlightRenderer
+  _debug: 0
+  _gridManager: {fileID: 0}
+  _gridRenderer: {fileID: 2964121792516583410}
+  _directionalArrowSprites:
+  - {fileID: 1971738423993067291, guid: 313f213a99e3e43a9b4c5f6346c1eb51, type: 3}
+  - {fileID: -7097763755111408915, guid: 2e1c416c5112c4825b63e74161c1c9da, type: 3}
+  - {fileID: -5859064968924809791, guid: aa6a763ddc86e48f9ba0104e78294fc6, type: 3}
+  - {fileID: -1348067141474673257, guid: 74e8369cbbf2846c692c5fdc57d12ae8, type: 3}
+  - {fileID: -8273524975305245344, guid: 7b83f17712427426dad10f9b9331dc72, type: 3}
+  - {fileID: 70464959845765214, guid: 14ef75a72a2cc4d4aabcc2af0a2a92ff, type: 3}
+  - {fileID: -3646648088846649019, guid: f430ec44a35c74937bce7b53d85f76fe, type: 3}
+  - {fileID: -8087575459239908926, guid: 62190d026e72c42079992beef35bbd9b, type: 3}
+  - {fileID: 357006442158401228, guid: d188e732a7c864775882326c6020eda2, type: 3}
+  - {fileID: -2208510542369132325, guid: 0f7360166850c444d850c6a31aae5b3d, type: 3}
+  - {fileID: 5655321678828108626, guid: 95a2642f41e67440aa63c830cf8ec071, type: 3}
+  - {fileID: -4345969612696422427, guid: 37dd001a3e604450ea81d732b166cdae, type: 3}
+  - {fileID: -6135066407726741817, guid: 891cff7228b2045ef85d897a6f996489, type: 3}
+  - {fileID: 1870245304260876862, guid: 6715747cae2314fc78391a633d9912c4, type: 3}
+  - {fileID: 5839820706974066888, guid: 2e90ff077f33943c9aa1834537430c6b, type: 3}
+  - {fileID: 8230488904728474184, guid: 9c5ce5a903c604d148265d5cd21da479, type: 3}
+  - {fileID: 4815476061570213978, guid: 272cf5c7dc7a349aa8090eb36bda4272, type: 3}
+  - {fileID: 6068752714494607558, guid: 6c398e4c7feaf40799c72d1ca48c1aa9, type: 3}
+  _projectileMaterial: {fileID: 2100000, guid: a2b6d8e0f4c14a3e9b7d5c1f0e8a6b34, type: 2}
+--- !u!114 &2964121792516583412
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9219465571526650938}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8580c0a5e52d4355969cecdb4e5d777, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MovePathRenderer
+  _debug: 0
+  _gridManager: {fileID: 0}
+  _gridRenderer: {fileID: 2964121792516583410}
+  _arrowMaterial: {fileID: 2100000, guid: 7d9e4f1a2c6b4e8d0a5f3b1c9e2d7a68, type: 2}
+  _arrowWidth: 0.12

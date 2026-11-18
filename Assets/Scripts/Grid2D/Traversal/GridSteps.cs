@@ -86,6 +86,38 @@ public class GridSteps
         return shortest;
     }
     
+    private static readonly (int x, int y)[] PathNeighbors =
+        { (0, 1), (1, 0), (0, -1), (-1, 0), (1, 1), (1, -1), (-1, -1), (-1, 1) };
+
+    public List<GridPosition>? PathTo(GridPosition source, GridPosition target, int index=0)
+    {
+        var distance = GetShortestDistance(target, index);
+        if (distance < 0) return null;
+        var path = new List<GridPosition> { target };
+        var current = target;
+        while (true)
+        {
+            var found = false;
+            foreach (var offset in PathNeighbors)
+            {
+                var neighbor = current.Add(offset);
+                if (!neighbor.IsValid()) continue;
+                if (neighbor.Equals(source) && distance <= 1)
+                {
+                    path.Reverse();
+                    return path;
+                }
+                if (GetShortestDistance(neighbor, index) != distance - 1) continue;
+                current = neighbor;
+                distance--;
+                path.Add(current);
+                found = true;
+                break;
+            }
+            if (!found) return null;
+        }
+    }
+
     public HashSet<GridStep> GetSteps(int index=0)
     {
         return _steps[index];

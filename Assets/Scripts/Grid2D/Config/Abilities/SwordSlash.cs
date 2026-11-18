@@ -15,6 +15,7 @@ public static partial class AbilityConfigs
             Grouping = new[] {1, 0, 2, 0, 3, 0, 4, 0},
             EffectArea = new GridSelection
             {
+                MinDistance = 1,
                 Traversals = new List<GridTraversal>
                 {
                     new GridTraversal { Direction = GridDirection.NorthCone, MaxDistance = 1, Linear = false, Passthrough = Occupant.Any },

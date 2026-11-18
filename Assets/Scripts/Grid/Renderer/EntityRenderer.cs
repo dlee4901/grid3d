@@ -21,11 +21,13 @@ public class EntityRenderer : LoggableBehaviour
     [SerializeField] private int _overlaySortingOrder = -1;
     [SerializeField] private float _referenceDistance = 10f;
     [SerializeField] private float _minScale = 0.6f;
+    [SerializeField] private bool _showHealthCounters = true;
+    [SerializeField] private float _pulseStrength = 0.35f;
+    [SerializeField] private float _pulseFrequency = 1f;
 
     private readonly Dictionary<int, EntityView> _views = new();
     private Canvas _overlayCanvas;
     private Camera _camera;
-    private bool _showHealthCounters;
 
     private GridState Displayed => _gridManager.DisplayedState;
 
@@ -84,6 +86,7 @@ public class EntityRenderer : LoggableBehaviour
     private void ProjectCounters(ScriptableRenderContext context, Camera renderingCamera)
     {
         if (renderingCamera != _camera) return;
+        var pulse = Pulse();
         foreach (var view in _views.Values)
         {
             if (!view.Counter.gameObject.activeSelf) continue;
@@ -99,9 +102,12 @@ public class EntityRenderer : LoggableBehaviour
             counterTransform.pivot = new Vector2(0.5f, 0.5f * steepness);
             counterTransform.position = new Vector3(screen.x, screen.y, 0f);
             counterTransform.localScale = Vector3.one * Mathf.Clamp(_referenceDistance / screen.z, _minScale, 1f);
+            view.Counter.SetPulse(view.Counter.Change != 0 ? pulse : 0f);
             view.Counter.SetAlpha(view.Counter.Change != 0 ? 1f : 0.5f);
         }
     }
+
+    private float Pulse() => _pulseStrength * (0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * _pulseFrequency * 2f * Mathf.PI));
 
     public void RefreshEntities()
     {
@@ -117,7 +123,9 @@ public class EntityRenderer : LoggableBehaviour
             if (entity.TryGetComponent<HealthComponent>(out var health))
             {
                 view.Counter.SetHealthCount(health.Current);
-                view.Counter.SetChange(health.Current - RealHealth(entity.Uid, health.Current));
+                view.Counter.SetOwner(entity, _gridManager.LocalSeat);
+                view.Counter.SetPrevious(RealHealth(entity.Uid, health.Current));
+                view.Counter.SetDead(false);
             }
             ApplyCounterVisibility(view);
             shown.Add(entity.Uid);
@@ -128,8 +136,10 @@ public class EntityRenderer : LoggableBehaviour
             var view = _views[uid];
             if (_gridManager.IsPreviewing)
             {
-                view.Shown = false;
-                view.Model.SetActive(false);
+                var real = _gridManager.GridState.GetEntityByUid(uid);
+                view.Shown = real != null;
+                view.Model.SetActive(view.Shown);
+                if (view.Shown) ShowDeath(view, real);
                 ApplyCounterVisibility(view);
                 continue;
             }
@@ -137,6 +147,16 @@ public class EntityRenderer : LoggableBehaviour
             Destroy(view.Counter.gameObject);
             _views.Remove(uid);
         }
+    }
+
+    private void ShowDeath(EntityView view, Entity real)
+    {
+        view.Entity = real;
+        view.Model.transform.position = _gridRenderer.CellCenter(real.Position);
+        if (!real.TryGetComponent<HealthComponent>(out var health)) return;
+        view.Counter.SetHealthCount(0);
+        view.Counter.SetPrevious(health.Current);
+        view.Counter.SetDead(true);
     }
 
     private int RealHealth(int uid, int fallback)

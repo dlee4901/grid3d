@@ -26,6 +26,9 @@ public sealed class GridState
     private int _nextUid;
     
     private readonly TeamData[] _loadedTeams;
+    private readonly List<EntityMove> _moves = new();
+
+    public IReadOnlyList<EntityMove> Moves => _moves;
     
     private int PlayerSlots => Definition.PlayerCount + 1;
     
@@ -74,10 +77,10 @@ public sealed class GridState
 
     private void StartNextTurn()
     {
+        EndAbilityTurn(ActivePlayer);
         ActivePlayer = ActivePlayer % Definition.PlayerCount + 1;
         Turn++;
         RefillMana(ActivePlayer);
-        TickAbilityCooldowns(ActivePlayer);
         foreach (var entity in ResolutionOrder.Entities)
             if (entity.TryGetComponent<ControlComponent>(out var control) && control.PlayerController == ActivePlayer)
                 Triggers.Emit(new TriggerEvent(GameEvent.TurnStart, entity));
@@ -107,7 +110,7 @@ public sealed class GridState
 
     public int GetSpawnPlayer(GridPosition position) => Definition.GetSpawnPlayer(position);
 
-    private void TickAbilityCooldowns(int player)
+    private void EndAbilityTurn(int player)
     {
         for (var i = 0; i < _entities.Length; i++)
         {
@@ -116,7 +119,6 @@ public sealed class GridState
             if (!entity.TryGetComponent<ControlComponent>(out var control) 
                 || control.PlayerController != player) continue;
             if (!entity.TryGetComponent<AbilityComponent>(out var abilities)) continue;
-            abilities.ResetTurn();
             foreach (var ability in abilities.List) ability.TurnUpdate();
         }
     }
@@ -261,7 +263,14 @@ public sealed class GridState
 
     public bool CanCast(Entity entity, Ability ability, int player)
         => !ability.Locked && ability.Cooldown == 0 && HasMana(player, ability.ManaCost)
-           && !(entity.TryGetComponent<AbilityComponent>(out var abilities) && abilities.HasActed);
+           && IsCastAllowedThisTurn(entity, ability);
+
+    private static bool IsCastAllowedThisTurn(Entity entity, Ability ability)
+    {
+        if (!entity.TryGetComponent<AbilityComponent>(out var abilities) || !abilities.HasActed) return true;
+        if (ability.CastsThisTurn > 0) return ability.CastsThisTurn == 1 && (ability.Keywords & Keyword.Repeat) != 0;
+        return (ability.Keywords & Keyword.Successive) != 0;
+    }
 
     public bool HasCastableAbility(Entity entity, int player)
     {
@@ -291,12 +300,15 @@ public sealed class GridState
         return true;
     }
     
+    internal void ClearMoves() => _moves.Clear();
+
     internal bool ChangeEntityPosition(GridPosition startPosition, GridPosition targetPosition)
     {
         if (!TryGetEntity(startPosition, out var entity) || !IsTraversable(targetPosition)) return false;
         _entities[targetPosition.Dim1] = entity;
         _entities[startPosition.Dim1] = null;
         entity.SetPosition(targetPosition);
+        _moves.Add(new EntityMove(entity.Uid, startPosition, targetPosition));
         return true;
     }
     
@@ -373,11 +385,12 @@ public sealed class GridState
         hash.Add(hasAbilities);
         if (!hasAbilities) return;
         hash.Add(abilities.List.Count);
-        hash.Add(abilities.HasActed);
         foreach (var ability in abilities.List)
         {
             hash.Add(ability.Id);
             hash.Add(ability.Cooldown);
+            hash.Add(ability.PendingCooldown);
+            hash.Add(ability.CastsThisTurn);
             hash.Add(ability.Delay);
             hash.Add(ability.Locked);
         }
