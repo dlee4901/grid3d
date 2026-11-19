@@ -77,7 +77,7 @@ public class GameView : StateView
             return state.Winner == _gridManager.LocalSeat ? "YOU\nWIN" : "YOU\nLOSE";
         }
         if (_gridManager.StopReason != null) return "MATCH\nSTOPPED";
-        return "END TURN\n" + state.Turn;
+        return "END TURN " + state.Turn;
     }
 
     private PlayerTimerView ViewFor(int seat)

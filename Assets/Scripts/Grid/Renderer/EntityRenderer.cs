@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.UI;
 
 public class EntityRenderer : LoggableBehaviour
 {
@@ -12,6 +13,10 @@ public class EntityRenderer : LoggableBehaviour
         public Entity Entity;
         public bool Shown;
         public float Height;
+        public GridPosition Cell;
+        public bool PreviewMoved;
+        public readonly Queue<Vector3> Waypoints = new();
+        public float MoveStartTime;
     }
 
     [SerializeField] private GridManager _gridManager;
@@ -24,6 +29,8 @@ public class EntityRenderer : LoggableBehaviour
     [SerializeField] private bool _showHealthCounters = true;
     [SerializeField] private float _pulseStrength = 0.35f;
     [SerializeField] private float _pulseFrequency = 1f;
+    [SerializeField] private float _moveSpeed = 12f;
+    [SerializeField] private float _previewMoveDelay = 1f;
 
     private readonly Dictionary<int, EntityView> _views = new();
     private Canvas _overlayCanvas;
@@ -80,6 +87,10 @@ public class EntityRenderer : LoggableBehaviour
         var canvas = new GameObject("EntityOverlayCanvas").AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = _overlaySortingOrder;
+        var scaler = canvas.gameObject.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920, 1080);
+        scaler.matchWidthOrHeight = 0f;
         return canvas;
     }
 
@@ -107,6 +118,56 @@ public class EntityRenderer : LoggableBehaviour
         }
     }
 
+    private void Update()
+    {
+        var step = _moveSpeed * Time.deltaTime;
+        foreach (var view in _views.Values)
+        {
+            if (view.Waypoints.Count == 0 || Time.time < view.MoveStartTime) continue;
+            var model = view.Model.transform;
+            model.position = Vector3.MoveTowards(model.position, view.Waypoints.Peek(), step);
+            if (model.position == view.Waypoints.Peek()) view.Waypoints.Dequeue();
+        }
+    }
+
+    private void MoveTo(EntityView view, GridPosition cell)
+    {
+        var previewing = _gridManager.IsPreviewing;
+        if (!previewing) view.MoveStartTime = 0f;
+        if (view.Cell.Equals(cell))
+        {
+            if (!previewing) view.PreviewMoved = false;
+            return;
+        }
+        var movePath = PathFromMoves(view, cell);
+        view.Cell = cell;
+        view.Waypoints.Clear();
+        if (view.PreviewMoved && (!previewing || movePath == null))
+        {
+            view.PreviewMoved = false;
+            view.Model.transform.position = _gridRenderer.CellCenter(cell);
+            return;
+        }
+        var path = movePath ?? new List<GridPosition> { cell };
+        if (movePath != null && previewing)
+        {
+            view.PreviewMoved = true;
+            view.Model.transform.position = _gridRenderer.CellCenter(movePath[0]);
+            view.MoveStartTime = Time.time + _previewMoveDelay;
+        }
+        foreach (var step in movePath == null ? path : path.Skip(1)) view.Waypoints.Enqueue(_gridRenderer.CellCenter(step));
+    }
+
+    private List<GridPosition> PathFromMoves(EntityView view, GridPosition cell)
+    {
+        var moves = Displayed.Moves.Where(move => move.Uid == view.Entity.Uid).ToList();
+        if (moves.Count == 0 || !moves[^1].To.Equals(cell)) return null;
+        if (!_gridManager.IsPreviewing && !moves[0].From.Equals(view.Cell)) return null;
+        var path = new List<GridPosition> { moves[0].From };
+        path.AddRange(moves.Select(move => move.To));
+        return path;
+    }
+
     private float Pulse() => _pulseStrength * (0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * _pulseFrequency * 2f * Mathf.PI));
 
     public void RefreshEntities()
@@ -119,7 +180,7 @@ public class EntityRenderer : LoggableBehaviour
             view.Entity = entity;
             view.Shown = true;
             view.Model.SetActive(true);
-            view.Model.transform.position = _gridRenderer.CellCenter(position);
+            MoveTo(view, position);
             if (entity.TryGetComponent<HealthComponent>(out var health))
             {
                 view.Counter.SetHealthCount(health.Current);
@@ -152,7 +213,7 @@ public class EntityRenderer : LoggableBehaviour
     private void ShowDeath(EntityView view, Entity real)
     {
         view.Entity = real;
-        view.Model.transform.position = _gridRenderer.CellCenter(real.Position);
+        MoveTo(view, real.Position);
         if (!real.TryGetComponent<HealthComponent>(out var health)) return;
         view.Counter.SetHealthCount(0);
         view.Counter.SetPrevious(health.Current);
@@ -179,7 +240,8 @@ public class EntityRenderer : LoggableBehaviour
         {
             Model = Instantiate(assets.Model3D, _gridRenderer.CellCenter(entity.Position), rotation, transform),
             Counter = Instantiate(_healthCounterPrefab, _overlayCanvas.transform),
-            Entity = entity
+            Entity = entity,
+            Cell = entity.Position
         };
         view.Height = ModelHeight(view.Model);
         _views[entity.Uid] = view;

@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -8,15 +10,23 @@ public class UnitView : StateView
     [SerializeField] private VerticalLayoutGroup _container;
     [SerializeField] private UnitLabel _unitLabelPrefab;
     [FormerlySerializedAs("_abilityIcon")] [SerializeField] private AbilityIcon _abilityIconPrefab;
+    [SerializeField] private RectTransform _panel;
+    [SerializeField] private float _slideDuration = 0.2f;
 
     private readonly List<AbilityIcon> _icons = new();
     private UnitLabel _unitLabel;
     private int _labelUid;
+    private float _shownX;
+    private Coroutine _slide;
+
+    private float HiddenX => _shownX - _panel.rect.width;
 
     protected override bool ShowsPreview => false;
 
     protected override void Start()
     {
+        _shownX = _panel.anchoredPosition.x;
+        SetPanelX(HiddenX);
         base.Start();
         _gridManager.Player.SelectionChanged += OnInputChanged;
         _gridManager.Player.OnActiveAbilityChanged += OnActiveAbilityChanged;
@@ -44,9 +54,38 @@ public class UnitView : StateView
 
     private void OnInputChanged(GridSource? source)
     {
+        if (source?.Entity == null)
+        {
+            SlideTo(HiddenX, ClearMenu);
+            return;
+        }
         ClearMenu();
-        if (source.HasValue) DisplayEntityInfo(source.Value);
+        DisplayEntityInfo(source.Value);
+        SlideTo(_shownX, null);
     }
+
+    private void SlideTo(float x, Action onArrived)
+    {
+        if (_slide != null) StopCoroutine(_slide);
+        _slide = StartCoroutine(Slide(x, onArrived));
+    }
+
+    private IEnumerator Slide(float x, Action onArrived)
+    {
+        var startX = _panel.anchoredPosition.x;
+        var duration = _slideDuration * Mathf.Abs(x - startX) / _panel.rect.width;
+        for (var t = 0f; t < duration; t += Time.unscaledDeltaTime)
+        {
+            var eased = 1f - Mathf.Pow(1f - t / duration, 3f);
+            SetPanelX(Mathf.Lerp(startX, x, eased));
+            yield return null;
+        }
+        SetPanelX(x);
+        _slide = null;
+        onArrived?.Invoke();
+    }
+
+    private void SetPanelX(float x) => _panel.anchoredPosition = new Vector2(x, _panel.anchoredPosition.y);
     
     // public void DisplayPositionInfo(Grid2D grid, int position)
     // {

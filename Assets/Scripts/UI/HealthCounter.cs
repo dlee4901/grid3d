@@ -9,7 +9,12 @@ public class HealthCounter : LoggableBehaviour
     [SerializeField] private Sprite _deathSprite;
     
     [SerializeField] private float _size = 48f;
+    [SerializeField] private float _fontScale = 0.5f;
     [SerializeField] private TeamPalette _teamPalette;
+    [SerializeField] private Image _border;
+    [SerializeField] private int _borderAlpha = 64;
+
+    private const float BorderSpriteMargin = 2f / 56f;
 
     private int _current = int.MinValue;
     private Transform _counterTextTransform;
@@ -34,7 +39,8 @@ public class HealthCounter : LoggableBehaviour
     public void SetSize(float size)
     {
         GetComponent<RectTransform>().sizeDelta = new Vector2(size, size);
-        _counterText.fontSize = size / 2f;
+        _border.rectTransform.sizeDelta = Vector2.one * (size * 2f * BorderSpriteMargin);
+        _counterText.fontSize = size * _fontScale;
     }
 
     public void SetHealthCount(int health)
@@ -66,6 +72,7 @@ public class HealthCounter : LoggableBehaviour
         if (_aliveSprite == null) _aliveSprite = _healthIcon.sprite;
         _healthIcon.sprite = dead ? _deathSprite : _aliveSprite;
         _counterText.gameObject.SetActive(!dead);
+        _border.gameObject.SetActive(!dead);
         ApplyIconColor();
     }
 
@@ -80,6 +87,7 @@ public class HealthCounter : LoggableBehaviour
         var color = Dead ? Color.white : _ownerColor;
         color.a = _healthIcon.color.a;
         _healthIcon.color = color;
+        ApplyBorderColor();
     }
 
     public void SetAlpha(float alpha)
@@ -87,5 +95,13 @@ public class HealthCounter : LoggableBehaviour
         var color = _healthIcon.color;
         color.a = alpha;
         _healthIcon.color = color;
+        ApplyBorderColor();
+    }
+
+    private void ApplyBorderColor()
+    {
+        var color = _ownerColor;
+        color.a = _borderAlpha / 255f * _healthIcon.color.a;
+        _border.color = color;
     }
 }

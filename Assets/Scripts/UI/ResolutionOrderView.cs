@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,10 +9,12 @@ public class ResolutionOrderView : StateView
     [SerializeField] private ResolutionOrderIcon _iconPrefab;
 
     [SerializeField] private Color _selectedColor = new Color32(255, 255, 255, 160);
-    [SerializeField] private Color _unhighlightedColor = new Color32(255, 255, 255, 0);
+    [SerializeField] private Color _unhighlightedColor = new Color32(255, 255, 255, 64);
     [SerializeField] private HighlightPalette _palette;
         
     private readonly List<ResolutionOrderIcon> _icons = new();
+    private readonly List<int> _shownUids = new();
+    private bool _shownPreview;
     private bool _outlinesDirty;
     private int? _hoveredIconUid;
 
@@ -45,14 +48,29 @@ public class ResolutionOrderView : StateView
             _icons.Add(icon);
         }
 
+        var previewing = _gridManager.IsPreviewing;
+        var previous = new List<int>(_shownUids);
+        var baseline = previewing ? _gridManager.GridState.ResolutionOrder.Entities.Select(entity => entity.Uid).ToList() : previous;
+        var snap = !previewing && _shownPreview;
+        _shownUids.Clear();
         for (var i = 0; i < _icons.Count; i++)
         {
             var active = i < entities.Count;
             _icons[i].gameObject.SetActive(active);
-            if (active) _icons[i].Bind(entities[i], _gridManager.LocalSeat);
+            if (!active) continue;
+            var uid = entities[i].Uid;
+            _shownUids.Add(uid);
+            _icons[i].Bind(entities[i], _gridManager.LocalSeat);
+            if (i < previous.Count && previous[i] == uid) continue;
+            var from = snap ? -1 : baseline.IndexOf(uid);
+            var offset = from < 0 || from == i ? 0f : (from - i) * Stride(_icons[i]);
+            _icons[i].SlideFrom(offset);
         }
+        _shownPreview = previewing;
         RefreshOutlines();
     }
+
+    private float Stride(ResolutionOrderIcon icon) => ((RectTransform)icon.transform).rect.width + _container.spacing;
 
     private void LateUpdate()
     {
@@ -81,11 +99,11 @@ public class ResolutionOrderView : StateView
         foreach (var icon in _icons)
         {
             if (!icon.gameObject.activeSelf || icon.Entity == null) continue;
-            icon.SetOutlineColor(OutlineColor(icon.Entity, selected));
+            icon.SetBorderColor(BorderColor(icon.Entity, selected));
         }
     }
   
-    private Color OutlineColor(Entity entity, Entity selected)
+    private Color BorderColor(Entity entity, Entity selected)
     {
         if (selected != null && entity.Uid == selected.Uid) return _selectedColor;
         if (_gridManager.Renderer.Highlights.TryGetHighlight(entity.Position, out var type) && SyncsToStrip(type))

@@ -45,7 +45,7 @@ public class GridInput : LoggableBehaviour
     private void Update()
     {
         if (!_initialized) return;
-        IsPointerOverUI = IsPointerOverInteractableUI();
+        IsPointerOverUI = IsPointerOverAnyUI();
         if (IsPointerOverUI)
         {
             SetHover(null);
@@ -58,7 +58,7 @@ public class GridInput : LoggableBehaviour
         if (_selectAction.WasReleasedThisFrame()) HandleRelease();
     }
 
-    private bool IsPointerOverInteractableUI()
+    private bool IsPointerOverAnyUI()
     {
         var eventSystem = EventSystem.current;
         if (eventSystem == null || Mouse.current == null) return false;
@@ -66,10 +66,7 @@ public class GridInput : LoggableBehaviour
         _pointerData.position = Mouse.current.position.ReadValue();
         _uiHits.Clear();
         eventSystem.RaycastAll(_pointerData, _uiHits);
-        if (_uiHits.Count == 0) return false;
-        var top = _uiHits[0].gameObject;
-        return ExecuteEvents.GetEventHandler<IPointerDownHandler>(top) != null
-            || ExecuteEvents.GetEventHandler<IPointerClickHandler>(top) != null;
+        return _uiHits.Count > 0;
     }
 
     private void UpdateHover()

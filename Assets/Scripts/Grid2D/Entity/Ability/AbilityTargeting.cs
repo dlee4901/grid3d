@@ -69,13 +69,14 @@ public class PositionTargeting : AbilityTargeting
 
 public class DirectionTargeting : AbilityTargeting
 {
-    public int[] Grouping { get; init; } = new int[GridTraversal.UnidirectionalCount];
+    public int[] Grouping { get; init; }
     public int MaxHits { get; init; } = 0;
-    
+
     public override GridSteps GetSelectableSteps(GridSource source)
     {
+        var grouping = Grouping ?? UngroupedDirections(EffectArea.GetGridSteps(source));
         var mask = new bool[GridTraversal.UnidirectionalCount];
-        for (var i = 0; i < mask.Length; i++) mask[i] = Grouping[i] != 0;
+        for (var i = 0; i < mask.Length; i++) mask[i] = grouping[i] != 0;
         var selection = new GridSelection()
         {
             MinDistance = 1,
@@ -103,18 +104,27 @@ public class DirectionTargeting : AbilityTargeting
         if (targetSteps.Count > 1) return false;
         
         var effectSteps = EffectArea.GetGridSteps(source);
+        var grouping = Grouping ?? UngroupedDirections(effectSteps);
         if (effectSteps.GroupCount == 1)
         {
-            var groupMapSingle = effectSteps.GetGroupMapSingle(Grouping);
+            var groupMapSingle = effectSteps.GetGroupMapSingle(grouping);
             foreach (var targetStep in targetSteps) steps.Add(LimitHits(source.Grid, groupMapSingle[targetStep.Direction]));
         }
         else if (effectSteps.GroupCount > 1)
         {
-            var groupMap = effectSteps.GetGroupMap(Grouping);
+            var groupMap = effectSteps.GetGroupMap(grouping);
             foreach (var targetStep in targetSteps) steps.Add(LimitHits(source.Grid, groupMap[targetStep.Direction]));
         }
-        
+
         return true;
+    }
+
+    private static int[] UngroupedDirections(GridSteps effectSteps)
+    {
+        var directionMap = effectSteps.GetDirectionMap();
+        var grouping = new int[GridTraversal.UnidirectionalCount];
+        for (var i = 0; i < grouping.Length; i++) grouping[i] = directionMap.ContainsKey((GridDirection)i) ? i + 1 : 0;
+        return grouping;
     }
 
     private HashSet<GridStep> LimitHits(GridState grid, HashSet<GridStep> steps)

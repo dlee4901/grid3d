@@ -79,7 +79,7 @@ public static class HeartSpriteGenerator
         var importer = (TextureImporter)AssetImporter.GetAtPath(OutputPath);
         importer.textureType = TextureImporterType.Sprite;
         importer.alphaIsTransparency = true;
-        importer.mipmapEnabled = false;
+        importer.mipmapEnabled = true;
         importer.SaveAndReimport();
 
         Debug.Log($"[Heart] {Size}x{Size} diameter={DiameterFraction:0.###} cleftY={CleftY:0.#} -> {OutputPath}");

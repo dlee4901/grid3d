@@ -13,7 +13,6 @@ public static partial class AbilityConfigs
         },
         Targeting = new DirectionTargeting
         {
-            Grouping = new[] {1, 0, 2, 0, 3, 0, 4, 0},
             MaxHits = 1,
             EffectArea = new GridSelection
             {
@@ -21,7 +20,7 @@ public static partial class AbilityConfigs
                 {
                     new GridTraversal
                     {
-                        Direction = GridDirection.Straight, Linear = true, MaxDistance = 3, Passthrough = Occupant.Any
+                        Direction = GridDirection.Line, Linear = true, MaxDistance = 3, Passthrough = Occupant.Any
                     }
                 }
             }
