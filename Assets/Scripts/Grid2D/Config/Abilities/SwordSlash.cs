@@ -5,6 +5,8 @@ public static partial class AbilityConfigs
     public static readonly AbilityConfig SwordSlash = new()
     {
         Id = "Sword Slash",
+        DisplayName = "Sword Slash",
+        Description = "Slash the square in front and both diagonals beside it for {Damage} damage.",
         ManaCost = 1,
         Effects = new List<AbilityEffect>
         {

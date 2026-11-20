@@ -5,6 +5,8 @@ public static partial class AbilityConfigs
     public static readonly AbilityConfig ShieldBash = new()
     {
         Id = "Shield Bash",
+        DisplayName = "Shield Bash",
+        Description = "Bash an adjacent unit for {Damage} damage and push it back {Push} squares.",
         ManaCost = 1,
         Effects = new List<AbilityEffect>
         {

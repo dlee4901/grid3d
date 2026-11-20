@@ -13,6 +13,6 @@ public sealed class ModifyDamageEffect : AbilityEffect
             return;
         }
         if (Prevent) ctx.Damage.Prevented = true;
-        else ctx.Damage.Amount += Amount.Eval(ctx);
+        else ctx.Damage.Modify(ctx.Trait?.Id, Amount.Eval(ctx));
     }
 }

@@ -2,6 +2,10 @@ public sealed class DamageEffect : AbilityEffect
 {
     public Value Amount { get; init; } = 0;
 
+    protected override string DefaultDescriptionToken => "Damage";
+
+    public override bool TryGetValueRange(GridState state, out int min, out int max) => Amount.TryGetRange(out min, out max);
+
     internal override void Apply(in EffectContext ctx)
     {
         if (ctx.Target == null || !ctx.Target.TryGetComponent<HealthComponent>(out var health)) return;

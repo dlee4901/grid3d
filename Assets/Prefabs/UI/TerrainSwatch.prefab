@@ -1,0 +1,64 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &5829174630192837465
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 5135895430516307800, guid: b78de81caddbb44e6aa3c2c7ec6a35c6, type: 3}
+      propertyPath: m_Name
+      value: TerrainSwatch
+      objectReference: {fileID: 0}
+    - target: {fileID: 1631633409757487404, guid: b78de81caddbb44e6aa3c2c7ec6a35c6, type: 3}
+      propertyPath: m_Color.r
+      value: 0.3764706
+      objectReference: {fileID: 0}
+    - target: {fileID: 1631633409757487404, guid: b78de81caddbb44e6aa3c2c7ec6a35c6, type: 3}
+      propertyPath: m_Color.g
+      value: 0.3764706
+      objectReference: {fileID: 0}
+    - target: {fileID: 1631633409757487404, guid: b78de81caddbb44e6aa3c2c7ec6a35c6, type: 3}
+      propertyPath: m_Color.b
+      value: 0.3764706
+      objectReference: {fileID: 0}
+    - target: {fileID: 2317780744933614489, guid: b78de81caddbb44e6aa3c2c7ec6a35c6, type: 3}
+      propertyPath: _distance
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2317780744933614489, guid: b78de81caddbb44e6aa3c2c7ec6a35c6, type: 3}
+      propertyPath: _color.rgba
+      value: 1073741824
+      objectReference: {fileID: 0}
+    - target: {fileID: 7255194278362820934, guid: b78de81caddbb44e6aa3c2c7ec6a35c6, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: -2
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: b78de81caddbb44e6aa3c2c7ec6a35c6, type: 3}
+--- !u!1 &1703274215016563713 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5135895430516307800, guid: b78de81caddbb44e6aa3c2c7ec6a35c6, type: 3}
+  m_PrefabInstance: {fileID: 5829174630192837465}
+  m_PrefabAsset: {fileID: 0}
+--- !u!224 &981576482993892452 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 6735733495733591869, guid: b78de81caddbb44e6aa3c2c7ec6a35c6, type: 3}
+  m_PrefabInstance: {fileID: 5829174630192837465}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &8024697189416239139 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4591438385694372730, guid: b78de81caddbb44e6aa3c2c7ec6a35c6, type: 3}
+  m_PrefabInstance: {fileID: 5829174630192837465}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1703274215016563713}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34d988159c87402984e8fbf178aee107, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AbilityIcon

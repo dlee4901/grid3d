@@ -4,12 +4,9 @@ public abstract class StateView : LoggableBehaviour
 {
     [SerializeField] protected GridManager _gridManager;
 
-    protected virtual bool ShowsPreview => true;
-
     protected virtual void Start()
     {
-        if (ShowsPreview) _gridManager.DisplayChanged += Refresh;
-        else _gridManager.StateChanged += Refresh;
+        _gridManager.DisplayChanged += RenderShown;
         _gridManager.GameStarted += OnGameStarted;
         if (_gridManager.IsGameStarted) OnGameStarted();
     }
@@ -17,12 +14,13 @@ public abstract class StateView : LoggableBehaviour
     protected virtual void OnDestroy()
     {
         if (_gridManager == null) return;
-        _gridManager.StateChanged -= Refresh;
-        _gridManager.DisplayChanged -= Refresh;
+        _gridManager.DisplayChanged -= RenderShown;
         _gridManager.GameStarted -= OnGameStarted;
     }
 
-    protected virtual void OnGameStarted() => Refresh();
+    protected virtual void OnGameStarted() => RenderShown();
 
-    protected abstract void Refresh();
+    protected void RenderShown() => Render(_gridManager.DisplayedState);
+
+    protected abstract void Render(GridState shown);
 }

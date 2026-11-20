@@ -5,6 +5,8 @@ public static partial class AbilityConfigs
     public static readonly AbilityConfig CrossbowShot = new()
     {
         Id = "Crossbow Shot",
+        DisplayName = "Crossbow Shot",
+        Description = "Fire diagonally up to 4 squares, dealing {Damage} damage.",
         ManaCost = 1,
         Effects = new List<AbilityEffect>
         {

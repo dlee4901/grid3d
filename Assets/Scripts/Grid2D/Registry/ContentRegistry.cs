@@ -11,6 +11,7 @@ public static class ContentRegistry
         RegisterStaticFields<AbilityConfig>(typeof(AbilityConfigs), effectIds);
         RegisterStaticFields<TraitConfig>(typeof(TraitConfigs), effectIds);
         RegisterStaticFields<StatusConfig>(typeof(StatusConfigs), effectIds);
+        RegisterStaticFields<TerrainConfig>(typeof(TerrainConfigs), effectIds);
         RegisterMaps();
     }
 
@@ -22,6 +23,8 @@ public static class ContentRegistry
             if (config is EffectConfig && !effectIds.Add(config.Id))
                 GridLog.Error($"Effect id '{config.Id}' is used by more than one ability, trait or status");
             IdRegistry<T>.Register(config);
+            if (config is EffectConfig effectConfig)
+                foreach (var issue in Descriptions.Validate(effectConfig)) GridLog.Error(issue);
         }
     }
 

@@ -24,12 +24,15 @@ public class TraitTests
         => Assert.IsTrue(executor.Apply(new EndTurnCommand(player)));
 
     [Test]
-    public void Burn_TicksOnOwnersTurnStart_ThenExpires()
+    public void Burn_TicksOnOwnersTurnEnd_ThenExpires()
     {
         var executor = TestGame.Start(TestContent.BurnTouch, TestContent.Tough, player2Position: 1);
         Cast(executor, 1, TestContent.BurnTouch, 0, 1);
         Assert.AreEqual(1, Count(executor, 1, "Burn"));
         EndTurn(executor, 1);
+        Assert.AreEqual(10, Health(executor, 1));
+        Assert.AreEqual(1, Count(executor, 1, "Burn"));
+        EndTurn(executor, 2);
         Assert.AreEqual(9, Health(executor, 1));
         Assert.AreEqual(0, Count(executor, 1, "Burn"));
     }
@@ -40,6 +43,7 @@ public class TraitTests
         var executor = TestGame.Start(TestContent.BurnTouch, TestContent.Blazing, player2Position: 1);
         Cast(executor, 1, TestContent.BurnTouch, 0, 1);
         EndTurn(executor, 1);
+        EndTurn(executor, 2);
         Assert.AreEqual(10, Health(executor, 1));
         Assert.AreEqual(1, Count(executor, 1, "Power"));
         Assert.AreEqual(0, Count(executor, 1, "Burn"));
@@ -54,12 +58,28 @@ public class TraitTests
     }
 
     [Test]
-    public void Armored_NegatesBurn()
+    public void Armored_DoesNotReduceBurn()
     {
         var executor = TestGame.Start(TestContent.BurnTouch, TestContent.Armored, player2Position: 1);
         Cast(executor, 1, TestContent.BurnTouch, 0, 1);
         EndTurn(executor, 1);
-        Assert.AreEqual(10, Health(executor, 1));
+        EndTurn(executor, 2);
+        Assert.AreEqual(9, Health(executor, 1));
+    }
+
+    [Test]
+    public void DamageBreakdown_ListsPowerAsModifier_WithoutChangingState()
+    {
+        var executor = TestGame.Start(TestContent.PowerHit, TestContent.Tough, player2Position: 1);
+        Cast(executor, 1, TestContent.PowerHit, 0, 1);
+        var caster = At(executor, 0);
+        var hash = executor.State.ComputeHash();
+        var roll = DamageBreakdown.ForCaster(executor.State, caster, 3);
+        Assert.AreEqual(3, roll.BaseAmount);
+        Assert.AreEqual(5, roll.Amount);
+        Assert.AreEqual(1, roll.Modifiers.Count);
+        Assert.AreEqual(("Power", 2), roll.Modifiers[0]);
+        Assert.AreEqual(hash, executor.State.ComputeHash());
     }
 
     [Test]

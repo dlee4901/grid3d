@@ -1,9 +1,8 @@
 using System;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class ResolutionOrderIcon : LoggableBehaviour, IPointerEnterHandler, IPointerExitHandler
+public class ResolutionOrderIcon : LoggableBehaviour
 {
     [SerializeField] private RectTransform _visual;
     [SerializeField] private Image _border;
@@ -13,7 +12,6 @@ public class ResolutionOrderIcon : LoggableBehaviour, IPointerEnterHandler, IPoi
     
     public Entity Entity { get; private set; }
     public event Action<Entity> OnSelectRequested;
-    public event Action<Entity> OnHoverChanged;
     
     private InteractableUI _interactableUI;
     private float _slideSpeed;
@@ -35,10 +33,6 @@ public class ResolutionOrderIcon : LoggableBehaviour, IPointerEnterHandler, IPoi
         _healthCounter.SetHealthCount(health.Current);
         _healthCounter.SetOwner(entity, viewerPlayer);
     }
-
-    public void OnPointerEnter(PointerEventData eventData) => OnHoverChanged?.Invoke(Entity);
-
-    public void OnPointerExit(PointerEventData eventData) => OnHoverChanged?.Invoke(null);
 
     public void SetBorderColor(Color color) => _border.color = color;
 

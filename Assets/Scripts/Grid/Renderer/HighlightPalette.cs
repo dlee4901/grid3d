@@ -18,6 +18,9 @@ public class HighlightPalette : ScriptableObject
     [SerializeField] private HighlightStyle _effectArea;
     [SerializeField] private HighlightStyle _selected;
     [SerializeField] private HighlightStyle _hover;
+    [SerializeField, ColorUsage(false, true)] private Color _dangerFace = new(0.75f, 0.1f, 0.05f, 1f);
+
+    public Color DangerFace => _dangerFace;
 
     public HighlightStyle StyleFor(HighlightType type) => type switch
     {

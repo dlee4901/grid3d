@@ -8,8 +8,10 @@ public class TeamPalette : ScriptableObject
     [SerializeField] private Color _enemy = new Color32(230, 50, 60, 255);
 
     public Color ColorFor(Entity entity, int viewerPlayer)
-    {
-        if (!entity.TryGetComponent<ControlComponent>(out var control) || control.PlayerController == 0) return _neutral;
-        return control.PlayerController == viewerPlayer ? _ally : _enemy;
-    }
+        => entity.TryGetComponent<ControlComponent>(out var control)
+            ? ColorForPlayer(control.PlayerController, viewerPlayer)
+            : _neutral;
+
+    public Color ColorForPlayer(int player, int viewerPlayer)
+        => player == 0 ? _neutral : player == viewerPlayer ? _ally : _enemy;
 }

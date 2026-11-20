@@ -306,8 +306,8 @@ RectTransform:
   m_Children:
   - {fileID: 193813367880907159}
   - {fileID: 7523753924609254930}
-  - {fileID: 63951340463725473}
   - {fileID: 3581433632712648420}
+  - {fileID: 63951340463725473}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -356,8 +356,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InteractableUI
   _debug: 0
-  _hoverTriggerTime: 1
-  _holdTriggerTime: 1
+  _hoverTriggerTime: 0.5
+  _holdTriggerTime: 0.5
   _defaultOverlayColor:
     serializedVersion: 2
     rgba: 16777215
@@ -461,6 +461,7 @@ GameObject:
   - component: {fileID: 6197654877334950863}
   - component: {fileID: 1817995219631574406}
   - component: {fileID: 4418230957716204381}
+  - component: {fileID: 511882021290246274}
   m_Layer: 5
   m_Name: Icon
   m_TagString: Untagged
@@ -737,6 +738,7 @@ GameObject:
   m_Component:
   - component: {fileID: 63951340463725473}
   - component: {fileID: 5295675333675445194}
+  - component: {fileID: 2317780744933614489}
   m_Layer: 5
   m_Name: Mana
   m_TagString: Untagged
@@ -897,3 +899,53 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 2134357268969836666, guid: c03954cf38a64a0893b01e0cf91e846d, type: 3}
   m_PrefabInstance: {fileID: 3729398072047412840}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &2317780744933614489
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8882648344813548334}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a0c3e1b7f94a2c8e6d4b2a0f1c3e5d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DropShadow
+  _shadow: {fileID: 403131704407158482}
+  _effect: {fileID: 0}
+  _direction: 0
+  _distance: 4
+  _color:
+    serializedVersion: 2
+    rgba: 2147483648
+  _text: {fileID: 6872364024505970547}
+  _textMaterials:
+  - {fileID: 2100000, guid: cfb3870a2f164b1fa673d3201f2850a6, type: 2}
+  - {fileID: 2100000, guid: 01f1d7ce49c24be1adb37ecf68f3b1ee, type: 2}
+  - {fileID: 2100000, guid: 6e9433de0520437d84207bfc68925809, type: 2}
+  - {fileID: 2100000, guid: 935268a7d2ad419ba7bda304541a601a, type: 2}
+--- !u!114 &511882021290246274
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5971270370453641986}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a0c3e1b7f94a2c8e6d4b2a0f1c3e5d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DropShadow
+  _shadow: {fileID: 0}
+  _effect: {fileID: 4418230957716204381}
+  _direction: 0
+  _distance: 4
+  _color:
+    serializedVersion: 2
+    rgba: 2147483648
+  _text: {fileID: 8641954176398722878}
+  _textMaterials:
+  - {fileID: 2100000, guid: cfb3870a2f164b1fa673d3201f2850a6, type: 2}
+  - {fileID: 2100000, guid: 01f1d7ce49c24be1adb37ecf68f3b1ee, type: 2}
+  - {fileID: 2100000, guid: 6e9433de0520437d84207bfc68925809, type: 2}
+  - {fileID: 2100000, guid: 935268a7d2ad419ba7bda304541a601a, type: 2}

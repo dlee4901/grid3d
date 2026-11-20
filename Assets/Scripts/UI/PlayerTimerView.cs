@@ -9,8 +9,11 @@ public class PlayerTimerView : LoggableBehaviour
     [SerializeField] private Color _inactiveColor = new Color(1f, 1f, 1f, 0.4f);
 
     private int _shownSeconds = int.MinValue;
+    private Color _teamColor = Color.white;
 
     public void SetLabel(string label) => _playerText.text = label;
+
+    public void SetTeamColor(Color color) => _teamColor = color;
 
     public void SetTimeMs(int ms)
     {
@@ -23,7 +26,7 @@ public class PlayerTimerView : LoggableBehaviour
     public void SetActiveVisual(bool active)
     {
         var color = active ? _activeColor : _inactiveColor;
-        _playerText.color = color;
+        _playerText.color = new Color(_teamColor.r, _teamColor.g, _teamColor.b, color.a);
         _timeText.color = color;
     }
 }

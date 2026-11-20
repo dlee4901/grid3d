@@ -5,7 +5,9 @@ public static partial class StatusConfigs
     public static readonly StatusConfig Burn = new()
     {
         Id = "Burn",
-        Trigger = new Trigger { On = GameEvent.TurnStart },
+        DisplayName = "Burn",
+        Description = "At the end of this unit's turn, take {Damage} damage and lose one stack.",
+        Trigger = new Trigger { On = GameEvent.TurnEnd },
         Effects = new List<AbilityEffect>
         {
             new DamageEffect { Relation = Occupant.Self, Amount = 1 },

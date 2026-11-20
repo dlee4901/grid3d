@@ -27,8 +27,12 @@ public class TurnController : LoggableBehaviour
     public void EndTurn()
     {
         if (!CanEndTurn) return;
-        _gridManager.Submit(seat => new EndTurnCommand(seat, _timers.ElapsedMs(seat)));
+        _gridManager.Submit(BuildEndTurn);
     }
+
+    public bool PreviewEndTurn() => CanEndTurn && _gridManager.Preview(BuildEndTurn);
+
+    private Command BuildEndTurn(int seat) => new EndTurnCommand(seat, _timers.ElapsedMs(seat));
 
     private void OnStateChanged()
     {

@@ -4,6 +4,19 @@ public abstract class Value
 {
     internal abstract int Eval(in EffectContext ctx);
 
+    public virtual bool TryGetConstant(out int value)
+    {
+        value = 0;
+        return false;
+    }
+
+    public virtual bool TryGetRange(out int min, out int max)
+    {
+        var constant = TryGetConstant(out min);
+        max = min;
+        return constant;
+    }
+
     public static implicit operator Value(int constant) => new ConstValue(constant);
 
     public static Value operator +(Value a, Value b) => new BinaryValue(a, b, (x, y) => x + y);
@@ -23,6 +36,12 @@ internal sealed class ConstValue : Value
     private readonly int _value;
     public ConstValue(int value) => _value = value;
     internal override int Eval(in EffectContext ctx) => _value;
+
+    public override bool TryGetConstant(out int value)
+    {
+        value = _value;
+        return true;
+    }
 }
 
 internal sealed class BinaryValue : Value
@@ -39,6 +58,15 @@ internal sealed class IfValue : Value
     private readonly Value _then, _otherwise;
     public IfValue(Condition when, Value then, Value otherwise) { _when = when; _then = then; _otherwise = otherwise; }
     internal override int Eval(in EffectContext ctx) => _when.Eval(ctx) ? _then.Eval(ctx) : _otherwise.Eval(ctx);
+
+    public override bool TryGetRange(out int min, out int max)
+    {
+        min = max = 0;
+        if (!_then.TryGetRange(out var thenMin, out var thenMax) || !_otherwise.TryGetRange(out var otherMin, out var otherMax)) return false;
+        min = Math.Min(thenMin, otherMin);
+        max = Math.Max(thenMax, otherMax);
+        return true;
+    }
 }
 
 internal sealed class VarValue : Value

@@ -24,26 +24,25 @@ public class AbilityIcon : LoggableBehaviour
     private RectTransform _manaCounterTransform;
     
     private Ability _ability;
+    private Trait _trait;
+    private Status _status;
+    private RawImage _textureImage;
     private GridSource _source;
 
     public string AbilityId => _ability?.Id;
+    public Ability Ability => _ability;
+    public Trait Trait => _trait;
+    public Status Status => _status;
+    public GridSource Source => _source;
 
-    public event Action<Ability, GridSource> OnPreviewRequested;
-    public event Action OnPreviewCancelled;
-    public event Action<Ability, GridSource> OnActivateRequested;
+    public event Action<AbilityIcon> OnClicked;
 
     private void Start()
     {
         _interactableUI = UnityUtil.GetOrAddComponent<InteractableUI>(gameObject);
         _manaCounterTransform = _manaCounter.GetComponent<RectTransform>();
         
-        _interactableUI.OnHoverTriggered += () => { Log($"PreviewRequested: {_ability?.Id}"); OnPreviewRequested?.Invoke(_ability, _source); };
-        _interactableUI.OnHoverCompleted += () => { Log("PreviewCancelled"); OnPreviewCancelled?.Invoke(); };
-        
-        _interactableUI.OnHoldTriggered += () => { Log($"PreviewRequested: {_ability?.Id}"); OnPreviewRequested?.Invoke(_ability, _source); };
-        _interactableUI.OnHoldCompleted += () => { Log("PreviewCancelled"); OnPreviewCancelled?.Invoke(); };
-        
-        _interactableUI.OnClickCompleted += () => { Log($"ActivateRequested: {_ability?.Id}"); OnActivateRequested?.Invoke(_ability, _source); };
+        _interactableUI.OnClickCompleted += () => OnClicked?.Invoke(this);
     }
 
     public void Init(Sprite sprite, Ability ability, GridSource source)
@@ -51,7 +50,44 @@ public class AbilityIcon : LoggableBehaviour
         _icon.sprite = sprite;
         _ability = ability;
         _source = source;
-        UpdateInfo();
+    }
+
+    public void InitTrait(Sprite sprite, Trait trait)
+    {
+        _icon.sprite = sprite;
+        _trait = trait;
+        _cooldown.SetActive(false);
+        _manaCounter.gameObject.SetActive(false);
+    }
+
+    public void InitStatus(Sprite sprite, int count, Status status = null)
+    {
+        _icon.sprite = sprite;
+        _status = status;
+        _cooldown.SetActive(false);
+        _manaCounter.gameObject.SetActive(true);
+        _manaCounter.SetManaCount(count);
+    }
+
+    public void InitSwatch(Texture texture, int turns)
+    {
+        if (_textureImage == null)
+        {
+            _textureImage = new GameObject("Texture", typeof(RectTransform), typeof(RawImage)).GetComponent<RawImage>();
+            var rect = _textureImage.rectTransform;
+            rect.SetParent(_icon.rectTransform, false);
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            _textureImage.raycastTarget = false;
+        }
+        _textureImage.texture = texture;
+        _icon.sprite = null;
+        _icon.color = Color.black;
+        _cooldown.SetActive(false);
+        _manaCounter.gameObject.SetActive(turns > 0);
+        if (turns > 0) _manaCounter.SetManaCount(turns);
     }
 
     public void SetActiveVisual(bool active)
@@ -60,27 +96,17 @@ public class AbilityIcon : LoggableBehaviour
         if (_border != null) _border.color = active ? _activeBorderColor : _borderColor;
     }
 
-    public void SetInteractable(bool interactable)
-    {
-        if (_interactableUI == null) _interactableUI = UnityUtil.GetOrAddComponent<InteractableUI>(gameObject);
-        _interactableUI.enabled = interactable;
-        _icon.color = interactable ? Color.white : _disabledTint;
-    }
+    public void SetCastable(bool castable) => _icon.color = castable ? Color.white : _disabledTint;
     
-    public void UpdateInfo()
+    public void Render(Ability shown, bool castable)
     {
-        if (_ability.Cooldown > 0)
-        {
-            _cooldown.SetActive(true);
-            _cooldownText.text = _ability.Cooldown.ToString();
-            _manaCounter.gameObject.SetActive(false);
-        }
-        else
-        {
-            _cooldown.SetActive(false);
-            _manaCounter.gameObject.SetActive(true);
-            _manaCounter.SetManaCount(_ability.ManaCost);
-        }
+        var onCooldown = shown.Cooldown > 0;
+        _cooldown.SetActive(onCooldown);
+        if (onCooldown) _cooldownText.text = shown.Cooldown.ToString();
+        _manaCounter.gameObject.SetActive(true);
+        _manaCounter.SetManaCount(shown.ManaCost);
+        _manaCounter.SetDimmed(onCooldown);
+        SetCastable(castable);
     }
     
     private void SetManaCounterPosition()

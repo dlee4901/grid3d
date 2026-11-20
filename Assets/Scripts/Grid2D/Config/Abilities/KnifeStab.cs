@@ -5,6 +5,8 @@ public static partial class AbilityConfigs
     public static readonly AbilityConfig KnifeStab = new()
     {
         Id = "Knife Stab",
+        DisplayName = "Knife Stab",
+        Description = "Stab an adjacent unit for {Damage} damage.",
         ManaCost = 1,
         Effects = new List<AbilityEffect>
         {

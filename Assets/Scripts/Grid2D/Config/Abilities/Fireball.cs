@@ -5,9 +5,16 @@ public static partial class AbilityConfigs
     public static readonly AbilityConfig Fireball = new()
     {
         Id = "Fireball",
+        DisplayName = "Fireball",
+        Description = "Deal {Damage} damage and apply {Burning} in an area.",
         ManaCost = 2,
         Effects = new List<AbilityEffect>()
         {
+            new TerrainEffect()
+            {
+                Relation = Occupant.Any,
+                Terrain = TerrainType.Burning
+            },
             new DamageEffect()
             {
                 Relation = Occupant.Units & ~Occupant.Self,
@@ -22,9 +29,9 @@ public static partial class AbilityConfigs
                 {
                     new GridTraversal()
                     {
-                        Direction = GridDirection.Straight,
+                        Direction = GridDirection.Line,
                         Linear = false,
-                        MaxDistance = 2,
+                        MaxDistance = 1,
                         Passthrough = Occupant.Any
                     }
                 }

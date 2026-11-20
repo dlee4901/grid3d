@@ -7,11 +7,14 @@ public class TraitComponent : IEntityComponent
     public IReadOnlyList<Trait> Traits => _traits;
     public IReadOnlyList<Status> Statuses => _statuses;
 
-    public TraitComponent(List<string> traitIds)
+    public TraitComponent(List<string> traitIds, List<(string Id, int Count)> statuses = null)
     {
-        if (traitIds == null) return;
-        foreach (var id in traitIds)
-            if (IdRegistry<TraitConfig>.TryGet(id, out var config)) _traits.Add(new Trait(config));
+        if (traitIds != null)
+            foreach (var id in traitIds)
+                if (IdRegistry<TraitConfig>.TryGet(id, out var config)) _traits.Add(new Trait(config));
+        if (statuses != null)
+            foreach (var (id, count) in statuses)
+                if (IdRegistry<StatusConfig>.TryGet(id, out var config)) AdjustStatus(config, count);
     }
 
     internal IEnumerable<Trait> All

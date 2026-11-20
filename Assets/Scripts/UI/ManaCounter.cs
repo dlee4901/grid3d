@@ -5,6 +5,7 @@ using UnityEngine.UI;
 public class ManaCounter : MonoBehaviour
 {
     [SerializeField] private TMP_Text _counterText;
+    [SerializeField] private Color32 _dimmedTint = new(128, 128, 128, 255);
     
     //[SerializeField] private Image _manaIcon;
     // [SerializeField] private Outline _outline;
@@ -40,6 +41,18 @@ public class ManaCounter : MonoBehaviour
     public void SetManaCount(int manaCount)
     {
         _counterText.text = manaCount.ToString();
+    }
+
+    public void SetSize(float size)
+    {
+        ((RectTransform)transform).sizeDelta = new Vector2(size, size);
+        _counterText.fontSize = Mathf.Max(24f, size * 0.5f);
+    }
+
+    public void SetDimmed(bool dimmed)
+    {
+        var tint = dimmed ? (Color)_dimmedTint : Color.white;
+        foreach (var graphic in GetComponentsInChildren<Graphic>()) graphic.canvasRenderer.SetColor(tint);
     }
     
     // public void ToggleOutline(bool on)

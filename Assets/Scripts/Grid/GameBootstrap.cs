@@ -6,10 +6,19 @@ public class GameBootstrap : LoggableBehaviour
 {
     private enum StartMode { Local, Steam }
 
+    private const string TestTeamId = "TestTeam";
+
+    private static bool _contentRegistered;
+
     [SerializeField] private GridManager _gridManager;
     [SerializeField] private List<EntityAssets> _entityAssets;
+    [SerializeField] private List<StatusAssets> _statusAssets;
+    [SerializeField] private List<TraitAssets> _traitAssets;
+    [SerializeField] private List<TerrainAssets> _terrainAssets;
     [SerializeField] private bool _autoStart = true;
     [SerializeField] private string _mapId = "TestMap1";
+    [SerializeField] private string _team1Id = TestTeamId;
+    [SerializeField] private string _team2Id = TestTeamId;
     [SerializeField] private StartMode _startMode = StartMode.Local;
 
     private void Start()
@@ -23,9 +32,13 @@ public class GameBootstrap : LoggableBehaviour
             return;
         }
 
-        CreateTestTeams();
-        var team1 = JsonHandler.LoadData<TeamData>("TestTeam1");
-        var team2 = JsonHandler.LoadData<TeamData>("TestTeam2");
+        CreateTestTeam();
+        var saved1 = JsonHandler.LoadData<SavedTeam>(_team1Id);
+        var saved2 = JsonHandler.LoadData<SavedTeam>(_team2Id);
+        foreach (var saved in new[] { saved1, saved2 })
+            if (saved.Validate(definition) is { } savedIssue) LogError($"Team '{saved.Id}': {savedIssue}");
+        var team1 = saved1.ForSeat(1);
+        var team2 = saved2.ForSeat(2);
         var teams = new[] { team1, team2 };
 
         ValidateContent(definition, teams);
@@ -55,8 +68,12 @@ public class GameBootstrap : LoggableBehaviour
         foreach (var unit in team.UnitStartPositions) spawnable.Add(unit.UnitId);
         if (map.EntityStartPositions != null) foreach (var spec in map.EntityStartPositions) spawnable.Add(spec.EntityId);
         foreach (var id in spawnable)
-            if (IdRegistry<EntityConfig>.TryGet(id, out _) && !IdRegistry<EntityAssets>.TryGet(id, out _))
-                LogWarning($"Entity '{id}' has no EntityAssets (no model/sprite)");
+        {
+            if (!IdRegistry<EntityConfig>.TryGet(id, out var entityConfig)) continue;
+            if (!IdRegistry<EntityAssets>.TryGet(id, out _)) LogWarning($"Entity '{id}' has no EntityAssets (no model/sprite)");
+            foreach (var trait in entityConfig.Traits)
+                if (!IdRegistry<TraitAssets>.TryGet(trait, out _)) LogError($"Trait '{trait}' on '{id}' has no TraitAssets (no icon)");
+        }
     }
 
     private void Update()
@@ -70,17 +87,26 @@ public class GameBootstrap : LoggableBehaviour
         }
     }
 
-    private void RegisterContent()
+    public void RegisterContent()
     {
+        if (_contentRegistered) return;
+        _contentRegistered = true;
         ContentRegistry.RegisterAll();
         RegistryManager.Register(_entityAssets);
+        RegistryManager.Register(_statusAssets);
+        RegistryManager.Register(_traitAssets);
+        RegistryManager.Register(_terrainAssets);
     }
 
-    private void CreateTestTeams()
+    private static void CreateTestTeam()
     {
-        var team1 = new TeamData("TestTeam1", "TestMap1", new List<(int, string)> { (9, "Rogue"), (11, "Fire Mage"), (12, "Barbarian"), (14, "Knight") });
-        var team2 = new TeamData("TestTeam2", "TestMap1", new List<(int, string)> { (54, "Rogue"), (52, "Fire Mage"), (51, "Barbarian"), (49, "Knight") });
-        JsonHandler.SaveData(team1);
-        JsonHandler.SaveData(team2);
+        if (JsonHandler.Exists(TestTeamId)) return;
+        JsonHandler.SaveData(new SavedTeam(TestTeamId, "TestMap1", new List<SavedUnit>
+        {
+            new("Rogue", new[] { 9, 54 }),
+            new("Fire Mage", new[] { 11, 52 }),
+            new("Barbarian", new[] { 12, 51 }),
+            new("Knight", new[] { 14, 49 })
+        }));
     }
 }

@@ -6,14 +6,6 @@ public class AbilityComponent : IEntityComponent
     private readonly Dictionary<string, Ability> _dictionary = new();
     public IReadOnlyList<Ability> List => _list;
     public IReadOnlyDictionary<string, Ability> Dictionary => _dictionary;
-    public bool HasActed
-    {
-        get
-        {
-            foreach (var ability in _list) if (ability.CastsThisTurn > 0) return true;
-            return false;
-        }
-    }
     
     public AbilityComponent(List<string> abilityIds)
     {
@@ -24,5 +16,13 @@ public class AbilityComponent : IEntityComponent
             _list.Add(ability);
             _dictionary.Add(abilityId, ability);
         }
+    }
+
+    internal void OnCast(Ability cast)
+    {
+        cast.Trigger();
+        if ((cast.Keywords & Keyword.Opener) != 0) return;
+        foreach (var ability in _list)
+            if (ability != cast && (ability.Keywords & Keyword.Finisher) == 0) ability.ApplyCooldown(1);
     }
 }

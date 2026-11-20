@@ -12,10 +12,11 @@ public class Ability : INameId
     public List<AbilityEffect> Effects => Config.Effects;
 
     public int Cooldown { get; private set; }
-    public int PendingCooldown { get; private set; }
     public int CastsThisTurn { get; private set; }
     public int Delay { get; private set; }
     public bool Locked { get; private set; }
+
+    private int? _castCooldown;
 
     internal Ability(AbilityConfig config)
     {
@@ -38,19 +39,23 @@ public class Ability : INameId
 
     internal void Trigger()
     {
+        var cooldown = _castCooldown ?? Config.Cooldown;
+        _castCooldown = null;
         CastsThisTurn++;
-        ApplyCooldown(Config.Cooldown);
+        if (CastsThisTurn == 1 && (Keywords & Keyword.Double) != 0) return;
+        ApplyCooldown(cooldown);
     }
+
+    internal void SetCastCooldown(int turns) => _castCooldown = turns;
 
     internal void ApplyCooldown(int turns)
     {
-        if (turns > PendingCooldown) PendingCooldown = turns;
+        if (turns > Cooldown) Cooldown = turns;
     }
 
     internal void TurnUpdate()
     {
-        Cooldown = Math.Max(Cooldown - 1, PendingCooldown);
-        PendingCooldown = 0;
+        Cooldown = Math.Max(Cooldown - 1, 0);
         CastsThisTurn = 0;
     }
 }

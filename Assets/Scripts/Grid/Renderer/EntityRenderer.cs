@@ -72,13 +72,18 @@ public class EntityRenderer : LoggableBehaviour
         _overlayCanvas = CreateOverlayCanvas();
         RefreshEntities();
         _gridManager.DisplayChanged += RefreshEntities;
+        _gridManager.Restarted += ClearViews;
         RenderPipelineManager.beginCameraRendering += ProjectCounters;
     }
 
     private void OnDestroy()
     {
         RenderPipelineManager.beginCameraRendering -= ProjectCounters;
-        if (_gridManager != null) _gridManager.DisplayChanged -= RefreshEntities;
+        if (_gridManager != null)
+        {
+            _gridManager.DisplayChanged -= RefreshEntities;
+            _gridManager.Restarted -= ClearViews;
+        }
         if (_overlayCanvas != null) Destroy(_overlayCanvas.gameObject);
     }
 
@@ -139,6 +144,14 @@ public class EntityRenderer : LoggableBehaviour
             if (!previewing) view.PreviewMoved = false;
             return;
         }
+        if (TeleportedTo(view, cell))
+        {
+            view.Cell = cell;
+            view.Waypoints.Clear();
+            view.PreviewMoved = previewing;
+            view.Model.transform.position = _gridRenderer.CellCenter(cell);
+            return;
+        }
         var movePath = PathFromMoves(view, cell);
         view.Cell = cell;
         view.Waypoints.Clear();
@@ -158,6 +171,9 @@ public class EntityRenderer : LoggableBehaviour
         foreach (var step in movePath == null ? path : path.Skip(1)) view.Waypoints.Enqueue(_gridRenderer.CellCenter(step));
     }
 
+    private bool TeleportedTo(EntityView view, GridPosition cell)
+        => Displayed.Moves.Any(move => move.Uid == view.Entity.Uid && move.Teleport && move.To.Equals(cell));
+
     private List<GridPosition> PathFromMoves(EntityView view, GridPosition cell)
     {
         var moves = Displayed.Moves.Where(move => move.Uid == view.Entity.Uid).ToList();
@@ -169,6 +185,16 @@ public class EntityRenderer : LoggableBehaviour
     }
 
     private float Pulse() => _pulseStrength * (0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * _pulseFrequency * 2f * Mathf.PI));
+
+    private void ClearViews()
+    {
+        foreach (var view in _views.Values)
+        {
+            Destroy(view.Model);
+            Destroy(view.Counter.gameObject);
+        }
+        _views.Clear();
+    }
 
     public void RefreshEntities()
     {
@@ -184,7 +210,7 @@ public class EntityRenderer : LoggableBehaviour
             if (entity.TryGetComponent<HealthComponent>(out var health))
             {
                 view.Counter.SetHealthCount(health.Current);
-                view.Counter.SetOwner(entity, _gridManager.LocalSeat);
+                view.Counter.SetOwner(entity, _gridManager.ViewerSeat);
                 view.Counter.SetPrevious(RealHealth(entity.Uid, health.Current));
                 view.Counter.SetDead(false);
             }

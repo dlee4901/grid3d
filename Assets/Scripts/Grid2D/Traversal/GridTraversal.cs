@@ -24,6 +24,8 @@ public class GridTraversal
     public GridDirection Direction { get; init; }
     public bool[] CustomDirection { get; init; } = new bool[UnidirectionalCount];
 
+    public const int Unlimited = -1;
+
     public int MaxDistance { get; init; } = 0;
     public bool Linear { get; init; } = true;
     public bool AbsoluteDirection { get; init; } = false;
@@ -100,8 +102,7 @@ public class GridTraversal
         if (!currentPosition.IsValid()) yield break;
         
         var grid = source.Grid;
-        var maxDistance = MaxDistance < 0 || MaxDistance > grid.X * grid.Y ? grid.X * grid.Y : MaxDistance;
-        if (curDistance > maxDistance) yield break;
+        if (MaxDistance != Unlimited && curDistance > MaxDistance) yield break;
 
         var directionFacing = source.Entity?.Facing ?? GridDirectionFacing.North;
         var directionVectors = GetDirectionVectors(gridDirection, directionFacing);

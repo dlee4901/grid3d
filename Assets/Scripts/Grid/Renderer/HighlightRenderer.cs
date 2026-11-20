@@ -16,9 +16,8 @@ public class HighlightRenderer : LoggableBehaviour
     private LinePool _projectiles;
 
     private readonly Dictionary<int, HighlightType> _highlights = new();
-    private int? _hoveredIndex;
-    private int? _uiHoveredIndex;
     private int? _selectedIndex;
+    private readonly HashSet<int> _danger = new();
 
     private const float DirectionalArrowHeight = 0.02f;
     private const float ProjectileHeight = 0.05f;
@@ -35,6 +34,7 @@ public class HighlightRenderer : LoggableBehaviour
             for (var y = 0; y < state.Y; y++)
             {
                 var position = new GridPosition(state, (x, y));
+                if (!position.IsValid()) continue;
                 var arrow = new GameObject("DirectionalArrow").AddComponent<SpriteRenderer>();
                 arrow.transform.SetParent(transform);
                 arrow.transform.SetPositionAndRotation(_gridRenderer.CellCenter(position, DirectionalArrowHeight), Quaternion.Euler(90f, 0f, 0f));
@@ -43,28 +43,15 @@ public class HighlightRenderer : LoggableBehaviour
             }
         }
         _projectiles = new LinePool(transform, _projectileMaterial);
-        _gridManager.Input.OnHoverChanged += OnHoverChanged;
     }
 
-    private void OnDestroy()
+    public void SetDanger(IEnumerable<GridPosition> positions)
     {
-        if (_gridManager != null && _gridManager.Input != null) _gridManager.Input.OnHoverChanged -= OnHoverChanged;
-    }
-
-    private void OnHoverChanged(GridSource? source)
-    {
-        var previous = _hoveredIndex;
-        _hoveredIndex = source?.Position.Dim1;
-        RefreshCube(previous);
-        RefreshCube(_hoveredIndex);
-    }
-
-    public void SetUIHovered(GridPosition? position)
-    {
-        var previous = _uiHoveredIndex;
-        _uiHoveredIndex = position?.Dim1;
-        RefreshCube(previous);
-        RefreshCube(_uiHoveredIndex);
+        _danger.Clear();
+        if (positions != null)
+            foreach (var position in positions) _danger.Add(position.Dim1);
+        for (var i = 0; i < _positionCubes.Length; i++)
+            if (_positionCubes[i] != null) _positionCubes[i].SetDanger(_danger.Contains(i));
     }
 
     public void SetSelected(GridPosition? position)
@@ -82,7 +69,6 @@ public class HighlightRenderer : LoggableBehaviour
         var cube = _positionCubes[index.Value];
         if (_highlights.TryGetValue(index.Value, out var type)) cube.SetHighlight(type);
         else if (index == _selectedIndex) cube.SetHighlight(HighlightType.Selected);
-        else if (index == _hoveredIndex || index == _uiHoveredIndex) cube.SetHighlight(HighlightType.Hover);
         else cube.ClearHighlight();
     }
 
@@ -91,12 +77,13 @@ public class HighlightRenderer : LoggableBehaviour
 
     public void Clear()
     {
-        foreach (var cube in _positionCubes) cube.ClearHighlight();
-        foreach (var arrow in _directionalArrows) arrow.gameObject.SetActive(false);
+        foreach (var cube in _positionCubes)
+            if (cube != null) cube.ClearHighlight();
+        foreach (var arrow in _directionalArrows)
+            if (arrow != null) arrow.gameObject.SetActive(false);
         _projectiles.HideAll();
         _highlights.Clear();
         RefreshCube(_selectedIndex);
-        RefreshCube(_hoveredIndex);
         HighlightsChanged?.Invoke();
     }
 

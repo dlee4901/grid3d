@@ -5,6 +5,8 @@ public static partial class AbilityConfigs
     public static readonly AbilityConfig MoveStraight3Step = new()
     {
         Id = "MoveStraight3Step",
+        DisplayName = "Move",
+        Description = "Move 3 squares",
         Effects = new List<AbilityEffect> { new MoveEffect() },
         Targeting = Straight3Step()
     };

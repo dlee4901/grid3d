@@ -35,7 +35,16 @@ public abstract class AbilityEffect
 {
     public Occupant Relation { get; init; } = Occupant.Units;
     public Condition When { get; init; } = Condition.Always;
+    public string DescriptionToken { get; init; }
+    protected virtual string DefaultDescriptionToken => null;
+    internal bool MatchesToken(string token) => (DescriptionToken ?? DefaultDescriptionToken) == token;
     internal abstract void Apply(in EffectContext ctx);
+
+    public virtual bool TryGetValueRange(GridState state, out int min, out int max)
+    {
+        min = max = 0;
+        return false;
+    }
 
     internal bool Affects(in EffectContext ctx)
         => (Relation & Occupants.Of(ctx.Source, ctx.Target)) != 0 && When.Eval(ctx);

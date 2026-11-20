@@ -20,6 +20,8 @@ public sealed class GridState
     internal TriggerSystem Triggers { get; }
     
     private readonly Entity[] _entities;
+    private readonly TerrainType[] _terrain;
+    private readonly int[] _terrainTurns;
     private readonly int[] _mana;
     private readonly int[] _timeMs;
     private int _consecutivePasses;
@@ -37,6 +39,8 @@ public sealed class GridState
         Definition = definition;
         Triggers = new TriggerSystem(this);
         _entities = new Entity[definition.Size];
+        _terrain = (TerrainType[])definition.TerrainMap.Clone();
+        _terrainTurns = (int[])definition.TerrainTurns.Clone();
         _mana = new int[PlayerSlots];
         _loadedTeams = new TeamData[PlayerSlots];
         
@@ -78,13 +82,14 @@ public sealed class GridState
     private void StartNextTurn()
     {
         EndAbilityTurn(ActivePlayer);
+        foreach (var entity in ResolutionOrder.Entities)
+            if (entity.TryGetComponent<ControlComponent>(out var control) && control.PlayerController == ActivePlayer)
+                Triggers.Emit(new TriggerEvent(GameEvent.TurnEnd, entity));
+        Triggers.Resolve();
+        TickTerrain();
         ActivePlayer = ActivePlayer % Definition.PlayerCount + 1;
         Turn++;
         RefillMana(ActivePlayer);
-        foreach (var entity in ResolutionOrder.Entities)
-            if (entity.TryGetComponent<ControlComponent>(out var control) && control.PlayerController == ActivePlayer)
-                Triggers.Emit(new TriggerEvent(GameEvent.TurnStart, entity));
-        Triggers.Resolve();
     }
 
     public int GetMana(int player) => player < 1 || player > Definition.PlayerCount ? 0 : _mana[player];
@@ -109,6 +114,24 @@ public sealed class GridState
     }
 
     public int GetSpawnPlayer(GridPosition position) => Definition.GetSpawnPlayer(position);
+
+    private void ApplyTerrainAt(GridPosition position)
+    {
+        var entity = GetEntity(position);
+        if (entity == null || !IdRegistry<TerrainConfig>.TryGet(_terrain[position.Dim1].ToString(), out var config)) return;
+        var steps = new GridSteps();
+        steps.Add(new GridStep(position, GridDirection.Line, 0));
+        EffectResolver.Run(new EffectContext(new GridSource(this, position, entity), null), steps, config.Effects);
+    }
+
+    private void TickTerrain()
+    {
+        for (var i = 0; i < _terrain.Length; i++)
+        {
+            if (_terrainTurns[i] <= 0) continue;
+            if (--_terrainTurns[i] == 0) _terrain[i] = TerrainType.Plain;
+        }
+    }
 
     private void EndAbilityTurn(int player)
     {
@@ -213,12 +236,24 @@ public sealed class GridState
     {
         if (!position.IsValid())
         {
-            terrainType = TerrainType.Default;
+            terrainType = TerrainType.Plain;
             return false;
         }
-        terrainType = Definition.TerrainMap[position.Dim1];
+        terrainType = _terrain[position.Dim1];
         return true;
     }
+
+    internal void SetTerrain(GridPosition position, TerrainType terrain, int turns)
+    {
+        if (!position.IsValid()) return;
+        var refresh = _terrain[position.Dim1] == terrain;
+        _terrain[position.Dim1] = terrain;
+        _terrainTurns[position.Dim1] = terrain == TerrainType.Plain ? 0
+            : refresh ? System.Math.Max(_terrainTurns[position.Dim1], turns) : turns;
+        ApplyTerrainAt(position);
+    }
+
+    public int GetTerrainTurns(GridPosition position) => position.IsValid() ? _terrainTurns[position.Dim1] : 0;
     
     public HashSet<GridPosition> GetControllableEntityPositions() => GetControllableEntityPositions(ActivePlayer);
 
@@ -234,7 +269,7 @@ public sealed class GridState
         for (var i = 0; i < _entities.Length; i++)
         {
             var gridPosition = new GridPosition(this, i);
-            if (predicate(gridPosition)) positions.Add(gridPosition);
+            if (gridPosition.IsValid() && predicate(gridPosition)) positions.Add(gridPosition);
         }
         return positions;
     }
@@ -262,15 +297,7 @@ public sealed class GridState
         => CanPlayerAct(player) && IsControllable(position, player) && CanCast(_entities[position.Dim1], ability, player);
 
     public bool CanCast(Entity entity, Ability ability, int player)
-        => !ability.Locked && ability.Cooldown == 0 && HasMana(player, ability.ManaCost)
-           && IsCastAllowedThisTurn(entity, ability);
-
-    private static bool IsCastAllowedThisTurn(Entity entity, Ability ability)
-    {
-        if (!entity.TryGetComponent<AbilityComponent>(out var abilities) || !abilities.HasActed) return true;
-        if (ability.CastsThisTurn > 0) return ability.CastsThisTurn == 1 && (ability.Keywords & Keyword.Repeat) != 0;
-        return (ability.Keywords & Keyword.Successive) != 0;
-    }
+        => !ability.Locked && ability.Cooldown == 0 && HasMana(player, ability.ManaCost);
 
     public bool HasCastableAbility(Entity entity, int player)
     {
@@ -297,18 +324,20 @@ public sealed class GridState
         _entities[position.Dim1] = entity;
         entity.SetPosition(position);
         ResolutionOrder.Add(entity);
+        ApplyTerrainAt(position);
         return true;
     }
     
     internal void ClearMoves() => _moves.Clear();
 
-    internal bool ChangeEntityPosition(GridPosition startPosition, GridPosition targetPosition)
+    internal bool ChangeEntityPosition(GridPosition startPosition, GridPosition targetPosition, bool teleport = false)
     {
         if (!TryGetEntity(startPosition, out var entity) || !IsTraversable(targetPosition)) return false;
         _entities[targetPosition.Dim1] = entity;
         _entities[startPosition.Dim1] = null;
         entity.SetPosition(targetPosition);
-        _moves.Add(new EntityMove(entity.Uid, startPosition, targetPosition));
+        _moves.Add(new EntityMove(entity.Uid, startPosition, targetPosition, teleport));
+        ApplyTerrainAt(targetPosition);
         return true;
     }
     
@@ -325,7 +354,7 @@ public sealed class GridState
     // TODO: Terrain check
     public bool IsTraversable(GridPosition position)
     {
-        return position.IsValid() && _entities[position.Dim1] == null && Definition.TerrainMap[position.Dim1] != TerrainType.Void; 
+        return position.IsValid() && _entities[position.Dim1] == null;
     }
 
     public ulong ComputeHash()
@@ -343,6 +372,11 @@ public sealed class GridState
             hash.Add(_timeMs[player]);
         }
         foreach (var entity in _entities) AddEntity(ref hash, entity);
+        for (var i = 0; i < _terrain.Length; i++)
+        {
+            hash.Add((int)_terrain[i]);
+            hash.Add(_terrainTurns[i]);
+        }
         hash.Add(ResolutionOrder.Entities.Count);
         foreach (var entity in ResolutionOrder.Entities) hash.Add(entity.Position.Dim1);
         return hash.Value;
@@ -389,7 +423,6 @@ public sealed class GridState
         {
             hash.Add(ability.Id);
             hash.Add(ability.Cooldown);
-            hash.Add(ability.PendingCooldown);
             hash.Add(ability.CastsThisTurn);
             hash.Add(ability.Delay);
             hash.Add(ability.Locked);

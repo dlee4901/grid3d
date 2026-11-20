@@ -11,6 +11,8 @@ public static class JsonHandler
         File.WriteAllText(filePath, jsonData);
     }
 
+    public static bool Exists(string id) => File.Exists(Path.Combine(Application.persistentDataPath, id + ".json"));
+
     public static T LoadData<T>(string id) where T : INameId
     {
         var filePath = Path.Combine(Application.persistentDataPath, id + ".json");

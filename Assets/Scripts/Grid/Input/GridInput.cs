@@ -12,7 +12,6 @@ public class GridInput : LoggableBehaviour
     private InputAction _selectAction;
     private bool _initialized;
 
-    private GridSource? _hovered;
     private bool _isLocked;
 
     private readonly List<RaycastResult> _uiHits = new();
@@ -22,13 +21,11 @@ public class GridInput : LoggableBehaviour
     private float? _cancelPressTime;
     private bool _pressedOnGrid;
 
-    public GridSource? Hovered => _hovered;
     public bool IsPointerOverUI { get; private set; }
 
     public event Action<GridSource> OnPositionPressed;
     public event Action<GridSource> OnPositionSelected;
     public event Action OnCancelClicked;
-    public event Action<GridSource?> OnHoverChanged;
 
     // public event Action<bool> OnLockChanged;
     // public bool IsLocked => _isLocked;
@@ -42,20 +39,20 @@ public class GridInput : LoggableBehaviour
         _initialized = true;
     }
 
+    public void SetState(GridState state) => _state = state;
+
     private void Update()
     {
         if (!_initialized) return;
         IsPointerOverUI = IsPointerOverAnyUI();
         if (IsPointerOverUI)
         {
-            SetHover(null);
             _cancelPressTime = null;
             _pressedOnGrid = false;
             return;
         }
-        UpdateHover();
-        if (_selectAction.WasPressedThisFrame()) HandlePress();
-        if (_selectAction.WasReleasedThisFrame()) HandleRelease();
+        if (_selectAction.WasPressedThisFrame()) HandlePress(PointerCell());
+        if (_selectAction.WasReleasedThisFrame()) HandleRelease(PointerCell());
     }
 
     private bool IsPointerOverAnyUI()
@@ -69,52 +66,44 @@ public class GridInput : LoggableBehaviour
         return _uiHits.Count > 0;
     }
 
-    private void UpdateHover()
+    private GridSource? PointerCell()
     {
         UnityUtil.GetMouseWorldPosition(_camera, out var worldPos, out var error);
-        if (error) { SetHover(null); return; }
+        if (error) return null;
         var cell = _grid.WorldToCell(worldPos);
         var gridPosition = new GridPosition(_state, (cell.x, cell.y));
-        if (!gridPosition.IsValid()) { SetHover(null); return; }
-        SetHover(new GridSource(_state, gridPosition, _state.GetEntity(gridPosition)));
+        if (!gridPosition.IsValid()) return null;
+        return new GridSource(_state, gridPosition, _state.GetEntity(gridPosition));
     }
 
-    private void HandlePress()
+    private void HandlePress(GridSource? cell)
     {
-        if (!_hovered.HasValue)
+        if (!cell.HasValue)
         {
             _cancelPressTime = Time.unscaledTime;
             return;
         }
         _pressedOnGrid = true;
-        Log($"Press: {Describe(_hovered)}");
-        OnPositionPressed?.Invoke(_hovered.Value);
+        Log($"Press: {Describe(cell)}");
+        OnPositionPressed?.Invoke(cell.Value);
     }
 
-    private void HandleRelease()
+    private void HandleRelease(GridSource? cell)
     {
         var pressedOnGrid = _pressedOnGrid;
         _pressedOnGrid = false;
-        if (pressedOnGrid && _hovered.HasValue)
+        if (pressedOnGrid && cell.HasValue)
         {
-            Log($"Click: {Describe(_hovered)}");
-            OnPositionSelected?.Invoke(_hovered.Value);
+            Log($"Click: {Describe(cell)}");
+            OnPositionSelected?.Invoke(cell.Value);
             return;
         }
         var pressTime = _cancelPressTime;
         _cancelPressTime = null;
-        if (pressTime == null || _hovered.HasValue) return;
+        if (pressTime == null || cell.HasValue) return;
         if (Time.unscaledTime - pressTime.Value > _cancelClickMaxSeconds) return;
         Log("Click: off map");
         OnCancelClicked?.Invoke();
-    }
-    
-    public void SetHover(GridSource? source)
-    {
-        if (_hovered == source) return;
-        _hovered = source;
-        Log($"Hover: {Describe(_hovered)}");
-        OnHoverChanged?.Invoke(_hovered);
     }
 
     private static string Describe(GridSource? source)

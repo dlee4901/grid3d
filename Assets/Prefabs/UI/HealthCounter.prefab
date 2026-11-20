@@ -297,6 +297,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6210963788679689376}
   - component: {fileID: 3206603829137708325}
+  - component: {fileID: 4532611281262642039}
   m_Layer: 5
   m_Name: HealthCounter
   m_TagString: Untagged
@@ -347,3 +348,28 @@ MonoBehaviour:
   _teamPalette: {fileID: 11400000, guid: 9e4c7b2a1d5f4c8eb3a6f0d2e8c1b570, type: 2}
   _border: {fileID: 8941101263628319560}
   _borderAlpha: 64
+--- !u!114 &4532611281262642039
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8295255859921445560}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a0c3e1b7f94a2c8e6d4b2a0f1c3e5d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DropShadow
+  _shadow: {fileID: 0}
+  _effect: {fileID: 0}
+  _direction: 2
+  _distance: 4
+  _color:
+    serializedVersion: 2
+    rgba: 2147483648
+  _text: {fileID: 4375948378184206316}
+  _textMaterials:
+  - {fileID: 2100000, guid: cfb3870a2f164b1fa673d3201f2850a6, type: 2}
+  - {fileID: 2100000, guid: 01f1d7ce49c24be1adb37ecf68f3b1ee, type: 2}
+  - {fileID: 2100000, guid: 6e9433de0520437d84207bfc68925809, type: 2}
+  - {fileID: 2100000, guid: 935268a7d2ad419ba7bda304541a601a, type: 2}

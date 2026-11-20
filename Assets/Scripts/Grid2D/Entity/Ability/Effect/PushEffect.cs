@@ -4,6 +4,10 @@ public sealed class PushEffect : AbilityEffect
 {
     public Value Distance { get; init; } = 1;
 
+    protected override string DefaultDescriptionToken => "Push";
+
+    public override bool TryGetValueRange(GridState state, out int min, out int max) => Distance.TryGetRange(out min, out max);
+
     internal override void Apply(in EffectContext ctx)
     {
         if (ctx.Target == null) return;

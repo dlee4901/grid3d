@@ -38,11 +38,12 @@ public static class TestGame
     }
 
     public static TurnExecutor StartOn(int x, int y, (int Position, string Ability)[] player1,
-                                       (int Position, string Ability)[] player2, int manaPerTurn = 3)
+                                       (int Position, string Ability)[] player2, int manaPerTurn = 3,
+                                       string[] layout = null)
     {
         var map = new GridDefinition
         {
-            Id = $"Test.Map.{x}x{y}", X = x, Y = y, ManaPerTurn = manaPerTurn, MaxTeamCost = 100,
+            Id = $"Test.Map.{x}x{y}", X = x, Y = y, Layout = layout, ManaPerTurn = manaPerTurn, MaxTeamCost = 100,
             PlayerStartPositions = new List<PositionConfig>
             {
                 new() { PositionValues = Positions(player1) },

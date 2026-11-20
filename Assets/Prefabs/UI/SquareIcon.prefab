@@ -297,8 +297,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InteractableUI
   _debug: 0
-  _hoverTriggerTime: 0.1
-  _holdTriggerTime: 1
+  _hoverTriggerTime: 0.5
+  _holdTriggerTime: 0.5
   _defaultOverlayColor:
     serializedVersion: 2
     rgba: 16777215

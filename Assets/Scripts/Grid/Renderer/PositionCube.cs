@@ -16,6 +16,8 @@ public class PositionCube : LoggableBehaviour
     [SerializeField, ColorUsage(false, true)] private Color _bottomEmission = Color.black;
 
     private Material _overlay;
+    private TerrainAssets _terrain;
+    private bool _danger;
 
     private static readonly int OutlineColorId = Shader.PropertyToID("_OutlineColor");
     private static readonly int EdgeEmissionId = Shader.PropertyToID("_EdgeEmission");
@@ -51,12 +53,32 @@ public class PositionCube : LoggableBehaviour
     public void ClearHighlight()
         => _overlay.SetColor(EdgeEmissionId, _edgeEmission);
 
+    public void SetTerrainEmission(TerrainAssets terrain)
+    {
+        _terrain = terrain;
+        ApplyFaces();
+    }
+
+    public void SetDanger(bool danger)
+    {
+        if (_danger == danger) return;
+        _danger = danger;
+        ApplyFaces();
+    }
+
+    private void ApplyFaces()
+    {
+        var top = _terrain != null ? _terrain.TopEmission : _topEmission;
+        if (_danger) top += _palette.DangerFace;
+        _overlay.SetColor(FaceEmissionIds[(int)CubeFace.Top], top);
+        _overlay.SetColor(FaceEmissionIds[(int)CubeFace.Side], _terrain != null ? _terrain.SideEmission : _sideEmission);
+    }
+
     private void Apply()
     {
         _overlay.SetColor(OutlineColorId, _edgeColor);
         _overlay.SetColor(EdgeEmissionId, _edgeEmission);
-        _overlay.SetColor(FaceEmissionIds[(int)CubeFace.Top], _topEmission);
-        _overlay.SetColor(FaceEmissionIds[(int)CubeFace.Side], _sideEmission);
         _overlay.SetColor(FaceEmissionIds[(int)CubeFace.Bottom], _bottomEmission);
+        ApplyFaces();
     }
 }

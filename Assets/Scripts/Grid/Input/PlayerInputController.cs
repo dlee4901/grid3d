@@ -5,6 +5,8 @@ public class PlayerInputController : LoggableBehaviour
     public PlayerInputState State { get; private set; }
     public string ActiveAbilityId { get; private set; }
     public event System.Action<string> OnActiveAbilityChanged;
+    public event System.Action TargetingChanged;
+    public bool CanConfirm => State is PreviewState { Castable: true };
     
     private PlayerInputContext _ctx;
 
@@ -26,27 +28,47 @@ public class PlayerInputController : LoggableBehaviour
         input.OnPositionPressed += pressed => State.OnPress(pressed);
         input.OnPositionSelected += clicked => State.OnPositionSelected(clicked);
         input.OnCancelClicked += () => State.OnCancel();
-        input.OnHoverChanged += hovered => State.OnHover(hovered);
+    }
+
+    public void Rebind(CommandDispatcher dispatcher, GridState grid)
+    {
+        _ctx.Dispatcher = dispatcher;
+        _ctx.Grid = grid;
+        ResetToIdle();
     }
 
     private void Update()
     {
         if (State == null) return;
-        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+        var keyboard = Keyboard.current;
+        if (keyboard == null) return;
+        if (keyboard.escapeKey.wasPressedThisFrame)
         {
             Log("Cancel (ESC)");
             State.OnCancel();
         }
+        for (var i = 0; i < AbilityKeys.Length; i++)
+            if (keyboard[AbilityKeys[i]].wasPressedThisFrame) ActivateAbilityAt(i);
     }
 
-    public void OnAbilityPreview(Ability ability, GridSource source) => State.OnAbilityPreview(ability, source);
-    public void OnAbilityCancelPreview() => State.OnAbilityCancelPreview();
+    private static readonly Key[] AbilityKeys = { Key.Digit1, Key.Digit2, Key.Digit3, Key.Digit4 };
+
+    private void ActivateAbilityAt(int index)
+    {
+        if (CurrentSelection is not { Entity: { } entity } source) return;
+        if (!entity.TryGetComponent<AbilityComponent>(out var abilities) || index >= abilities.List.Count) return;
+        Log($"Ability key {index + 1}: {abilities.List[index].Id}");
+        State.OnAbilityActivate(abilities.List[index], source);
+    }
+
     public void OnAbilityActivate(Ability ability, GridSource source) => State.OnAbilityActivate(ability, source);
     public void OnPositionSelected(GridSource source) => State.OnPositionSelected(source);
+    public void Confirm() => (State as PreviewState)?.Confirm();
+    public void Cancel() => State.OnCancel();
 
     private void UpdateActiveAbility()
     {
-        var id = (State as TargetingState)?.AbilityId;
+        var id = (State as AbilityInputState)?.AbilityId;
         if (ActiveAbilityId == id) return;
         ActiveAbilityId = id;
         OnActiveAbilityChanged?.Invoke(id);
@@ -60,8 +82,8 @@ public class PlayerInputController : LoggableBehaviour
     {
         GridSource? sel = State switch
         {
-            SelectedState s  => s.Selected,
-            TargetingState t => t.Source,
+            PositionSelectedState s => s.Selected,
+            AbilityInputState a => a.Source,
             _ => null
         };
         if (_currentSelection == sel) return;
@@ -80,6 +102,7 @@ public class PlayerInputController : LoggableBehaviour
         State.OnEnter();
         UpdateActiveAbility();
         UpdateSelection();
+        TargetingChanged?.Invoke();
     }
     
     public void LogState(string message) => Log(message);

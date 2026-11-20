@@ -51,7 +51,7 @@ public sealed class MatchSetup
         return null;
     }
 
-    private static string ValidateTeam(GridDefinition map, int seat, TeamData team)
+    public static string ValidateTeam(GridDefinition map, int seat, TeamData team)
     {
         if (team.MapId != map.Id) return $"team is for map '{team.MapId}'";
         if (team.UnitStartPositions.Count == 0) return "team has no units";
@@ -60,7 +60,7 @@ public sealed class MatchSetup
         {
             if (!IdRegistry<EntityConfig>.TryGet(unit.UnitId, out var config)) return $"unknown unit '{unit.UnitId}'";
             if (unit.Position < 0 || unit.Position >= map.Size) return $"position {unit.Position} is off the map";
-            if (map.GetSpawnPlayer(new GridPosition(map.X, map.Y, unit.Position)) != seat)
+            if (map.GetSpawnPlayer(new GridPosition(map.Shape, unit.Position)) != seat)
                 return $"position {unit.Position} is not a seat {seat} spawn";
             cost += config.Cost;
         }

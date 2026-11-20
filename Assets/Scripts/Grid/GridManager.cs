@@ -28,12 +28,14 @@ public class GridManager : LoggableBehaviour
     public Camera MainCamera => _mainCamera;
     public GridRenderer Renderer => _renderer;
     public int LocalSeat => _seatMode == SeatMode.Hotseat ? GridState.ActivePlayer : _fixedSeat;
+    public int ViewerSeat => _seatMode == SeatMode.Hotseat ? 1 : _fixedSeat;
     public bool IsNetworked => _seatMode == SeatMode.Fixed;
     public string StopReason { get; private set; }
 
     public event Action StateChanged;
     public event Action DisplayChanged;
     public event Action GameStarted;
+    public event Action Restarted;
     public bool IsGameStarted { get; private set; }
 
     public bool Submit(Func<int, Command> build) => _dispatcher.Submit(build);
@@ -93,6 +95,23 @@ public class GridManager : LoggableBehaviour
         GameStarted?.Invoke();
     }
 
+    public void Restart(IReadOnlyList<Command> seedCommands)
+    {
+        _executor.CommandApplied -= OnCommandApplied;
+        _preview = null;
+        _executor = TurnExecutor.ForDefinition(GridState.Definition);
+        _dispatcher = new CommandDispatcher(_executor, () => LocalSeat);
+        if (seedCommands != null) foreach (var command in seedCommands) _executor.Apply(command);
+        _lastActivePlayer = GridState.ActivePlayer;
+        _executor.CommandApplied += OnCommandApplied;
+
+        Input.SetState(GridState);
+        Player.Rebind(_dispatcher, GridState);
+        Restarted?.Invoke();
+        StateChanged?.Invoke();
+        DisplayChanged?.Invoke();
+    }
+
     public void AttachSession(LockstepSession session)
     {
         session.Failed += OnSessionFailed;
@@ -104,6 +123,7 @@ public class GridManager : LoggableBehaviour
         StopReason = reason;
         _dispatcher.Enabled = false;
         StateChanged?.Invoke();
+        DisplayChanged?.Invoke();
     }
 
     private int _lastActivePlayer;

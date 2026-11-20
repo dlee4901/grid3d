@@ -5,7 +5,9 @@ public static partial class AbilityConfigs
     public static readonly AbilityConfig MoveNimble = new()
     {
         Id = "MoveNimble",
-        Keywords = Keyword.Successive | Keyword.Repeat,
+        DisplayName = "Nimble Move",
+        Description = "Move 3 squares.",
+        Keywords = Keyword.Finisher | Keyword.Double,
         Effects = new List<AbilityEffect> { new MoveEffect() },
         Targeting = Straight3Step()
     };

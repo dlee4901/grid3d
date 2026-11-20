@@ -9,7 +9,7 @@ public class KeywordTests
         => TestGame.StartOn(3, 3, new[] { (4, kit) }, new[] { (5, TestContent.Tough) }, manaPerTurn: 5);
 
     [Test]
-    public void Successive_CastAfterOtherAbility()
+    public void Finisher_CastAfterOtherAbility()
     {
         var executor = Start(TestContent.DashKit);
         Assert.IsTrue(Cast(executor, TestContent.Hit3, 4, 5));
@@ -17,7 +17,7 @@ public class KeywordTests
     }
 
     [Test]
-    public void Successive_NotTwice()
+    public void Finisher_NotTwice()
     {
         var executor = Start(TestContent.DashKit);
         Assert.IsTrue(Cast(executor, TestContent.Dash, 4, 3));
@@ -25,7 +25,7 @@ public class KeywordTests
     }
 
     [Test]
-    public void Successive_BlocksOthersAfterIt()
+    public void Finisher_BlocksOthersAfterIt()
     {
         var executor = Start(TestContent.DashKit);
         Assert.IsTrue(Cast(executor, TestContent.Dash, 4, 1));
@@ -33,7 +33,7 @@ public class KeywordTests
     }
 
     [Test]
-    public void Repeat_CastTwice_NotThrice()
+    public void Double_CastTwice_NotThrice()
     {
         var executor = Start(TestContent.DoubleKit);
         Assert.IsTrue(Cast(executor, TestContent.Double, 4, 5));
@@ -42,7 +42,7 @@ public class KeywordTests
     }
 
     [Test]
-    public void Repeat_NotAfterOtherAbility()
+    public void Double_NotAfterOtherAbility()
     {
         var executor = Start(TestContent.DoubleKit);
         Assert.IsTrue(Cast(executor, TestContent.Hit3, 4, 5));
@@ -65,6 +65,47 @@ public class KeywordTests
         var executor = Start(TestContent.NimbleKit);
         Assert.IsTrue(Cast(executor, AbilityConfigs.MoveNimble.Id, 4, 1));
         Assert.IsFalse(Cast(executor, TestContent.Hit3, 1, 2));
+    }
+
+    private static int CooldownOf(TurnExecutor executor, int position, string ability)
+    {
+        executor.State.GetEntity(position).TryGetComponent<AbilityComponent>(out var abilities);
+        return abilities.Dictionary[ability].Cooldown;
+    }
+
+    [Test]
+    public void Cast_PutsOtherAbilitiesOnCooldown1_ReadyNextTurn()
+    {
+        var executor = Start(TestContent.GroundedKit);
+        Assert.IsTrue(Cast(executor, TestContent.Hit3, 4, 5));
+        Assert.AreEqual(1, CooldownOf(executor, 4, AbilityConfigs.MoveStraight3Step.Id));
+        Assert.IsTrue(executor.Apply(new EndTurnCommand(1)));
+        Assert.AreEqual(0, CooldownOf(executor, 4, AbilityConfigs.MoveStraight3Step.Id));
+    }
+
+    [Test]
+    public void Finisher_SkipsSiblingCooldown()
+    {
+        var executor = Start(TestContent.DashKit);
+        Assert.IsTrue(Cast(executor, TestContent.Hit3, 4, 5));
+        Assert.AreEqual(0, CooldownOf(executor, 4, TestContent.Dash));
+    }
+
+    [Test]
+    public void Opener_LeavesOtherAbilitiesReady()
+    {
+        var executor = Start(TestContent.LeadKit);
+        Assert.IsTrue(Cast(executor, TestContent.Lead, 4, 1));
+        Assert.AreEqual(0, CooldownOf(executor, 1, TestContent.Hit3));
+        Assert.IsTrue(Cast(executor, TestContent.Hit3, 1, 2));
+    }
+
+    [Test]
+    public void Opener_StillGoesOnItsOwnCooldown()
+    {
+        var executor = Start(TestContent.LeadKit);
+        Assert.IsTrue(Cast(executor, TestContent.Lead, 4, 1));
+        Assert.IsFalse(Cast(executor, TestContent.Lead, 1, 0));
     }
 
     [Test]

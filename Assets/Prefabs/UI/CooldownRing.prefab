@@ -1,0 +1,64 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &7261495830274958316
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7514783096491002023, guid: 2cddc9cc1a74544ebace91931e3574d2, type: 3}
+      propertyPath: m_Name
+      value: CooldownRing
+      objectReference: {fileID: 0}
+    - target: {fileID: 7958945525016260241, guid: 2cddc9cc1a74544ebace91931e3574d2, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: f6a7b8c9d0e14f2a3b4c5d6e7f809102, type: 3}
+    - target: {fileID: 5398584418877583332, guid: 2cddc9cc1a74544ebace91931e3574d2, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: f6a7b8c9d0e14f2a3b4c5d6e7f809102, type: 3}
+    - target: {fileID: 7958945525016260241, guid: 2cddc9cc1a74544ebace91931e3574d2, type: 3}
+      propertyPath: m_Color.r
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7958945525016260241, guid: 2cddc9cc1a74544ebace91931e3574d2, type: 3}
+      propertyPath: m_Color.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7958945525016260241, guid: 2cddc9cc1a74544ebace91931e3574d2, type: 3}
+      propertyPath: m_Color.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7958945525016260241, guid: 2cddc9cc1a74544ebace91931e3574d2, type: 3}
+      propertyPath: m_Color.a
+      value: 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 2cddc9cc1a74544ebace91931e3574d2, type: 3}
+--- !u!1 &905184583907027787 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7514783096491002023, guid: 2cddc9cc1a74544ebace91931e3574d2, type: 3}
+  m_PrefabInstance: {fileID: 7261495830274958316}
+  m_PrefabAsset: {fileID: 0}
+--- !u!224 &8586515565867336644 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 1436487297106599976, guid: 2cddc9cc1a74544ebace91931e3574d2, type: 3}
+  m_PrefabInstance: {fileID: 7261495830274958316}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &4518334898731709359 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6517370956483366979, guid: 2cddc9cc1a74544ebace91931e3574d2, type: 3}
+  m_PrefabInstance: {fileID: 7261495830274958316}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 905184583907027787}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ea4063622b540ab9e97b9b74d4a3dab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ManaCounter

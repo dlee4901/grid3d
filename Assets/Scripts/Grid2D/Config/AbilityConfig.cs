@@ -5,7 +5,7 @@ public class AbilityConfig : EffectConfig
     public AbilityTargeting Targeting { get; init; }
 
     public int Warmup { get; init; } = 0;
-    public int Cooldown { get; init; } = 0;
+    public int Cooldown { get; init; } = 1;
     public int Delay { get; init; } = 0;
     public bool Locked { get; init; } = false;
 }
