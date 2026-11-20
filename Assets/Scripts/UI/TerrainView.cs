@@ -62,6 +62,7 @@ public class TerrainView : StateView
             CloseTooltip();
             return;
         }
+        _gridManager.Player.DeselectAbility();
         var shown = _gridManager.DisplayedState;
         shown.TryGetTerrain(cell, out var terrain);
         _tooltips.OpenRoot(this, TooltipText.ForTerrain(terrain, shown, shown.GetTerrainTurns(cell)), rect, TooltipSide.Right);

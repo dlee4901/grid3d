@@ -66,6 +66,11 @@ public class PlayerInputController : LoggableBehaviour
     public void Confirm() => (State as PreviewState)?.Confirm();
     public void Cancel() => State.OnCancel();
 
+    public void DeselectAbility()
+    {
+        if (State is AbilityInputState ability) TransitionTo(new PositionSelectedState(_ctx, ability.Source));
+    }
+
     private void UpdateActiveAbility()
     {
         var id = (State as AbilityInputState)?.AbilityId;

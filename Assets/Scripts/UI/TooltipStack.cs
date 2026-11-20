@@ -7,83 +7,69 @@ public class TooltipStack : MonoBehaviour
 {
     [SerializeField] private Tooltip _tooltipPrefab;
 
-    private sealed class Chain
-    {
-        public Object Owner;
-        public RectTransform Source;
-        public readonly List<Tooltip> Open = new();
-    }
-
-    private readonly List<Chain> _chains = new();
+    private readonly List<Tooltip> _open = new();
+    private Object _owner;
+    private RectTransform _rootSource;
 
     public void OpenRoot(Object owner, TooltipContent content, RectTransform source, TooltipSide side)
     {
-        var chain = ChainOf(owner);
-        if (chain == null) _chains.Add(chain = new Chain { Owner = owner });
-        CloseFrom(chain, 0);
-        chain.Source = source;
-        Open(chain, content, VisibleRect(source), side);
+        CloseFrom(0);
+        _owner = owner;
+        _rootSource = source;
+        Open(content, VisibleRect(source), side);
     }
 
     public bool IsOpenFor(Object owner, RectTransform source)
-        => ChainOf(owner) is { } chain && chain.Open.Count > 0 && ReferenceEquals(chain.Source, source);
+        => _open.Count > 0 && _owner == owner && ReferenceEquals(_rootSource, source);
 
     public void Close(Object owner)
     {
-        if (ChainOf(owner) is { } chain) CloseFrom(chain, 0);
+        if (_open.Count > 0 && _owner == owner) CloseFrom(0);
     }
 
-    private Chain ChainOf(Object owner) => _chains.Find(chain => chain.Owner == owner);
-
-    private void Open(Chain chain, TooltipContent content, Rect anchor, TooltipSide side)
+    private void Open(TooltipContent content, Rect anchor, TooltipSide side)
     {
         var tooltip = Instantiate(_tooltipPrefab, transform);
-        tooltip.LinkPressed += (parent, link, bounds) => OnLinkPressed(chain, parent, link, bounds);
-        chain.Open.Add(tooltip);
+        tooltip.LinkPressed += OnLinkPressed;
+        _open.Add(tooltip);
         tooltip.Show(content, anchor, side);
     }
 
-    private void OnLinkPressed(Chain chain, Tooltip parent, string link, Rect anchor)
+    private void OnLinkPressed(Tooltip parent, string link, Rect anchor)
     {
         if (!parent.Content.Links.TryGetValue(link, out var content)) return;
-        CloseFrom(chain, chain.Open.IndexOf(parent) + 1);
-        Open(chain, content, anchor, parent.Side);
+        CloseFrom(_open.IndexOf(parent) + 1);
+        Open(content, anchor, parent.Side);
     }
 
     private void Update()
     {
+        if (_open.Count == 0) return;
         var pointer = Pointer.current;
         if (pointer == null || !pointer.press.wasPressedThisFrame) return;
         var position = pointer.position.ReadValue();
-        var pressed = FindPressed(position, out var deepest);
-        foreach (var chain in _chains)
-            if (chain != pressed) CloseFrom(chain, 1);
-        if (pressed == null) return;
-        CloseFrom(pressed, deepest + 1);
-        if (pressed.Open[deepest].TryGetLink(position, out var id, out var bounds))
-            OnLinkPressed(pressed, pressed.Open[deepest], id, bounds);
+        var deepest = -1;
+        for (var i = _open.Count - 1; i >= 0; i--)
+        {
+            if (!_open[i].Contains(position)) continue;
+            deepest = i;
+            break;
+        }
+        CloseFrom(Mathf.Max(1, deepest + 1));
+        if (deepest >= 0 && _open[deepest].TryGetLink(position, out var id, out var bounds))
+            OnLinkPressed(_open[deepest], id, bounds);
     }
 
-    private Chain FindPressed(Vector2 position, out int deepest)
+    private void CloseFrom(int index)
     {
-        for (var c = _chains.Count - 1; c >= 0; c--)
+        for (var i = _open.Count - 1; i >= index; i--)
         {
-            var open = _chains[c].Open;
-            for (deepest = open.Count - 1; deepest >= 0; deepest--)
-                if (open[deepest].Contains(position)) return _chains[c];
+            Destroy(_open[i].gameObject);
+            _open.RemoveAt(i);
         }
-        deepest = -1;
-        return null;
-    }
-
-    private static void CloseFrom(Chain chain, int index)
-    {
-        for (var i = chain.Open.Count - 1; i >= index; i--)
-        {
-            Destroy(chain.Open[i].gameObject);
-            chain.Open.RemoveAt(i);
-        }
-        if (chain.Open.Count == 0) chain.Source = null;
+        if (_open.Count > 0) return;
+        _owner = null;
+        _rootSource = null;
     }
 
     private static Rect VisibleRect(RectTransform source)

@@ -123,6 +123,7 @@ public class GameView : StateView
     private void PreviewEndTurn()
     {
         if (_gridManager.Player.CanConfirm) return;
+        _gridManager.Player.DeselectAbility();
         _previewingEndTurn = true;
         _previewingEndTurn = _gridManager.Turns.PreviewEndTurn();
     }
