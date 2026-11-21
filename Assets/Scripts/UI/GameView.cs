@@ -62,7 +62,7 @@ public class GameView : StateView
         var turns = _gridManager.Turns;
         var players = state.Definition.PlayerCount;
 
-        _manaCounter.SetManaCount(state.GetMana(state.ActivePlayer));
+        if (_manaCounter != null) _manaCounter.SetManaCount(state.GetMana(state.ActivePlayer));
         _shownActivePlayer = real.ActivePlayer;
 
         for (var p = 1; p <= players; p++)
@@ -76,7 +76,7 @@ public class GameView : StateView
             view.SetActiveVisual(isActive && turns.TimersEnabled);
         }
 
-        _endTurnText.text = EndTurnLabel(real);
+        if (_endTurnText != null) _endTurnText.text = EndTurnLabel(real);
         if (_endTurn != null)
         {
             _endTurn.enabled = _gridManager.Player.State is PreviewState || !_gridManager.IsPreviewing || _previewingEndTurn;

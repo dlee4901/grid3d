@@ -3,9 +3,9 @@ using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
 
-public class UnitView : StateView
+public class EntityView : StateView
 {
-    [SerializeField] private VerticalLayoutGroup _container;
+    [FormerlySerializedAs("_label")] [SerializeField] private RectTransform _container;
     [SerializeField] private UnitLabel _unitLabelPrefab;
     [FormerlySerializedAs("_abilityIcon")] [SerializeField] private AbilityIcon _abilityIconPrefab;
     [SerializeField] private RectTransform _statusContainer;
@@ -17,6 +17,7 @@ public class UnitView : StateView
     private AbilityIcon _tooltipIcon;
     private RectTransform _tooltipSource;
     private int _labelUid;
+    private Entity _detached;
 
     protected override void Start()
     {
@@ -42,11 +43,19 @@ public class UnitView : StateView
 
     private void Rebuild() => OnInputChanged(_gridManager.Player.CurrentSelection);
 
+    public void ShowDetached(Entity entity)
+    {
+        ClearMenu();
+        if (entity == null) return;
+        _detached = entity;
+        DisplayEntityInfo(new GridSource(_gridManager.GridState, default, entity));
+    }
+
     protected override void Render(GridState shown)
     {
         if (_unitLabel == null) return;
-        var real = _gridManager.GridState.GetEntityByUid(_labelUid);
-        var entity = shown.GetEntityByUid(_labelUid);
+        var real = _detached ?? _gridManager.GridState.GetEntityByUid(_labelUid);
+        var entity = _detached ?? shown.GetEntityByUid(_labelUid);
         RenderHealth(real, entity);
         RenderAbilities(real, entity ?? real);
         RenderStatuses(entity ?? real);
@@ -60,6 +69,7 @@ public class UnitView : StateView
 
     private void RefreshAbilityTooltip()
     {
+        if (_detached != null) return;
         var player = _gridManager.Player;
         var selected = player.State as AbilitySelectedState;
         var active = selected == null ? null : _icons.Find(icon => icon.AbilityId == selected.AbilityId);
@@ -67,12 +77,12 @@ public class UnitView : StateView
         {
             if (!IsShowing(active)) ShowTooltip(active);
         }
-        else if (!ReferenceEquals(_tooltipIcon, null) && _tooltipIcon.Ability != null) HideTooltip();
+        else if (!ReferenceEquals(_tooltipIcon, null) && _tooltipIcon.Ability is { IsCastable: true }) HideTooltip();
     }
 
     private void OnIconClicked(AbilityIcon icon)
     {
-        if (icon.Ability != null) _gridManager.Player.OnAbilityActivate(icon.Ability, icon.Source);
+        if (icon.Ability is { IsCastable: true } && _detached == null) _gridManager.Player.OnAbilityActivate(icon.Ability, icon.Source);
         else if (IsShowing(icon)) HideTooltip();
         else ShowTooltip(icon);
     }
@@ -81,8 +91,7 @@ public class UnitView : StateView
     {
         var state = _gridManager.GridState;
         var content = icon.Ability != null ? TooltipText.ForAbility(icon.Ability, state, icon.Source.Entity)
-            : icon.Status != null ? TooltipText.ForStatus(icon.Status, state)
-            : TooltipText.ForTrait(icon.Trait, state);
+            : TooltipText.ForStatus(icon.Status, state);
         _tooltipSource = (RectTransform)icon.transform;
         _tooltips.OpenRoot(this, content, _tooltipSource, TooltipSide.Right);
         _tooltipIcon = icon;
@@ -119,16 +128,14 @@ public class UnitView : StateView
             return;
         if (!IdRegistry<EntityAssets>.TryGet(entity.Id, out var entityAssets))
             return;
-        var unitLabel = Instantiate(_unitLabelPrefab, _container.transform);
-        unitLabel.SetName(entity.Id);
+        var unitLabel = Instantiate(_unitLabelPrefab, _container);
+        unitLabel.Init(entity.Id, entityAssets.Model2D, IdRegistry<EntityConfig>.TryGet(entity.Id, out var config) ? config.Cost : 0);
         _unitLabel = unitLabel;
         _labelUid = entity.Uid;
         unitLabel.HealthCounter.SetOwner(entity, _gridManager.ViewerSeat);
         
         if (entity.TryGetComponent<AbilityComponent>(out var abilities))
             AddAbilityIcons(abilities, entityAssets, source);
-        if (entity.TryGetComponent<TraitComponent>(out var traits))
-            AddTraitIcons(traits);
         RenderShown();
     }
 
@@ -140,24 +147,13 @@ public class UnitView : StateView
         {
             if (abilityIcons.Count <= i)
                 break;
-            var icon = Instantiate(_abilityIconPrefab, _container.transform);
+            var icon = Instantiate(_abilityIconPrefab, _container);
             icon.Init(abilityIcons[i], abilities.List[i], source);
             icon.OnClicked += OnIconClicked;
             _icons.Add(icon);
         }
         var activeId = _gridManager.Player.ActiveAbilityId;
         foreach (var icon in _icons) icon.SetActiveVisual(icon.AbilityId == activeId);
-    }
-
-    private void AddTraitIcons(TraitComponent traits)
-    {
-        foreach (var trait in traits.Traits)
-        {
-            if (!IdRegistry<TraitAssets>.TryGet(trait.Id, out var traitAssets)) continue;
-            var icon = Instantiate(_abilityIconPrefab, _container.transform);
-            icon.InitTrait(traitAssets.Icon, trait);
-            icon.OnClicked += OnIconClicked;
-        }
     }
 
     private void RenderAbilities(Entity real, Entity shown)
@@ -167,14 +163,14 @@ public class UnitView : StateView
             || !shown.TryGetComponent<AbilityComponent>(out var shownAbilities)) return;
         var seat = _gridManager.LocalSeat;
         for (var i = 0; i < _icons.Count; i++)
-            _icons[i].Render(shownAbilities.List[i], _gridManager.GridState.CanCastAt(real.Position, realAbilities.List[i], seat));
+            _icons[i].Render(shownAbilities.List[i], _detached != null || _gridManager.GridState.CanCastAt(real.Position, realAbilities.List[i], seat));
     }
 
     private void RenderStatuses(Entity shown)
     {
         UnityUtil.DestroyAllChildren(_statusContainer.gameObject);
-        if (shown == null || !shown.TryGetComponent<TraitComponent>(out var traits)) return;
-        foreach (var status in traits.Statuses)
+        if (shown == null || !shown.TryGetComponent<StatusComponent>(out var statuses)) return;
+        foreach (var status in statuses.Statuses)
         {
             if (!IdRegistry<StatusAssets>.TryGet(status.Id, out var statusAssets)) continue;
             var icon = Instantiate(_statusIconPrefab, _statusContainer);
@@ -195,9 +191,11 @@ public class UnitView : StateView
     private void ClearMenu()
     {
         HideTooltip();
+        if (_unitLabel != null) Destroy(_unitLabel.gameObject);
+        foreach (var icon in _icons) Destroy(icon.gameObject);
         _unitLabel = null;
+        _detached = null;
         _icons.Clear();
-        UnityUtil.DestroyAllChildren(_container.gameObject);
         UnityUtil.DestroyAllChildren(_statusContainer.gameObject);
     }
     

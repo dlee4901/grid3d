@@ -20,9 +20,9 @@ public class AbilityComponent : IEntityComponent
 
     internal void OnCast(Ability cast)
     {
-        cast.Trigger();
+        cast.RecordCast();
         if ((cast.Keywords & Keyword.Opener) != 0) return;
         foreach (var ability in _list)
-            if (ability != cast && (ability.Keywords & Keyword.Finisher) == 0) ability.ApplyCooldown(1);
+            if (ability != cast && ability.IsCastable && (ability.Keywords & Keyword.Finisher) == 0) ability.ApplyCooldown(1);
     }
 }

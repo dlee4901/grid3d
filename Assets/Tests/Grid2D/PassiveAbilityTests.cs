@@ -1,6 +1,6 @@
 using NUnit.Framework;
 
-public class TraitTests
+public class PassiveAbilityTests
 {
     private static Entity At(TurnExecutor executor, int position) => executor.State.GetEntity(position);
 
@@ -12,8 +12,8 @@ public class TraitTests
 
     private static int Count(TurnExecutor executor, int position, string statusId)
     {
-        At(executor, position).TryGetComponent<TraitComponent>(out var traits);
-        foreach (var status in traits.Statuses) if (status.Id == statusId) return status.Count;
+        At(executor, position).TryGetComponent<StatusComponent>(out var statuses);
+        foreach (var status in statuses.Statuses) if (status.Id == statusId) return status.Count;
         return 0;
     }
 
@@ -199,11 +199,11 @@ public class TraitTests
     public void Statuses_ChangeStateHash()
     {
         var state = TestGame.Start(TestContent.Tough, TestContent.Tough, player2Position: 1).State;
-        state.GetEntity(1).TryGetComponent<TraitComponent>(out var traits);
+        state.GetEntity(1).TryGetComponent<StatusComponent>(out var statuses);
         var before = state.ComputeHash();
-        traits.AdjustStatus(StatusConfigs.Burn, 1);
+        statuses.AdjustStatus(StatusConfigs.Burn, 1);
         Assert.AreNotEqual(before, state.ComputeHash());
-        traits.AdjustStatus(StatusConfigs.Burn, -1);
+        statuses.AdjustStatus(StatusConfigs.Burn, -1);
         Assert.AreEqual(before, state.ComputeHash());
     }
 }

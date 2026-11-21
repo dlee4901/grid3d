@@ -30,28 +30,36 @@ internal sealed class TriggerSystem
 
     private void Run(Entity holder, TriggerEvent e)
     {
-        if (!holder.TryGetComponent<TraitComponent>(out var traits)) return;
         var self = holder == e.Subject;
-        foreach (var trait in new List<Trait>(traits.All))
+        foreach (var triggered in new List<ITriggered>(Of(holder)))
         {
-            var trigger = trait.Trigger;
+            var trigger = triggered.Trigger;
             if (trigger == null || trigger.On != e.On) continue;
             if (!(self && e.On == GameEvent.Died) && !IsOnBoard(holder)) continue;
             var origin = new GridSource(_state, holder.Position, holder);
             if (!Hears(trigger, origin, e.Subject)) continue;
-            var ctx = new EffectContext(origin, null, trait, e);
+            var ctx = new EffectContext(origin, null, triggered, e);
             if (!trigger.When.Eval(ctx)) continue;
 
             GridSteps steps;
-            if (trait.Area != null)
-                steps = trait.Area.GetGridSteps(origin);
+            if (triggered.Area != null)
+                steps = triggered.Area.GetGridSteps(origin);
             else if (self)
                 steps = Participants(holder, e.Other, e.Distance);
             else
                 steps = Participants(holder, e.Subject, holder.Position.StepsTo(e.Subject.Position));
 
-            EffectResolver.Run(ctx, steps, trait.Effects);
+            EffectResolver.Run(ctx, steps, triggered.Effects);
         }
+    }
+
+    internal static IEnumerable<ITriggered> Of(Entity holder)
+    {
+        if (holder.TryGetComponent<AbilityComponent>(out var abilities))
+            foreach (var ability in abilities.List)
+                if (ability.Trigger != null) yield return ability;
+        if (holder.TryGetComponent<StatusComponent>(out var statuses))
+            foreach (var status in statuses.Statuses) yield return status;
     }
 
     private bool IsOnBoard(Entity entity) => _state.GetEntity(entity.Position) == entity;

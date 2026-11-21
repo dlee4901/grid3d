@@ -34,8 +34,8 @@ public class TerrainTests
 
     private static int Burn(TurnExecutor executor, int position)
     {
-        executor.State.GetEntity(position).TryGetComponent<TraitComponent>(out var traits);
-        foreach (var status in traits.Statuses) if (status.Id == "Burn") return status.Count;
+        executor.State.GetEntity(position).TryGetComponent<StatusComponent>(out var statuses);
+        foreach (var status in statuses.Statuses) if (status.Id == "Burn") return status.Count;
         return 0;
     }
 

@@ -26,6 +26,7 @@ public class GridInput : LoggableBehaviour
     public event Action<GridSource> OnPositionPressed;
     public event Action<GridSource> OnPositionSelected;
     public event Action OnCancelClicked;
+    public event Action OnReleasedOffGrid;
 
     // public event Action<bool> OnLockChanged;
     // public bool IsLocked => _isLocked;
@@ -48,7 +49,7 @@ public class GridInput : LoggableBehaviour
         if (IsPointerOverUI)
         {
             _cancelPressTime = null;
-            _pressedOnGrid = false;
+            if (_selectAction.WasReleasedThisFrame()) HandleRelease(null);
             return;
         }
         if (_selectAction.WasPressedThisFrame()) HandlePress(PointerCell());
@@ -65,6 +66,8 @@ public class GridInput : LoggableBehaviour
         eventSystem.RaycastAll(_pointerData, _uiHits);
         return _uiHits.Count > 0;
     }
+
+    public GridSource? CellUnderPointer() => IsPointerOverAnyUI() ? null : PointerCell();
 
     private GridSource? PointerCell()
     {
@@ -92,10 +95,18 @@ public class GridInput : LoggableBehaviour
     {
         var pressedOnGrid = _pressedOnGrid;
         _pressedOnGrid = false;
-        if (pressedOnGrid && cell.HasValue)
+        if (pressedOnGrid)
         {
-            Log($"Click: {Describe(cell)}");
-            OnPositionSelected?.Invoke(cell.Value);
+            if (cell.HasValue)
+            {
+                Log($"Click: {Describe(cell)}");
+                OnPositionSelected?.Invoke(cell.Value);
+            }
+            else
+            {
+                Log("Release: off map");
+                OnReleasedOffGrid?.Invoke();
+            }
             return;
         }
         var pressTime = _cancelPressTime;

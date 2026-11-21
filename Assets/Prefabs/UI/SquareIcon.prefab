@@ -308,7 +308,7 @@ MonoBehaviour:
   _pressOverlayColor:
     serializedVersion: 2
     rgba: 167772160
-  _hoverScale: 1.02
+  _hoverScale: 1
   _pressScale: 0.98
   _scaleTargets:
   - {fileID: 2384471177420758317}

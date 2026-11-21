@@ -2,7 +2,7 @@ public readonly struct EffectContext
 {
     public readonly GridSource Origin;
     public readonly Ability Ability;
-    public readonly Trait Trait;
+    public readonly ITriggered Triggered;
     public readonly TriggerEvent Event;
     public readonly GridPosition Position;
     public readonly Entity Target;
@@ -12,15 +12,15 @@ public readonly struct EffectContext
     public Entity Source => Origin.Entity;
     public DamageRoll Damage => Event?.Damage;
 
-    internal EffectContext(GridSource origin, Ability ability, Trait trait = null, TriggerEvent evt = null)
-        : this(origin, ability, trait, evt, origin.Position, origin.Entity, 0) { }
+    internal EffectContext(GridSource origin, Ability ability, ITriggered triggered = null, TriggerEvent evt = null)
+        : this(origin, ability, triggered, evt, origin.Position, origin.Entity, 0) { }
 
-    private EffectContext(GridSource origin, Ability ability, Trait trait, TriggerEvent evt,
+    private EffectContext(GridSource origin, Ability ability, ITriggered triggered, TriggerEvent evt,
                           GridPosition position, Entity target, int distance)
     {
         Origin = origin;
         Ability = ability;
-        Trait = trait;
+        Triggered = triggered;
         Event = evt;
         Position = position;
         Target = target;
@@ -28,7 +28,7 @@ public readonly struct EffectContext
     }
 
     internal EffectContext At(GridPosition position, Entity target, int distance)
-        => new(Origin, Ability, Trait, Event, position, target, distance);
+        => new(Origin, Ability, Triggered, Event, position, target, distance);
 }
 
 public abstract class AbilityEffect

@@ -7,8 +7,7 @@ public static partial class UnitConfigs
         Id = "Knight",
         Cost = 3,
         Health = 10,
-        Abilities = new List<string> {"MoveStraight3Step", "Sword Slash", "Shield Bash"},
-        Traits = new List<string> {"Armored"},
+        Abilities = new List<string> {"MoveStraight3Step", "Sword Slash", "Shield Bash", "Armored"},
         Statuses = new List<(string, int)> {("Power", 1), ("Burn", 2)}
     };
 }

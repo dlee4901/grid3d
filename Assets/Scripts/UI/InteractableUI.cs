@@ -22,8 +22,8 @@ public class InteractableUI : LoggableBehaviour, IPointerEnterHandler, IPointerE
     [SerializeField] private Color32 _pressOverlayColor = new Color32(0, 0, 0, 10);
 
     [Header("Visual Scales")]
-    [SerializeField] private float _hoverScale = 1.02f;
-    [SerializeField] private float _pressScale = 0.98f;
+    [SerializeField] private float _hoverScale = 1f;
+    [SerializeField] private float _pressScale = 1f;
     [SerializeField] private List<GameObject> _scaleTargets;
 
     private Image _overlayImage;
@@ -43,6 +43,7 @@ public class InteractableUI : LoggableBehaviour, IPointerEnterHandler, IPointerE
         child.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, 0);
         child.transform.SetParent(transform, false);
         _overlayImage = child.GetComponent<Image>();
+        _overlayImage.raycastTarget = false;
         _baseScale = transform.localScale;
         ApplyVisual();
     }
@@ -89,7 +90,7 @@ public class InteractableUI : LoggableBehaviour, IPointerEnterHandler, IPointerE
         var held = _held;
         CancelPress();
         ApplyVisual();
-        if (!held) OnClickCompleted?.Invoke();
+        if (!held && !eventData.dragging) OnClickCompleted?.Invoke();
     }
 
     private void CancelPress()

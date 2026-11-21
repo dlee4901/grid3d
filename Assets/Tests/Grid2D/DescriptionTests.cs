@@ -3,10 +3,10 @@ using System.Reflection;
 public class DescriptionTests
 {
     [Test]
-    public void AllAbilityAndTraitDescriptionTokensResolve()
+    public void AllDescriptionTokensResolve()
     {
         var issues = new System.Collections.Generic.List<string>();
-        foreach (var type in new[] { typeof(AbilityConfigs), typeof(TraitConfigs), typeof(TerrainConfigs), typeof(StatusConfigs) })
+        foreach (var type in new[] { typeof(AbilityConfigs), typeof(TerrainConfigs), typeof(StatusConfigs) })
         foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.Static))
             if (field.GetValue(null) is EffectConfig config) issues.AddRange(Descriptions.Validate(config));
         Assert.IsEmpty(issues, string.Join("\n", issues));

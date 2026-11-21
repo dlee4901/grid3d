@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-public class Ability : INameId
+public class Ability : INameId, ITriggered
 {
     public AbilityConfig Config { get; }
 
@@ -9,6 +9,10 @@ public class Ability : INameId
     public int ManaCost => Config.ManaCost;
     public Keyword Keywords => Config.Keywords;
     public AbilityTargeting Targeting => Config.Targeting;
+    public Trigger Trigger => Config.Trigger;
+    public GridSelection Area => Config.Area;
+    public bool IsCastable => Trigger == null;
+    public int Count => 1;
     public List<AbilityEffect> Effects => Config.Effects;
 
     public int Cooldown { get; private set; }
@@ -36,8 +40,7 @@ public class Ability : INameId
         return true;
     }
 
-
-    internal void Trigger()
+    internal void RecordCast()
     {
         var cooldown = _castCooldown ?? Config.Cooldown;
         _castCooldown = null;

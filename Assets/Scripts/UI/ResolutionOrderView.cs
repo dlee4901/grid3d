@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class ResolutionOrderView : StateView
@@ -11,6 +13,9 @@ public class ResolutionOrderView : StateView
     [SerializeField] private Color _selectedColor = new Color32(255, 255, 255, 160);
     [SerializeField] private Color _unhighlightedColor = new Color32(255, 255, 255, 64);
     [SerializeField] private HighlightPalette _palette;
+    [SerializeField] private bool _reorderable;
+
+    public event Action<IReadOnlyList<int>> Reordered;
         
     private readonly List<ResolutionOrderIcon> _icons = new();
     private readonly List<int> _shownUids = new();
@@ -21,13 +26,16 @@ public class ResolutionOrderView : StateView
     {
         _gridManager.Player.SelectionChanged += OnSelectionChanged;
         _gridManager.Renderer.Highlights.HighlightsChanged += MarkOutlinesDirty;
+        _gridManager.Restarted += ForgetShown;
         base.OnGameStarted();
     }
 
     protected override void OnDestroy()
     {
         base.OnDestroy();
-        if (_gridManager == null || _gridManager.Player == null) return;
+        if (_gridManager == null) return;
+        _gridManager.Restarted -= ForgetShown;
+        if (_gridManager.Player == null) return;
         _gridManager.Player.SelectionChanged -= OnSelectionChanged;
         if (_gridManager.Renderer != null) _gridManager.Renderer.Highlights.HighlightsChanged -= MarkOutlinesDirty;
     }
@@ -40,6 +48,7 @@ public class ResolutionOrderView : StateView
         {
             var icon = Instantiate(_iconPrefab, _container.transform);
             icon.OnSelectRequested += OnIconSelected;
+            if (_reorderable) AddDragRelay(icon);
             _icons.Add(icon);
         }
 
@@ -63,6 +72,45 @@ public class ResolutionOrderView : StateView
         }
         _shownPreview = previewing;
         RefreshOutlines();
+    }
+
+    private void ForgetShown() => _shownUids.Clear();
+
+    private void AddDragRelay(ResolutionOrderIcon icon)
+    {
+        var relay = icon.gameObject.AddComponent<DragRelay>();
+        relay.Began += _ => icon.BeginDrag();
+        relay.Moved += data => DragIcon(icon, data);
+        relay.Ended += _ => EndDrag(icon);
+    }
+
+    private void DragIcon(ResolutionOrderIcon icon, PointerEventData data)
+    {
+        var container = (RectTransform)_container.transform;
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(container, data.position, data.pressEventCamera, out var local)) return;
+        var rect = (RectTransform)icon.transform;
+        var stride = Stride(icon);
+        var from = _icons.IndexOf(icon);
+        var to = Mathf.Clamp(Mathf.RoundToInt((local.x - _container.padding.left - rect.rect.width / 2f) / stride), 0, _shownUids.Count - 1);
+        if (to != from)
+        {
+            var step = to > from ? 1 : -1;
+            for (var i = from + step; i != to + step; i += step) _icons[i].SlideFrom(step * stride);
+            _icons.RemoveAt(from);
+            _icons.Insert(to, icon);
+            var uid = _shownUids[from];
+            _shownUids.RemoveAt(from);
+            _shownUids.Insert(to, uid);
+            rect.SetSiblingIndex(to);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(container);
+        }
+        icon.DragTo(local.x - rect.anchoredPosition.x);
+    }
+
+    private void EndDrag(ResolutionOrderIcon icon)
+    {
+        icon.EndDrag();
+        Reordered?.Invoke(new List<int>(_shownUids));
     }
 
     private float Stride(ResolutionOrderIcon icon) => ((RectTransform)icon.transform).rect.width + _container.spacing;

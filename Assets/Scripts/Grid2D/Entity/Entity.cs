@@ -24,7 +24,7 @@ public class Entity : INameId
         entity.AddComponent(new HealthComponent(config.Health));
         entity.AddComponent(new AbilityComponent(config.Abilities));
         entity.AddComponent(new ControlComponent(playerController));
-        entity.AddComponent(new TraitComponent(config.Traits, config.Statuses));
+        entity.AddComponent(new StatusComponent(config.Statuses));
         return entity;
     }
     

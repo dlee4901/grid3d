@@ -1,6 +1,10 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -12,38 +16,49 @@ public class TeamBuilder : LoggableBehaviour
         public int[] Positions;
     }
 
+    private const string NewTeamName = "New Team";
+    private const string NewTeamOption = "<align=center>+</align>";
+
     [SerializeField] private GameBootstrap _bootstrap;
     [SerializeField] private GridManager _gridManager;
-    [SerializeField] private RectTransform _panel;
-    [SerializeField] private AbilityIcon _unitIconPrefab;
-    [SerializeField] private InteractableUI _buttonPrefab;
-    [SerializeField] private Material _labelMaterial;
-    [SerializeField] private int _slotCount = 4;
-    [SerializeField] private float _unitIconSize = 128f;
-    [SerializeField] private float _rowHeight = 64f;
-    [SerializeField] private float _labelHeight = 40f;
-    [SerializeField] private float _spacing = 12f;
-    [SerializeField] private int _fontSize = 32;
-    [SerializeField] private Color32 _selectedLabelColor = new(255, 192, 64, 255);
-    [SerializeField] private Color32 _errorLabelColor = new(255, 128, 112, 255);
+    [SerializeField] private TMP_Dropdown _mapDropdown;
+    [SerializeField] private DeletableDropdown _teamDropdown;
+    [SerializeField] private TMP_InputField _nameField;
+    [SerializeField] private TMP_Text _costText;
+    [SerializeField] private UnitFilterView _filter;
+    [SerializeField] private RectTransform _unitGrid;
+    [SerializeField] private UnitPortrait _unitCardPrefab;
+    [SerializeField] private ScrollRect _unitScroll;
+    [SerializeField] private EntityView _entityView;
+    [SerializeField] private ResolutionOrderView _resolutionOrder;
+    [SerializeField] private float _dragLift = 0.5f;
+    [SerializeField] private float _holdTime = 0.25f;
 
     private static string _mapId = "TestMap1";
-    private static int _slot = 1;
-    private static bool _loadSlotOnStart;
+    private static string _teamId;
 
     private GridDefinition _map;
     private readonly List<DraftUnit> _units = new();
     private int _side = 1;
     private string _armedUnitId;
     private DraftUnit _selected;
-    private int? _pendingPosition;
+    private DraftUnit _pressedUnit;
+    private int _pressedPosition;
+    private float _pressedAt;
+    private bool _dragging;
+    private bool _draggingFromCard;
+    private GameObject _ghost;
+    private float _ghostHeight;
+    private EntityConfig _cardConfig;
+    private Vector2 _cardPressPoint;
+    private bool _cardMoved;
+    private DraftUnit _selectedBeforeCard;
+    private string _armedBeforeCard;
+    private bool _wasTargeting;
+    private string _loadedId;
 
-    private readonly Dictionary<string, AbilityIcon> _rosterIcons = new();
-    private readonly List<TMP_Text> _slotLabels = new();
-    private readonly Dictionary<string, TMP_Text> _mapLabels = new();
-    private TMP_Text _costText;
-    private TMP_Text _statusText;
-    private TMP_Text _sideLabel;
+    private readonly List<SavedTeam> _teams = new();
+    private readonly List<(EntityConfig Config, UnitPortrait Card)> _cards = new();
 
     private void Start()
     {
@@ -53,26 +68,29 @@ public class TeamBuilder : LoggableBehaviour
             LogError($"Map '{_mapId}' not found");
             return;
         }
-        _gridManager.Input.OnPositionSelected += DecidePress;
         _gridManager.StartGame(_map, Seeds());
-        _gridManager.Input.OnPositionSelected += ApplyPress;
+        _gridManager.Input.OnPositionPressed += PressBoard;
+        _gridManager.Input.OnPositionSelected += ReleaseOnBoard;
+        _gridManager.Input.OnReleasedOffGrid += ReleaseOffBoard;
+        _gridManager.Input.OnCancelClicked += CancelClick;
         _gridManager.Player.TargetingChanged += RefreshHighlights;
-        BuildPanel();
-        if (_loadSlotOnStart)
-        {
-            _loadSlotOnStart = false;
-            Load();
-            return;
-        }
-        Rebuild();
+        _resolutionOrder.Reordered += Reorder;
+        BindPanel();
+        var teams = TeamsForMap();
+        var team = teams.Find(t => t.Id == _teamId) ?? (teams.Count > 0 ? teams[0] : null);
+        if (team != null) Open(team);
+        else NewTeam();
     }
 
     private void OnDestroy()
     {
         if (_gridManager == null || _gridManager.Input == null) return;
-        _gridManager.Input.OnPositionSelected -= DecidePress;
-        _gridManager.Input.OnPositionSelected -= ApplyPress;
+        _gridManager.Input.OnPositionPressed -= PressBoard;
+        _gridManager.Input.OnPositionSelected -= ReleaseOnBoard;
+        _gridManager.Input.OnReleasedOffGrid -= ReleaseOffBoard;
+        _gridManager.Input.OnCancelClicked -= CancelClick;
         _gridManager.Player.TargetingChanged -= RefreshHighlights;
+        if (_resolutionOrder != null) _resolutionOrder.Reordered -= Reorder;
     }
 
     private List<Command> Seeds() => new()
@@ -88,40 +106,189 @@ public class TeamBuilder : LoggableBehaviour
         return new SavedTeam(id, _map.Id, units);
     }
 
-    private void DecidePress(GridSource cell)
+    private void Update()
+    {
+        _wasTargeting = _gridManager.Player.State is AbilityInputState;
+        if (_pressedUnit != null && !_dragging && Pointer.current.press.isPressed
+            && (Time.unscaledTime - _pressedAt >= _holdTime || PointerPosition() != _pressedPosition))
+            StartDrag(_pressedUnit, null, false);
+        if (!_dragging) return;
+        MoveGhost();
+        if (_draggingFromCard && Pointer.current.press.wasReleasedThisFrame) ReleaseCardDrag();
+    }
+
+    private void PressBoard(GridSource cell)
+    {
+        _pressedPosition = cell.Position.Dim1;
+        _pressedUnit = _wasTargeting ? null : UnitAt(_pressedPosition);
+        _pressedAt = Time.unscaledTime;
+    }
+
+    private void ReleaseOnBoard(GridSource cell)
     {
         var position = cell.Position.Dim1;
-        var occupant = UnitAt(position);
-        _pendingPosition = null;
-        if (occupant != null)
+        var pressed = _pressedUnit;
+        _pressedUnit = null;
+        if (_gridManager.Player.State is AbilityInputState) return;
+        if (pressed != null && (_dragging || position != _pressedPosition))
         {
-            _selected = occupant;
-            _armedUnitId = null;
+            EndDrag();
+            if (IsOpenSpawn(position)) Move(pressed, position);
+            else Deselect();
+            return;
         }
-        else if (IsOpenSpawn(position) && (_armedUnitId != null || _selected != null)) _pendingPosition = position;
-        else _selected = null;
+        if (!_wasTargeting && IsLegal(position))
+        {
+            Commit(position);
+            return;
+        }
+        _armedUnitId = null;
+        _selected = _gridManager.Player.CurrentSelection is { Entity: not null } source ? UnitAt(source.Position.Dim1) : null;
+        RefreshHighlights();
         RefreshPanel();
     }
 
-    private void ApplyPress(GridSource cell)
+    private void ReleaseOffBoard()
     {
-        if (_pendingPosition is not { } position) return;
-        _pendingPosition = null;
-        if (_armedUnitId != null) Place(_armedUnitId, position);
-        else Move(_selected, position);
+        if (_wasTargeting) return;
+        var pressed = _pressedUnit;
+        _pressedUnit = null;
+        EndDrag();
+        if (pressed == null)
+        {
+            Deselect();
+            return;
+        }
+        _units.Remove(pressed);
+        _selected = null;
+        Save();
+        Rebuild();
     }
 
-    private void Place(string unitId, int position)
+    private void PressCard(EntityConfig config)
     {
-        var unit = _units.Find(u => u.UnitId == unitId && u.Positions[_side - 1] == SavedUnit.Unplaced);
+        if (PlacedUnit(config.Id) is { } placed)
+        {
+            if (placed == _selected) Deselect();
+            else Select(placed);
+            return;
+        }
+        _armedUnitId = _armedUnitId == config.Id ? null : config.Id;
+        _selected = null;
+        Reselect();
+    }
+
+    private void CancelClick()
+    {
+        if (!_wasTargeting) Deselect();
+    }
+
+    private void HoldCard(EntityConfig config)
+    {
+        _cardConfig = config;
+        _cardPressPoint = Pointer.current.position.ReadValue();
+        _cardMoved = false;
+        _selectedBeforeCard = _selected;
+        _armedBeforeCard = _armedUnitId;
+        var placed = PlacedUnit(config.Id);
+        StartDrag(placed, placed == null ? config.Id : null, true);
+    }
+
+    private void StartDrag(DraftUnit unit, string armedUnitId, bool fromCard)
+    {
+        _selected = unit;
+        _armedUnitId = armedUnitId;
+        _dragging = true;
+        _draggingFromCard = fromCard;
+        _unitScroll.enabled = !fromCard;
+        IdRegistry<EntityAssets>.TryGet(unit?.UnitId ?? armedUnitId, out var assets);
+        _ghost = Instantiate(assets.Model3D, Vector3.zero, _side == 2 ? Quaternion.Euler(0f, 180f, 0f) : Quaternion.identity);
+        _ghostHeight = EntityRenderer.ModelHeight(_ghost);
+        _ghost.SetActive(!fromCard);
+        if (unit != null) _gridManager.Renderer.Entities.HideModel(new GridPosition(_gridManager.GridState, unit.Positions[_side - 1]));
+        Reselect();
+        MoveGhost();
+    }
+
+    private void ReleaseCardDrag()
+    {
+        var cell = _gridManager.Input.CellUnderPointer();
+        var clicked = !_cardMoved;
+        EndDrag();
+        if (clicked)
+        {
+            _selected = _selectedBeforeCard;
+            _armedUnitId = _armedBeforeCard;
+            PressCard(_cardConfig);
+            return;
+        }
+        if (cell is { } target && IsLegal(target.Position.Dim1)) Commit(target.Position.Dim1);
+        else Deselect();
+    }
+
+    private void EndDrag()
+    {
+        _dragging = false;
+        _draggingFromCard = false;
+        _unitScroll.enabled = true;
+        if (_ghost != null) Destroy(_ghost);
+        _gridManager.Renderer.Entities.HideModel(null);
+    }
+
+    private void MoveGhost()
+    {
+        if (_draggingFromCard && !_cardMoved)
+        {
+            _cardMoved = Vector2.Distance(Pointer.current.position.ReadValue(), _cardPressPoint) > EventSystem.current.pixelDragThreshold;
+            _ghost.SetActive(_cardMoved);
+        }
+        var renderer = _gridManager.Renderer;
+        if (_gridManager.Input.CellUnderPointer() is { } cell && IsLegal(cell.Position.Dim1))
+        {
+            _ghost.transform.position = renderer.CellCenter(cell.Position);
+            return;
+        }
+        var head = renderer.CellCenter(new GridPosition(_gridManager.GridState, 0), _dragLift + _ghostHeight);
+        var ray = _gridManager.MainCamera.ScreenPointToRay(Pointer.current.position.ReadValue());
+        if (!new Plane(Vector3.up, head).Raycast(ray, out var distance)) return;
+        _ghost.transform.position = ray.GetPoint(distance) + Vector3.down * _ghostHeight;
+    }
+
+    private int PointerPosition() => _gridManager.Input.CellUnderPointer() is { } cell ? cell.Position.Dim1 : SavedUnit.Unplaced;
+
+    private void Select(DraftUnit unit)
+    {
+        _selected = unit;
+        _armedUnitId = null;
+        Reselect();
+    }
+
+    private void Deselect()
+    {
+        _selected = null;
+        _armedUnitId = null;
+        Reselect();
+    }
+
+    private bool IsLegal(int position)
+    {
+        if (!IsOpenSpawn(position)) return false;
+        if (_selected != null) return true;
+        if (_armedUnitId == null) return false;
+        return _units.Exists(u => u.UnitId == _armedUnitId) || Cost() + CostOf(_armedUnitId) <= _map.MaxTeamCost;
+    }
+
+    private void Commit(int position)
+    {
+        if (_selected != null)
+        {
+            Move(_selected, position);
+            return;
+        }
+        var unit = _units.Find(u => u.UnitId == _armedUnitId);
         if (unit == null)
         {
-            if (Cost() + CostOf(unitId) > _map.MaxTeamCost)
-            {
-                Status($"{unitId} would exceed the cost limit", true);
-                return;
-            }
-            unit = new DraftUnit { UnitId = unitId, Positions = new int[_map.PlayerCount] };
+            unit = new DraftUnit { UnitId = _armedUnitId, Positions = new int[_map.PlayerCount] };
             for (var i = 0; i < unit.Positions.Length; i++) unit.Positions[i] = SavedUnit.Unplaced;
             _units.Add(unit);
         }
@@ -133,16 +300,8 @@ public class TeamBuilder : LoggableBehaviour
     {
         unit.Positions[_side - 1] = position;
         if (_map.IsMirrored) unit.Positions[2 - _side] = _map.Mirror(position);
-        _selected = unit;
-        Status(null);
-        Rebuild();
-    }
-
-    private void Remove()
-    {
-        if (_selected == null) return;
-        _units.Remove(_selected);
         _selected = null;
+        Save();
         Rebuild();
     }
 
@@ -150,51 +309,53 @@ public class TeamBuilder : LoggableBehaviour
     {
         _side = 3 - _side;
         _selected = null;
+        _armedUnitId = null;
         Rebuild();
     }
 
-    private void Arm(string unitId)
+    private void Save() => JsonHandler.SaveData(Draft(_loadedId));
+
+    private void BeginRename()
     {
-        _armedUnitId = _armedUnitId == unitId ? null : unitId;
-        _selected = null;
-        Rebuild();
+        _teamDropdown.interactable = false;
+        _teamDropdown.captionText.gameObject.SetActive(false);
+        _nameField.gameObject.SetActive(true);
+        _nameField.SetTextWithoutNotify(_loadedId);
+        _nameField.Select();
+        _nameField.ActivateInputField();
     }
 
-    private void SelectSlot(int slot)
+    private void EndRename(string text)
     {
-        _slot = slot;
-        RefreshPanel();
+        if (!_nameField.gameObject.activeSelf) return;
+        _nameField.gameObject.SetActive(false);
+        _teamDropdown.captionText.gameObject.SetActive(true);
+        _teamDropdown.interactable = true;
+        var name = text.Trim();
+        if (name == _loadedId) return;
+        if (NameIssue(name) is { } issue)
+        {
+            LogWarning(issue);
+            return;
+        }
+        JsonHandler.SaveData(Draft(name));
+        if (!string.Equals(name, _loadedId, StringComparison.OrdinalIgnoreCase)) JsonHandler.Delete(_loadedId);
+        _loadedId = name;
+        _teamId = name;
+        LoadTeams();
+        RefreshTeamOptions();
     }
 
-    private void Save()
+    private string NameIssue(string name)
     {
-        var team = Draft(SlotId(_slot));
-        if (team.Validate(_map) is { } issue)
-        {
-            Status(issue, true);
-            return;
-        }
-        JsonHandler.SaveData(team);
-        Status($"Saved team {_slot}");
+        if (name.Length == 0) return "Team name is empty";
+        if (name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0) return "Team name has an invalid character";
+        if (!string.Equals(name, _loadedId, StringComparison.OrdinalIgnoreCase) && JsonHandler.Exists(name)) return $"A team named {name} already exists";
+        return null;
     }
 
-    private void Load()
+    private void Open(SavedTeam team)
     {
-        var id = SlotId(_slot);
-        if (!JsonHandler.Exists(id))
-        {
-            Status($"Team {_slot} is empty", true);
-            Rebuild();
-            return;
-        }
-        var team = JsonHandler.LoadData<SavedTeam>(id);
-        if (team.MapId != _map.Id)
-        {
-            _mapId = team.MapId;
-            _loadSlotOnStart = true;
-            SceneManager.LoadScene(gameObject.scene.name);
-            return;
-        }
         _units.Clear();
         foreach (var saved in team.Units)
         {
@@ -202,50 +363,152 @@ public class TeamBuilder : LoggableBehaviour
             for (var seat = 1; seat <= positions.Length; seat++) positions[seat - 1] = saved.PositionFor(seat);
             _units.Add(new DraftUnit { UnitId = saved.UnitId, Positions = positions });
         }
+        _loadedId = team.Id;
+        _teamId = team.Id;
         _selected = null;
         _armedUnitId = null;
-        Status($"Loaded team {_slot}");
+        LoadTeams();
         Rebuild();
+    }
+
+    private void NewTeam()
+    {
+        var name = NewTeamName;
+        for (var i = 2; JsonHandler.Exists(name); i++) name = $"{NewTeamName} {i}";
+        var team = new SavedTeam(name, _map.Id, new List<SavedUnit>());
+        JsonHandler.SaveData(team);
+        Open(team);
+    }
+
+    private bool CanAddTeam => _units.Count > 0;
+    private int TeamOffset => CanAddTeam ? 1 : 0;
+
+    private void SelectTeam(int index)
+    {
+        if (index < TeamOffset) NewTeam();
+        else Open(_teams[index - TeamOffset]);
+    }
+
+    private void DeleteTeam(int index)
+    {
+        var team = _teams[index - TeamOffset];
+        JsonHandler.Delete(team.Id);
+        if (team.Id != _loadedId)
+        {
+            LoadTeams();
+            RefreshTeamOptions();
+            return;
+        }
+        _loadedId = null;
+        LoadTeams();
+        if (_teams.Count > 0) Open(_teams[0]);
+        else NewTeam();
+    }
+
+    private void LoadTeams()
+    {
+        DeleteEmptyTeams();
+        _teams.Clear();
+        _teams.AddRange(TeamsForMap());
+    }
+
+    private void DeleteEmptyTeams()
+    {
+        foreach (var id in JsonHandler.Ids())
+            if (!string.Equals(id, _loadedId, StringComparison.OrdinalIgnoreCase) && JsonHandler.LoadData<SavedTeam>(id).Units.Count == 0)
+                JsonHandler.Delete(id);
+    }
+
+    private void RefreshTeamOptions()
+    {
+        var options = new List<string>();
+        if (CanAddTeam) options.Add(NewTeamOption);
+        foreach (var team in _teams) options.Add(team.Id);
+        _teamDropdown.ClearOptions();
+        _teamDropdown.AddOptions(options);
+        _teamDropdown.SetValueWithoutNotify(_teams.FindIndex(t => t.Id == _loadedId) + TeamOffset);
     }
 
     private void SelectMap(string mapId)
     {
         if (mapId == _map.Id) return;
         _mapId = mapId;
+        _teamId = null;
         SceneManager.LoadScene(gameObject.scene.name);
+    }
+
+    private List<SavedTeam> TeamsForMap()
+    {
+        var teams = new List<SavedTeam>();
+        foreach (var id in JsonHandler.Ids())
+        {
+            var team = JsonHandler.LoadData<SavedTeam>(id);
+            if (team.MapId == _map.Id) teams.Add(team);
+        }
+        teams.Sort((a, b) => string.Compare(a.Id, b.Id, StringComparison.OrdinalIgnoreCase));
+        return teams;
     }
 
     private void Rebuild()
     {
         _gridManager.Restart(Seeds());
-        if (_selected != null && _selected.Positions[_side - 1] is var position && position != SavedUnit.Unplaced)
+        Reselect();
+    }
+
+    private void Reselect()
+    {
+        var player = _gridManager.Player;
+        player.ResetToIdle();
+        if (_selected != null)
         {
             var state = _gridManager.GridState;
-            var gridPosition = new GridPosition(state, position);
-            _gridManager.Player.OnPositionSelected(new GridSource(state, gridPosition, state.GetEntity(gridPosition)));
+            var gridPosition = new GridPosition(state, _selected.Positions[_side - 1]);
+            player.OnPositionSelected(new GridSource(state, gridPosition, state.GetEntity(gridPosition)));
         }
+        else if (_armedUnitId != null && IdRegistry<EntityConfig>.TryGet(_armedUnitId, out var config)) _entityView.ShowDetached(Entity.Create(config, _side));
+        else _entityView.ShowDetached(null);
         RefreshHighlights();
         RefreshPanel();
     }
 
     private void RefreshHighlights()
     {
-        if (_armedUnitId == null && _selected == null) return;
-        if (_gridManager.Player.State is not (IdleState or PositionSelectedState)) return;
-        var open = new HashSet<GridPosition>();
+        if (_gridManager.Player.State is AbilityInputState) return;
+        var highlights = _gridManager.Renderer.Highlights;
+        highlights.Clear();
+        var selected = _gridManager.Player.CurrentSelection?.Position.Dim1;
+        var starts = new HashSet<GridPosition>();
         var state = _gridManager.GridState;
         for (var i = 0; i < state.Size; i++)
-            if (IsOpenSpawn(i)) open.Add(new GridPosition(state, i));
-        _gridManager.Renderer.Highlights.Highlight(open, HighlightType.AvailableTargets);
+            if (IsSpawn(i) && i != selected) starts.Add(new GridPosition(state, i));
+        highlights.Highlight(starts, HighlightType.StartingPositions);
+    }
+
+    private DraftUnit PlacedUnit(string unitId) => _units.Find(u => u.UnitId == unitId && u.Positions[_side - 1] != SavedUnit.Unplaced);
+
+    private void Reorder(IReadOnlyList<int> uids)
+    {
+        var state = _gridManager.GridState;
+        var ordered = new List<DraftUnit>();
+        foreach (var uid in uids)
+            if (state.GetEntityByUid(uid) is { } entity && UnitAt(entity.Position.Dim1) is { } unit) ordered.Add(unit);
+        foreach (var unit in _units)
+            if (!ordered.Contains(unit)) ordered.Add(unit);
+        _units.Clear();
+        _units.AddRange(ordered);
+        Save();
+        Rebuild();
     }
 
     private DraftUnit UnitAt(int position) => _units.Find(u => u.Positions[_side - 1] == position);
 
-    private bool IsOpenSpawn(int position)
+    private bool IsSpawn(int position)
     {
         var gridPosition = new GridPosition(_map.Shape, position);
-        return gridPosition.IsValid() && _map.GetSpawnPlayer(gridPosition) == _side && UnitAt(position) == null;
+        return gridPosition.IsValid() && _map.GetSpawnPlayer(gridPosition) == _side;
     }
+
+    private bool IsOpenSpawn(int position) => IsSpawn(position) && UnitAt(position) == null;
 
     private int Cost()
     {
@@ -256,117 +519,59 @@ public class TeamBuilder : LoggableBehaviour
 
     private static int CostOf(string unitId) => IdRegistry<EntityConfig>.TryGet(unitId, out var config) ? config.Cost : 0;
 
-    private static string SlotId(int slot) => $"Team{slot}";
-
-    private void Status(string message, bool error = false)
+    private static IEnumerable<GridDefinition> Maps()
     {
-        if (_statusText == null) return;
-        _statusText.text = message ?? "";
-        _statusText.color = error ? _errorLabelColor : Color.white;
+        foreach (var field in typeof(MapConfigs).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static))
+            if (field.GetValue(null) is GridDefinition map) yield return map;
     }
 
-    private void BuildPanel()
+    private void BindPanel()
     {
-        var layout = _panel.gameObject.AddComponent<VerticalLayoutGroup>();
-        layout.spacing = _spacing;
-        layout.childAlignment = TextAnchor.UpperCenter;
-        layout.childControlWidth = true;
-        layout.childControlHeight = true;
-        layout.childForceExpandWidth = true;
-        layout.childForceExpandHeight = false;
+        var maps = new List<GridDefinition>(Maps());
+        _mapDropdown.ClearOptions();
+        _mapDropdown.AddOptions(maps.ConvertAll(map => map.Id));
+        _mapDropdown.SetValueWithoutNotify(maps.FindIndex(map => map.Id == _map.Id));
+        _mapDropdown.onValueChanged.AddListener(index => SelectMap(maps[index].Id));
+        _teamDropdown.onValueChanged.AddListener(SelectTeam);
+        _teamDropdown.GetComponentInChildren<InteractableUI>().OnHoldTriggered += BeginRename;
+        _nameField.onEndEdit.AddListener(EndRename);
+        _teamDropdown.DeleteRequested += DeleteTeam;
+        _teamDropdown.CanDelete = index => index >= TeamOffset;
+        _filter.Changed += ApplyFilter;
+        BuildUnitGrid();
+    }
 
-        var units = new List<EntityConfig>();
+    private void BuildUnitGrid()
+    {
+        var configs = new List<EntityConfig>();
         foreach (var field in typeof(UnitConfigs).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static))
-            if (field.GetValue(null) is EntityConfig config && IdRegistry<EntityAssets>.TryGet(config.Id, out _)) units.Add(config);
-        var columns = 2;
-        var rows = (units.Count + columns - 1) / columns;
-        var roster = Row(rows * _unitIconSize + (rows - 1) * _spacing, false);
-        var grid = roster.gameObject.AddComponent<GridLayoutGroup>();
-        grid.cellSize = new Vector2(_unitIconSize, _unitIconSize);
-        grid.spacing = new Vector2(_spacing, _spacing);
-        grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        grid.constraintCount = columns;
-        grid.childAlignment = TextAnchor.UpperCenter;
-        foreach (var config in units)
+            if (field.GetValue(null) is EntityConfig config && IdRegistry<EntityAssets>.TryGet(config.Id, out _)) configs.Add(config);
+        configs.Sort((a, b) => a.Cost != b.Cost ? a.Cost.CompareTo(b.Cost) : string.Compare(a.Id, b.Id, StringComparison.Ordinal));
+        foreach (var config in configs)
         {
             IdRegistry<EntityAssets>.TryGet(config.Id, out var assets);
-            var icon = Instantiate(_unitIconPrefab, roster);
-            icon.InitStatus(assets.Model2D, config.Cost);
-            var unitId = config.Id;
-            icon.OnClicked += _ => Arm(unitId);
-            _rosterIcons[unitId] = icon;
+            var card = Instantiate(_unitCardPrefab, _unitGrid);
+            card.Init(assets.Model2D, config.Cost);
+            var cardConfig = config;
+            card.Button.OnClickCompleted += () => PressCard(cardConfig);
+            card.Button.OnHoldTriggered += () => HoldCard(cardConfig);
+            _cards.Add((config, card));
         }
+    }
 
-        _costText = Label(Row(_labelHeight, true));
-
-        var edit = Row(_rowHeight, true);
-        if (!_map.IsMirrored) _sideLabel = Button(edit, "", ToggleSide);
-        Button(edit, "Remove", Remove);
-
-        var slots = Row(_rowHeight, true);
-        for (var slot = 1; slot <= _slotCount; slot++)
-        {
-            var index = slot;
-            _slotLabels.Add(Button(slots, slot.ToString(), () => SelectSlot(index)));
-        }
-
-        var files = Row(_rowHeight, true);
-        Button(files, "Save", Save);
-        Button(files, "Load", Load);
-
-        var maps = Row(_rowHeight, true);
-        foreach (var field in typeof(MapConfigs).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static))
-        {
-            if (field.GetValue(null) is not GridDefinition map) continue;
-            var mapId = map.Id;
-            _mapLabels[mapId] = Button(maps, mapId, () => SelectMap(mapId));
-        }
-
-        _statusText = Label(Row(_labelHeight, true));
+    private void ApplyFilter()
+    {
+        foreach (var (config, card) in _cards) card.gameObject.SetActive(_filter.Matches(config.Id, config.Cost));
     }
 
     private void RefreshPanel()
     {
-        foreach (var (unitId, icon) in _rosterIcons) icon.SetActiveVisual(unitId == _armedUnitId);
-        if (_costText != null) _costText.text = $"Cost {Cost()} / {_map.MaxTeamCost}";
-        if (_sideLabel != null) _sideLabel.text = $"Side {_side}";
-        for (var i = 0; i < _slotLabels.Count; i++) _slotLabels[i].color = i + 1 == _slot ? _selectedLabelColor : Color.white;
-        foreach (var (mapId, label) in _mapLabels) label.color = mapId == _map.Id ? _selectedLabelColor : Color.white;
-    }
-
-    private RectTransform Row(float height, bool horizontal)
-    {
-        var row = new GameObject("Row", typeof(RectTransform), typeof(LayoutElement)).GetComponent<RectTransform>();
-        row.SetParent(_panel, false);
-        row.GetComponent<LayoutElement>().preferredHeight = height;
-        if (!horizontal) return row;
-        var layout = row.gameObject.AddComponent<HorizontalLayoutGroup>();
-        layout.spacing = _spacing;
-        layout.childControlWidth = true;
-        layout.childControlHeight = true;
-        layout.childForceExpandWidth = true;
-        layout.childForceExpandHeight = true;
-        return row;
-    }
-
-    private TMP_Text Button(RectTransform row, string text, System.Action onClick)
-    {
-        var button = Instantiate(_buttonPrefab, row);
-        button.OnClickCompleted += onClick;
-        var label = button.GetComponentInChildren<TMP_Text>();
-        label.text = text;
-        label.fontSize = _fontSize;
-        return label;
-    }
-
-    private TMP_Text Label(RectTransform row)
-    {
-        var label = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI)).GetComponent<TextMeshProUGUI>();
-        label.rectTransform.SetParent(row, false);
-        label.fontSharedMaterial = _labelMaterial;
-        label.fontSize = _fontSize;
-        label.alignment = TextAlignmentOptions.Center;
-        label.textWrappingMode = TextWrappingModes.NoWrap;
-        return label;
+        _costText.text = $"Cost {Cost()} / {_map.MaxTeamCost}";
+        foreach (var (config, card) in _cards)
+        {
+            card.SetArmed(config.Id == _armedUnitId);
+            card.SetPlaced(PlacedUnit(config.Id) != null);
+        }
+        RefreshTeamOptions();
     }
 }

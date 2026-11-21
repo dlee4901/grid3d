@@ -24,14 +24,12 @@ public class AbilityIcon : LoggableBehaviour
     private RectTransform _manaCounterTransform;
     
     private Ability _ability;
-    private Trait _trait;
     private Status _status;
     private RawImage _textureImage;
     private GridSource _source;
 
     public string AbilityId => _ability?.Id;
     public Ability Ability => _ability;
-    public Trait Trait => _trait;
     public Status Status => _status;
     public GridSource Source => _source;
 
@@ -50,14 +48,6 @@ public class AbilityIcon : LoggableBehaviour
         _icon.sprite = sprite;
         _ability = ability;
         _source = source;
-    }
-
-    public void InitTrait(Sprite sprite, Trait trait)
-    {
-        _icon.sprite = sprite;
-        _trait = trait;
-        _cooldown.SetActive(false);
-        _manaCounter.gameObject.SetActive(false);
     }
 
     public void InitStatus(Sprite sprite, int count, Status status = null)
@@ -100,13 +90,13 @@ public class AbilityIcon : LoggableBehaviour
     
     public void Render(Ability shown, bool castable)
     {
-        var onCooldown = shown.Cooldown > 0;
+        var onCooldown = shown.IsCastable && shown.Cooldown > 0;
         _cooldown.SetActive(onCooldown);
         if (onCooldown) _cooldownText.text = shown.Cooldown.ToString();
-        _manaCounter.gameObject.SetActive(true);
+        _manaCounter.gameObject.SetActive(shown.IsCastable);
         _manaCounter.SetManaCount(shown.ManaCost);
         _manaCounter.SetDimmed(onCooldown);
-        SetCastable(castable);
+        SetCastable(castable || !shown.IsCastable);
     }
     
     private void SetManaCounterPosition()

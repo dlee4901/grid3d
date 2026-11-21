@@ -297,7 +297,7 @@ public sealed class GridState
         => CanPlayerAct(player) && IsControllable(position, player) && CanCast(_entities[position.Dim1], ability, player);
 
     public bool CanCast(Entity entity, Ability ability, int player)
-        => !ability.Locked && ability.Cooldown == 0 && HasMana(player, ability.ManaCost);
+        => ability.IsCastable && !ability.Locked && ability.Cooldown == 0 && HasMana(player, ability.ManaCost);
 
     public bool HasCastableAbility(Entity entity, int player)
     {
@@ -403,12 +403,12 @@ public sealed class GridState
         hash.Add(hasControl);
         if (hasControl) hash.Add(control.PlayerController);
 
-        var hasTraits = entity.TryGetComponent<TraitComponent>(out var traits);
-        hash.Add(hasTraits);
-        if (hasTraits)
+        var hasStatuses = entity.TryGetComponent<StatusComponent>(out var statuses);
+        hash.Add(hasStatuses);
+        if (hasStatuses)
         {
-            hash.Add(traits.Statuses.Count);
-            foreach (var status in traits.Statuses)
+            hash.Add(statuses.Statuses.Count);
+            foreach (var status in statuses.Statuses)
             {
                 hash.Add(status.Id);
                 hash.Add(status.Count);

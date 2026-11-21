@@ -7,7 +7,6 @@ public static partial class UnitConfigs
         Id = "Fire Mage",
         Cost = 4,
         Health = 12,
-        Abilities = new List<string> {"MoveStraight3Step", "Fireball", "Flame Step"},
-        Traits = new List<string> {"Blaze"}
+        Abilities = new List<string> {"MoveStraight3Step", "Fireball", "Flame Step", "Blaze"}
     };
 }

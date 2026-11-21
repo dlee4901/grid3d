@@ -1,3 +1,5 @@
+using TMPro;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 public class PlayerInputController : LoggableBehaviour
@@ -41,7 +43,7 @@ public class PlayerInputController : LoggableBehaviour
     {
         if (State == null) return;
         var keyboard = Keyboard.current;
-        if (keyboard == null) return;
+        if (keyboard == null || IsTyping()) return;
         if (keyboard.escapeKey.wasPressedThisFrame)
         {
             Log("Cancel (ESC)");
@@ -51,12 +53,17 @@ public class PlayerInputController : LoggableBehaviour
             if (keyboard[AbilityKeys[i]].wasPressedThisFrame) ActivateAbilityAt(i);
     }
 
+    private static bool IsTyping() =>
+        EventSystem.current != null
+        && EventSystem.current.currentSelectedGameObject is { } selected
+        && selected.TryGetComponent<TMP_InputField>(out var field) && field.isFocused;
+
     private static readonly Key[] AbilityKeys = { Key.Digit1, Key.Digit2, Key.Digit3, Key.Digit4 };
 
     private void ActivateAbilityAt(int index)
     {
         if (CurrentSelection is not { Entity: { } entity } source) return;
-        if (!entity.TryGetComponent<AbilityComponent>(out var abilities) || index >= abilities.List.Count) return;
+        if (!entity.TryGetComponent<AbilityComponent>(out var abilities) || index >= abilities.List.Count || !abilities.List[index].IsCastable) return;
         Log($"Ability key {index + 1}: {abilities.List[index].Id}");
         State.OnAbilityActivate(abilities.List[index], source);
     }

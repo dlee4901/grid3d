@@ -36,4 +36,8 @@ MonoBehaviour:
     Color: {r: 1, g: 1, b: 1, a: 1}
     EdgeIntensity: 4
     UIAlpha: 0.125
+  _startingPositions:
+    Color: {r: 0, g: 1, b: 0, a: 1}
+    EdgeIntensity: 8
+    UIAlpha: 0.25
   _dangerFace: {r: 0.75, g: 0.1, b: 0.05, a: 1}

@@ -68,23 +68,23 @@ public class TestContent
         Register(StatusConfigs.Burn);
         Register(TerrainConfigs.Burning);
         Register(StatusConfigs.Power);
-        Register(TraitConfigs.Armored);
-        Register(TraitConfigs.Blaze);
-        Register(TraitConfigs.Retaliate);
-        Register(new TraitConfig
+        Register(AbilityConfigs.Armored);
+        Register(AbilityConfigs.Blaze);
+        Register(AbilityConfigs.Retaliate);
+        Register(new AbilityConfig
         {
             Id = Vengeance,
             Trigger = new Trigger { On = GameEvent.Died },
             Effects = new List<AbilityEffect> { new DamageEffect { Relation = Occupant.Enemy, Amount = 3 } }
         });
-        Register(new TraitConfig
+        Register(new AbilityConfig
         {
             Id = Explode,
             Trigger = new Trigger { On = GameEvent.Died },
             Area = WithinSteps(1),
             Effects = new List<AbilityEffect> { new DamageEffect { Relation = Occupant.Units, Amount = 2 } }
         });
-        Register(new TraitConfig
+        Register(new AbilityConfig
         {
             Id = Feast,
             Trigger = new Trigger { On = GameEvent.Died, Subject = Occupant.Units & ~Occupant.Self, Range = WithinSteps(3) },
@@ -184,16 +184,16 @@ public class TestContent
         });
         RegisterUnit(AbilityConfigs.SwordSlash, health: 10);
         RegisterUnit(AbilityConfigs.ShieldBash, health: 10);
-        RegisterUnit(new AbilityConfig { Id = Blazing, ManaCost = 1 }, health: 10, traits: new List<string> { "Blaze" });
-        RegisterUnit(new AbilityConfig { Id = Armored, ManaCost = 1 }, health: 10, traits: new List<string> { "Armored" });
-        RegisterUnit(new AbilityConfig { Id = Retaliator, ManaCost = 1 }, health: 10, traits: new List<string> { "Retaliate" });
+        RegisterUnit(new AbilityConfig { Id = Blazing, ManaCost = 1 }, health: 10, passives: new List<string> { "Blaze" });
+        RegisterUnit(new AbilityConfig { Id = Armored, ManaCost = 1 }, health: 10, passives: new List<string> { "Armored" });
+        RegisterUnit(new AbilityConfig { Id = Retaliator, ManaCost = 1 }, health: 10, passives: new List<string> { "Retaliate" });
         RegisterUnit(new AbilityConfig
         {
             Id = Avenger, ManaCost = 1, Targeting = AdjacentTile(Occupant.Any),
             Effects = new List<AbilityEffect> { new DamageEffect { Amount = 3 } }
-        }, traits: new List<string> { Vengeance });
-        RegisterUnit(new AbilityConfig { Id = Volatile, ManaCost = 1 }, traits: new List<string> { Explode });
-        RegisterUnit(new AbilityConfig { Id = Scavenger, ManaCost = 1 }, health: 10, traits: new List<string> { Feast });
+        }, passives: new List<string> { Vengeance });
+        RegisterUnit(new AbilityConfig { Id = Volatile, ManaCost = 1 }, passives: new List<string> { Explode });
+        RegisterUnit(new AbilityConfig { Id = Scavenger, ManaCost = 1 }, health: 10, passives: new List<string> { Feast });
         RegisterCostlyUnit();
         RegisterKits();
     }
@@ -234,7 +234,7 @@ public class TestContent
         if (IdRegistry<EntityConfig>.TryGet(unitId, out _)) return;
         IdRegistry<EntityConfig>.Register(new EntityConfig
         {
-            Id = unitId, Health = 10, Abilities = new List<string>(abilityIds), Traits = new List<string>()
+            Id = unitId, Health = 10, Abilities = new List<string>(abilityIds)
         });
     }
 
@@ -355,14 +355,13 @@ public class TestContent
         if (!IdRegistry<T>.TryGet(item.Id, out _)) IdRegistry<T>.Register(item);
     }
 
-    private static void RegisterUnit(AbilityConfig ability, int health = 1, List<string> traits = null)
+    private static void RegisterUnit(AbilityConfig ability, int health = 1, List<string> passives = null)
     {
         if (!IdRegistry<AbilityConfig>.TryGet(ability.Id, out _)) IdRegistry<AbilityConfig>.Register(ability);
         var unitId = UnitWith(ability.Id);
         if (IdRegistry<EntityConfig>.TryGet(unitId, out _)) return;
-        IdRegistry<EntityConfig>.Register(new EntityConfig
-        {
-            Id = unitId, Health = health, Abilities = new List<string> { ability.Id }, Traits = traits ?? new List<string>()
-        });
+        var abilities = new List<string> { ability.Id };
+        if (passives != null) abilities.AddRange(passives);
+        IdRegistry<EntityConfig>.Register(new EntityConfig { Id = unitId, Health = health, Abilities = abilities });
     }
 }

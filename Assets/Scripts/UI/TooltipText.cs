@@ -26,10 +26,10 @@ public static class TooltipText
         var content = new TooltipContent
         {
             Title = Title(config),
-            Mana = config.ManaCost,
-            Cooldown = config.Cooldown > 1 ? config.Cooldown : null
+            Mana = ability.IsCastable ? config.ManaCost : null,
+            Cooldown = ability.IsCastable && config.Cooldown > 1 ? config.Cooldown : null
         };
-        var keywords = new List<string> { Kind("Ability") };
+        var keywords = new List<string>();
         foreach (var keyword in KeywordText.All)
         {
             if ((config.Keywords & keyword) == 0) continue;
@@ -37,20 +37,14 @@ public static class TooltipText
             keywords.Add(Link(id, LinkColor, keyword.ToString()));
             content.Links[id] = new TooltipContent { Title = keyword.ToString(), Body = $"{Kind("Keyword")}\n{KeywordText.Describe(keyword)}" };
         }
-        content.Body = string.Join(Separator, keywords) + "\n" + Body(config, state, caster, content);
-        return content;
-    }
-
-    public static TooltipContent ForTrait(Trait trait, GridState state)
-    {
-        var content = new TooltipContent { Title = Title(trait.Config) };
-        content.Body = $"{Kind("Trait")}\n{Body(trait.Config, state, null, content)}";
+        var body = Body(config, state, caster, content);
+        content.Body = keywords.Count > 0 ? string.Join(Separator, keywords) + "\n" + body : body;
         return content;
     }
 
     public static TooltipContent ForStatus(Status status, GridState state)
     {
-        var content = ForStatusConfig((StatusConfig)status.Config, state);
+        var content = ForStatusConfig(status.Config, state);
         content.Title = $"{content.Title} {status.Count}";
         return content;
     }
@@ -58,7 +52,7 @@ public static class TooltipText
     private static TooltipContent ForStatusConfig(StatusConfig config, GridState state)
     {
         var content = new TooltipContent { Title = Title(config) };
-        content.Body = $"{Kind("Status")}\n{Body(config, state, null, content)}";
+        content.Body = Body(config, state, null, content);
         return content;
     }
 
@@ -115,7 +109,7 @@ public static class TooltipText
     {
         if (id == null) return "Other";
         if (IdRegistry<StatusConfig>.TryGet(id, out var status)) return status.DisplayName ?? status.Id;
-        if (IdRegistry<TraitConfig>.TryGet(id, out var trait)) return trait.DisplayName ?? trait.Id;
+        if (IdRegistry<AbilityConfig>.TryGet(id, out var ability)) return ability.DisplayName ?? ability.Id;
         return id;
     }
 

@@ -1,1 +1,5 @@
-public sealed class StatusConfig : TraitConfig { }
+public sealed class StatusConfig : EffectConfig
+{
+    public Trigger Trigger { get; init; }
+    public GridSelection Area { get; init; }
+}

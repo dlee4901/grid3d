@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 
-public static partial class TraitConfigs
+public static partial class AbilityConfigs
 {
-    public static readonly TraitConfig Armored = new()
+    public static readonly AbilityConfig Armored = new()
     {
         Id = "Armored",
         DisplayName = "Armored",

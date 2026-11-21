@@ -35,6 +35,7 @@ public class EntityRenderer : LoggableBehaviour
     private readonly Dictionary<int, EntityView> _views = new();
     private Canvas _overlayCanvas;
     private Camera _camera;
+    private int _hiddenUid = -1;
 
     private GridState Displayed => _gridManager.DisplayedState;
 
@@ -64,6 +65,12 @@ public class EntityRenderer : LoggableBehaviour
             view.Counter.ForceVisible = false;
             ApplyCounterVisibility(view);
         }
+    }
+
+    public void HideModel(GridPosition? position)
+    {
+        _hiddenUid = position is { } cell && Displayed.GetEntity(cell) is { } entity ? entity.Uid : -1;
+        RefreshEntities();
     }
 
     public void Build()
@@ -188,6 +195,7 @@ public class EntityRenderer : LoggableBehaviour
 
     private void ClearViews()
     {
+        _hiddenUid = -1;
         foreach (var view in _views.Values)
         {
             Destroy(view.Model);
@@ -204,8 +212,8 @@ public class EntityRenderer : LoggableBehaviour
             var entity = Displayed.GetEntity(position);
             if (!_views.TryGetValue(entity.Uid, out var view) && !TryCreateView(entity, out view)) continue;
             view.Entity = entity;
-            view.Shown = true;
-            view.Model.SetActive(true);
+            view.Shown = entity.Uid != _hiddenUid;
+            view.Model.SetActive(view.Shown);
             MoveTo(view, position);
             if (entity.TryGetComponent<HealthComponent>(out var health))
             {
@@ -274,7 +282,7 @@ public class EntityRenderer : LoggableBehaviour
         return true;
     }
 
-    private static float ModelHeight(GameObject model)
+    public static float ModelHeight(GameObject model)
     {
         var renderers = model.GetComponentsInChildren<Renderer>();
         if (renderers.Length == 0) return 0f;

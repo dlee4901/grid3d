@@ -21,6 +21,7 @@ public class GridRenderer : LoggableBehaviour
     public Grid Grid => _grid;
     public PositionCube PositionCubePrefab => _positionCubePrefab;
     public HighlightRenderer Highlights => _highlights;
+    public EntityRenderer Entities => _entityRenderer;
 
     public Vector3 CellCenter(GridPosition position, float heightOffset = 0f)
         => _grid.CellToWorld(new Vector3Int(position.Dim2.x, position.Dim2.y, 0))

@@ -13,7 +13,6 @@ public class GameBootstrap : LoggableBehaviour
     [SerializeField] private GridManager _gridManager;
     [SerializeField] private List<EntityAssets> _entityAssets;
     [SerializeField] private List<StatusAssets> _statusAssets;
-    [SerializeField] private List<TraitAssets> _traitAssets;
     [SerializeField] private List<TerrainAssets> _terrainAssets;
     [SerializeField] private bool _autoStart = true;
     [SerializeField] private string _mapId = "TestMap1";
@@ -70,9 +69,10 @@ public class GameBootstrap : LoggableBehaviour
         foreach (var id in spawnable)
         {
             if (!IdRegistry<EntityConfig>.TryGet(id, out var entityConfig)) continue;
-            if (!IdRegistry<EntityAssets>.TryGet(id, out _)) LogWarning($"Entity '{id}' has no EntityAssets (no model/sprite)");
-            foreach (var trait in entityConfig.Traits)
-                if (!IdRegistry<TraitAssets>.TryGet(trait, out _)) LogError($"Trait '{trait}' on '{id}' has no TraitAssets (no icon)");
+            if (!IdRegistry<EntityAssets>.TryGet(id, out var entityAssets))
+                LogWarning($"Entity '{id}' has no EntityAssets (no model/sprite)");
+            else if (entityAssets.AbilityIcons.Count != entityConfig.Abilities.Count)
+                LogError($"Entity '{id}' has {entityConfig.Abilities.Count} abilities but {entityAssets.AbilityIcons.Count} ability icons");
         }
     }
 
@@ -94,7 +94,6 @@ public class GameBootstrap : LoggableBehaviour
         ContentRegistry.RegisterAll();
         RegistryManager.Register(_entityAssets);
         RegistryManager.Register(_statusAssets);
-        RegistryManager.Register(_traitAssets);
         RegistryManager.Register(_terrainAssets);
     }
 

@@ -15,6 +15,7 @@ public class HealthCounter : LoggableBehaviour
     [SerializeField] private int _borderAlpha = 64;
 
     private const float BorderSpriteMargin = 2f / 56f;
+    private const float MinFontSize = 24f;
 
     private int _current = int.MinValue;
     private Transform _counterTextTransform;
@@ -38,9 +39,10 @@ public class HealthCounter : LoggableBehaviour
     
     public void SetSize(float size)
     {
+        _size = size;
         GetComponent<RectTransform>().sizeDelta = new Vector2(size, size);
         _border.rectTransform.sizeDelta = Vector2.one * (size * 2f * BorderSpriteMargin);
-        _counterText.fontSize = size * _fontScale;
+        _counterText.fontSize = Mathf.Max(MinFontSize, size * _fontScale);
     }
 
     public void SetHealthCount(int health)
