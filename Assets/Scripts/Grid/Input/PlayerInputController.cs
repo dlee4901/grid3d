@@ -16,11 +16,10 @@ public class PlayerInputController : LoggableBehaviour
     {
         _ctx = new PlayerInputContext
         {
-            Manager = manager,
             Controller = this,
             Input = input,
             Dispatcher = dispatcher,
-            Highlights = highlights,
+            Display = new TargetingDisplay(manager, highlights),
             Grid = grid
         };
 
@@ -29,6 +28,7 @@ public class PlayerInputController : LoggableBehaviour
 
         input.OnPositionPressed += pressed => State.OnPress(pressed);
         input.OnPositionSelected += clicked => State.OnPositionSelected(clicked);
+        input.OnPositionDragged += dragged => State.OnDrag(dragged);
         input.OnCancelClicked += () => State.OnCancel();
     }
 
@@ -63,7 +63,7 @@ public class PlayerInputController : LoggableBehaviour
     private void ActivateAbilityAt(int index)
     {
         if (CurrentSelection is not { Entity: { } entity } source) return;
-        if (!entity.TryGetComponent<AbilityComponent>(out var abilities) || index >= abilities.List.Count || !abilities.List[index].IsCastable) return;
+        if (!entity.TryGetComponent<AbilityComponent>(out var abilities) || index >= abilities.List.Count) return;
         Log($"Ability key {index + 1}: {abilities.List[index].Id}");
         State.OnAbilityActivate(abilities.List[index], source);
     }

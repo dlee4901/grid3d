@@ -6,7 +6,7 @@ public class GameView : StateView
 {
     [SerializeField] private EntityRenderer _entityRenderer;
     [SerializeField] private CameraRig _cameraRig;
-    [SerializeField] private ManaCounter _manaCounter;
+    [SerializeField] private Counter _counter;
     [SerializeField] private InteractableUI _toggleHealth;
     [SerializeField] private InteractableUI _toggleDanger;
     [SerializeField] private InteractableUI _cameraCenter;
@@ -62,7 +62,7 @@ public class GameView : StateView
         var turns = _gridManager.Turns;
         var players = state.Definition.PlayerCount;
 
-        if (_manaCounter != null) _manaCounter.SetManaCount(state.GetMana(state.ActivePlayer));
+        if (_counter != null) _counter.SetValue(state.GetMana(state.ActivePlayer));
         _shownActivePlayer = real.ActivePlayer;
 
         for (var p = 1; p <= players; p++)

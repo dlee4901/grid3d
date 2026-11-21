@@ -36,6 +36,7 @@ public class GridManager : LoggableBehaviour
     public event Action DisplayChanged;
     public event Action GameStarted;
     public event Action Restarted;
+    public event Action<Command> CommandApplied;
     public bool IsGameStarted { get; private set; }
 
     public bool Submit(Func<int, Command> build) => _dispatcher.Submit(build);
@@ -138,5 +139,6 @@ public class GridManager : LoggableBehaviour
         }
         StateChanged?.Invoke();
         DisplayChanged?.Invoke();
+        CommandApplied?.Invoke(command);
     }
 }

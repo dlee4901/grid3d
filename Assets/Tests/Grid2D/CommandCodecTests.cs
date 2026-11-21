@@ -12,6 +12,15 @@ public class CommandCodecTests
         Assert.AreEqual("Fireball", ability.AbilityId);
         Assert.AreEqual(15, ability.SourcePosition);
         CollectionAssert.AreEqual(new[] { 37, 38 }, ability.TargetPositions);
+        Assert.IsNull(ability.Path);
+    }
+
+    [Test]
+    public void AbilityCommand_WithPath_RoundTrips()
+    {
+        var bytes = CommandCodec.Encode(new AbilityCommand(1, "MoveStraight3Step", 0, new[] { 1 }, new[] { 5, 6, 1 }));
+        Assert.IsTrue(CommandCodec.TryDecode(bytes, 1, out var decoded));
+        CollectionAssert.AreEqual(new[] { 5, 6, 1 }, ((AbilityCommand)decoded).Path);
     }
 
     [Test]

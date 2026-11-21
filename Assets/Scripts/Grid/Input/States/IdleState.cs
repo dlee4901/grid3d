@@ -4,10 +4,7 @@ public class IdleState : PlayerInputState
 
     public override void OnEnter()
     {
-        Ctx.Manager.ClearPreview();
-        Ctx.Highlights.Clear();
-        Ctx.Highlights.SetSelected(null);
-        Ctx.Highlights.Highlight(Ctx.Grid.GetAvailableEntityPositions(Ctx.Dispatcher.LocalSeat), HighlightType.AvailableSources);
+        Ctx.Display.ShowSources(null, Ctx.Grid.GetAvailableEntityPositions(Ctx.Dispatcher.LocalSeat));
     }
 
     public override void OnPositionSelected(GridSource clicked)

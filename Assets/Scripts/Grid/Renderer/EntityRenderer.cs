@@ -9,7 +9,8 @@ public class EntityRenderer : LoggableBehaviour
     private sealed class EntityView
     {
         public GameObject Model;
-        public HealthCounter Counter;
+        public EntityModel Visual;
+        public Health Counter;
         public Entity Entity;
         public bool Shown;
         public float Height;
@@ -21,7 +22,7 @@ public class EntityRenderer : LoggableBehaviour
 
     [SerializeField] private GridManager _gridManager;
     [SerializeField] private GridRenderer _gridRenderer;
-    [SerializeField] private HealthCounter _healthCounterPrefab;
+    [SerializeField] private Health _healthPrefab;
     [SerializeField] private float _overlayHeight = 1.5f;
     [SerializeField] private int _overlaySortingOrder = -1;
     [SerializeField] private float _referenceDistance = 10f;
@@ -80,6 +81,7 @@ public class EntityRenderer : LoggableBehaviour
         RefreshEntities();
         _gridManager.DisplayChanged += RefreshEntities;
         _gridManager.Restarted += ClearViews;
+        _gridManager.CommandApplied += PlayCast;
         RenderPipelineManager.beginCameraRendering += ProjectCounters;
     }
 
@@ -90,6 +92,7 @@ public class EntityRenderer : LoggableBehaviour
         {
             _gridManager.DisplayChanged -= RefreshEntities;
             _gridManager.Restarted -= ClearViews;
+            _gridManager.CommandApplied -= PlayCast;
         }
         if (_overlayCanvas != null) Destroy(_overlayCanvas.gameObject);
     }
@@ -135,11 +138,22 @@ public class EntityRenderer : LoggableBehaviour
         var step = _moveSpeed * Time.deltaTime;
         foreach (var view in _views.Values)
         {
-            if (view.Waypoints.Count == 0 || Time.time < view.MoveStartTime) continue;
-            var model = view.Model.transform;
-            model.position = Vector3.MoveTowards(model.position, view.Waypoints.Peek(), step);
-            if (model.position == view.Waypoints.Peek()) view.Waypoints.Dequeue();
+            if (view.Waypoints.Count > 0 && Time.time >= view.MoveStartTime)
+            {
+                var model = view.Model.transform;
+                model.position = Vector3.MoveTowards(model.position, view.Waypoints.Peek(), step);
+                if (model.position == view.Waypoints.Peek()) view.Waypoints.Dequeue();
+            }
+            if (view.Visual != null) view.Visual.SetMoving(view.Waypoints.Count > 0 && Time.time >= view.MoveStartTime);
         }
+    }
+
+    private void PlayCast(Command command)
+    {
+        if (command is not AbilityCommand cast || !IdRegistry<AbilityVisuals>.TryGet(cast.AbilityId, out var visuals)) return;
+        var caster = _gridManager.GridState.GetEntity(cast.SourcePosition);
+        if (caster == null || !_views.TryGetValue(caster.Uid, out var view) || view.Visual == null) return;
+        view.Visual.Play(visuals.CasterAction);
     }
 
     private void MoveTo(EntityView view, GridPosition cell)
@@ -273,10 +287,11 @@ public class EntityRenderer : LoggableBehaviour
         view = new EntityView
         {
             Model = Instantiate(assets.Model3D, _gridRenderer.CellCenter(entity.Position), rotation, transform),
-            Counter = Instantiate(_healthCounterPrefab, _overlayCanvas.transform),
+            Counter = Instantiate(_healthPrefab, _overlayCanvas.transform),
             Entity = entity,
             Cell = entity.Position
         };
+        if (!view.Model.TryGetComponent(out view.Visual)) LogError($"Model for '{entity.Id}' has no EntityModel component");
         view.Height = ModelHeight(view.Model);
         _views[entity.Uid] = view;
         return true;

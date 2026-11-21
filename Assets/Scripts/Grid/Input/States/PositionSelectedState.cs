@@ -10,11 +10,7 @@ public class PositionSelectedState : PlayerInputState
 
     public override void OnEnter()
     {
-        Ctx.Manager.ClearPreview();
-        Ctx.Highlights.Clear();
-        Ctx.Highlights.SetSelected(_selected.Position);
-        if (!Actionable)
-            Ctx.Highlights.Highlight(Ctx.Grid.GetAvailableEntityPositions(Ctx.Dispatcher.LocalSeat), HighlightType.AvailableSources);
+        Ctx.Display.ShowSources(_selected.Position, Actionable ? null : Ctx.Grid.GetAvailableEntityPositions(Ctx.Dispatcher.LocalSeat));
     }
 
     public override void OnPositionSelected(GridSource clicked)
@@ -27,7 +23,7 @@ public class PositionSelectedState : PlayerInputState
 
     public override void OnAbilityActivate(Ability ability, GridSource source)
     {
-        Ctx.Controller.TransitionTo(new AbilitySelectedState(Ctx, ability, source));
+        Ctx.Controller.TransitionTo(Select(ability, source));
     }
 
     public override void OnCancel() => Ctx.Controller.TransitionTo(new IdleState(Ctx));

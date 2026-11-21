@@ -10,11 +10,14 @@ public class Tooltip : MonoBehaviour
     [SerializeField] private TMP_Text _title;
     [SerializeField] private RectTransform _header;
     [SerializeField] private TMP_Text _body;
-    [SerializeField] private ManaCounter _manaPrefab;
-    [SerializeField] private ManaCounter _cooldownPrefab;
+    [SerializeField] private Counter _prefab;
+    [SerializeField] private CounterStyle _manaStyle = CounterStyle.Mana;
+    [SerializeField] private CounterStyle _cooldownStyle = CounterStyle.Clock;
+    [SerializeField] private ShapeGlyph _shapeGlyphPrefab;
     [SerializeField] private float _counterSize = 48f;
     [SerializeField] private float _gap;
     [SerializeField] private float _frameInset = 2f;
+    [SerializeField] private float _minWidth = 384f;
 
     public RectTransform Panel => (RectTransform)transform;
     public TooltipSide Side { get; private set; }
@@ -26,9 +29,12 @@ public class Tooltip : MonoBehaviour
     {
         Content = content;
         _title.text = content.Title;
-        if (content.Mana.HasValue) AddCounter(_manaPrefab, content.Mana.Value);
-        if (content.Cooldown.HasValue) AddCounter(_cooldownPrefab, content.Cooldown.Value);
+        var icons = 0;
+        if (content.Glyph != null) { AddGlyph(content.Glyph); icons++; }
+        if (content.Mana.HasValue) { AddCounter(_manaStyle, content.Mana.Value); icons++; }
+        if (content.Cooldown.HasValue) { AddCounter(_cooldownStyle, content.Cooldown.Value); icons++; }
         _body.text = content.Body;
+        FitWidth(icons);
         Side = side;
         LayoutRebuilder.ForceRebuildLayoutImmediate(Panel);
         Place(anchor, side);
@@ -39,11 +45,30 @@ public class Tooltip : MonoBehaviour
     public bool TryGetLink(Vector2 screenPoint, out string id, out Rect bounds)
         => TryGetLink(_body, screenPoint, out id, out bounds);
 
-    private void AddCounter(ManaCounter prefab, int value)
+    private void FitWidth(int icons)
     {
-        var counter = Instantiate(prefab, _header);
-        counter.SetSize(_counterSize);
-        counter.SetManaCount(value);
+        var spacing = _header.GetComponent<HorizontalLayoutGroup>().spacing;
+        var padding = Panel.GetComponent<VerticalLayoutGroup>().padding.horizontal;
+        var title = _title.GetPreferredValues(_title.text, float.PositiveInfinity, float.PositiveInfinity).x;
+        var header = title + icons * (_counterSize + spacing);
+        Panel.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, Mathf.Max(_minWidth, Mathf.Ceil(header) + padding));
+    }
+
+    private void AddGlyph(GlyphShape shape)
+    {
+        var glyph = Instantiate(_shapeGlyphPrefab, _header);
+        glyph.Show(shape);
+        var layout = glyph.gameObject.AddComponent<LayoutElement>();
+        layout.preferredWidth = _counterSize;
+        layout.preferredHeight = _counterSize;
+    }
+
+    private void AddCounter(CounterStyle style, int value)
+    {
+        var counter = Instantiate(_prefab, _header);
+        ((RectTransform)counter.transform).sizeDelta = new Vector2(_counterSize, _counterSize);
+        counter.SetStyle(style);
+        counter.SetValue(value);
         var layout = counter.gameObject.AddComponent<LayoutElement>();
         layout.preferredWidth = _counterSize;
         layout.preferredHeight = _counterSize;

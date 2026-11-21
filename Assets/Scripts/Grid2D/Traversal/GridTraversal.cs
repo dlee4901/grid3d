@@ -196,6 +196,8 @@ public class GridTraversal
         return unitVectors;
     }
 
+    public bool[] DirectionMask() => GetAbsoluteDirections(Direction);
+
     private bool[] GetAbsoluteDirections(GridDirection gridDirection, GridDirectionFacing gridDirectionFacing=GridDirectionFacing.North)
     {
         var absoluteDirections = new bool[UnidirectionalCount];//List<bool>{false, false, false, false, false, false, false, false};

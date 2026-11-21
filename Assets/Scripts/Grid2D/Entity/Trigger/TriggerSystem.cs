@@ -37,7 +37,7 @@ internal sealed class TriggerSystem
             if (trigger == null || trigger.On != e.On) continue;
             if (!(self && e.On == GameEvent.Died) && !IsOnBoard(holder)) continue;
             var origin = new GridSource(_state, holder.Position, holder);
-            if (!Hears(trigger, origin, e.Subject)) continue;
+            if (!Hears(trigger, origin, e.Subject, self ? e.Other : e.Subject)) continue;
             var ctx = new EffectContext(origin, null, triggered, e);
             if (!trigger.When.Eval(ctx)) continue;
 
@@ -64,13 +64,13 @@ internal sealed class TriggerSystem
 
     private bool IsOnBoard(Entity entity) => _state.GetEntity(entity.Position) == entity;
 
-    private static bool Hears(Trigger trigger, GridSource origin, Entity subject)
+    private static bool Hears(Trigger trigger, GridSource origin, Entity subject, Entity counterpart)
     {
         if ((trigger.Subject & Occupants.Between(origin.Entity, subject)) == 0) return false;
-        if (trigger.Range == null || origin.Entity == subject) return true;
+        if (trigger.Range == null || counterpart == null || counterpart == origin.Entity) return true;
         var range = trigger.Range.GetGridSteps(origin);
         for (var group = 0; group < range.GroupCount; group++)
-            if (range.Contains(subject.Position, group)) return true;
+            if (range.Contains(counterpart.Position, group)) return true;
         return false;
     }
 

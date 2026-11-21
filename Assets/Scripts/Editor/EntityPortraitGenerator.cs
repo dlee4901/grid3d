@@ -12,14 +12,23 @@ public static class EntityPortraitGenerator
     private const float Padding = 1.05f;
     private const string OutputFolder = "Assets/Visuals/Portraits";
 
-    [MenuItem("Assets/Generate Entity Portrait", true)]
-    private static bool Validate() => Selection.GetFiltered<EntityAssets>(SelectionMode.Assets).Length > 0;
+    [MenuItem("Tools/Generate Missing Entity Portraits")]
+    public static void GenerateMissing() => GenerateAll(onlyMissing: true);
 
-    [MenuItem("Assets/Generate Entity Portrait")]
-    private static void Generate()
+    [MenuItem("Tools/Regenerate All Entity Portraits")]
+    private static void RegenerateAll() => GenerateAll(onlyMissing: false);
+
+    private static void GenerateAll(bool onlyMissing)
     {
-        foreach (var assets in Selection.GetFiltered<EntityAssets>(SelectionMode.Assets)) GenerateFor(assets);
-        AssetDatabase.SaveAssets();
+        var generated = false;
+        foreach (var guid in AssetDatabase.FindAssets("t:EntityAssets"))
+        {
+            var assets = AssetDatabase.LoadAssetAtPath<EntityAssets>(AssetDatabase.GUIDToAssetPath(guid));
+            if (assets == null || assets.Model3D == null || onlyMissing && assets.Model2D != null) continue;
+            GenerateFor(assets);
+            generated = true;
+        }
+        if (generated) AssetDatabase.SaveAssets();
     }
 
     private static void GenerateFor(EntityAssets assets)
@@ -120,11 +129,12 @@ public static class EntityPortraitGenerator
     {
         if (controller == null) return null;
 
-        if (controller is AnimatorController editable)
+        var overrides = controller as AnimatorOverrideController;
+        if ((overrides != null ? overrides.runtimeAnimatorController : controller) is AnimatorController editable)
             foreach (var layer in editable.layers)
                 if (layer.stateMachine != null && layer.stateMachine.defaultState != null
                     && layer.stateMachine.defaultState.motion is AnimationClip stateClip)
-                    return stateClip;
+                    return overrides != null && overrides[stateClip] != null ? overrides[stateClip] : stateClip;
 
         var clips = controller.animationClips;
         return clips != null && clips.Length > 0 ? clips[0] : null;

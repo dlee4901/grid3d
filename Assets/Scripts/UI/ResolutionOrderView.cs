@@ -8,7 +8,10 @@ using UnityEngine.UI;
 public class ResolutionOrderView : StateView
 {
     [SerializeField] private HorizontalLayoutGroup _container;
-    [SerializeField] private ResolutionOrderIcon _iconPrefab;
+    [SerializeField] private SquarePortrait _iconPrefab;
+    [SerializeField] private PortraitElements _iconElements = PortraitElements.Health;
+    [SerializeField] private float _slideDuration = 0.5f;
+    [SerializeField] private int _dragSortingOrder = 10;
 
     [SerializeField] private Color _selectedColor = new Color32(255, 255, 255, 160);
     [SerializeField] private Color _unhighlightedColor = new Color32(255, 255, 255, 64);
@@ -17,7 +20,17 @@ public class ResolutionOrderView : StateView
 
     public event Action<IReadOnlyList<int>> Reordered;
         
-    private readonly List<ResolutionOrderIcon> _icons = new();
+    private sealed class Icon
+    {
+        public SquarePortrait Portrait;
+        public Entity Entity;
+        public float SlideSpeed;
+        public bool Dragging;
+        public Canvas DragCanvas;
+        public RectTransform Rect => (RectTransform)Portrait.transform;
+    }
+
+    private readonly List<Icon> _icons = new();
     private readonly List<int> _shownUids = new();
     private bool _shownPreview;
     private bool _outlinesDirty;
@@ -46,8 +59,9 @@ public class ResolutionOrderView : StateView
 
         while (_icons.Count < entities.Count)
         {
-            var icon = Instantiate(_iconPrefab, _container.transform);
-            icon.OnSelectRequested += OnIconSelected;
+            var icon = new Icon { Portrait = Instantiate(_iconPrefab, _container.transform) };
+            icon.Portrait.Configure(_iconElements);
+            icon.Portrait.Button.OnClickCompleted += () => OnIconSelected(icon.Entity);
             if (_reorderable) AddDragRelay(icon);
             _icons.Add(icon);
         }
@@ -60,15 +74,15 @@ public class ResolutionOrderView : StateView
         for (var i = 0; i < _icons.Count; i++)
         {
             var active = i < entities.Count;
-            _icons[i].gameObject.SetActive(active);
+            _icons[i].Portrait.gameObject.SetActive(active);
             if (!active) continue;
             var uid = entities[i].Uid;
             _shownUids.Add(uid);
-            _icons[i].Bind(entities[i], _gridManager.ViewerSeat);
+            Bind(_icons[i], entities[i]);
             if (i < previous.Count && previous[i] == uid) continue;
             var from = snap ? -1 : baseline.IndexOf(uid);
             var offset = from < 0 || from == i ? 0f : (from - i) * Stride(_icons[i]);
-            _icons[i].SlideFrom(offset);
+            SlideFrom(_icons[i], offset);
         }
         _shownPreview = previewing;
         RefreshOutlines();
@@ -76,26 +90,52 @@ public class ResolutionOrderView : StateView
 
     private void ForgetShown() => _shownUids.Clear();
 
-    private void AddDragRelay(ResolutionOrderIcon icon)
+    private void Bind(Icon icon, Entity entity)
     {
-        var relay = icon.gameObject.AddComponent<DragRelay>();
-        relay.Began += _ => icon.BeginDrag();
+        icon.Entity = entity;
+        var portrait = icon.Portrait;
+        portrait.Init(IdRegistry<EntityAssets>.TryGet(entity.Id, out var assets) ? assets.Model2D : null);
+        var hasHealth = entity.TryGetComponent<HealthComponent>(out var health);
+        portrait.SetHealthVisible(hasHealth);
+        if (!hasHealth) return;
+        portrait.Health.SetHealthCount(health.Current);
+        portrait.Health.SetOwner(entity, _gridManager.ViewerSeat);
+    }
+
+    private void SlideFrom(Icon icon, float offset)
+    {
+        icon.Portrait.Visual.anchoredPosition = new Vector2(offset, 0f);
+        icon.SlideSpeed = Mathf.Abs(offset) / _slideDuration;
+    }
+
+    private void AddDragRelay(Icon icon)
+    {
+        var relay = icon.Portrait.gameObject.AddComponent<DragRelay>();
+        relay.Began += _ => BeginDrag(icon);
         relay.Moved += data => DragIcon(icon, data);
         relay.Ended += _ => EndDrag(icon);
     }
 
-    private void DragIcon(ResolutionOrderIcon icon, PointerEventData data)
+    private void BeginDrag(Icon icon)
+    {
+        icon.Dragging = true;
+        icon.DragCanvas = icon.Portrait.gameObject.AddComponent<Canvas>();
+        icon.DragCanvas.overrideSorting = true;
+        icon.DragCanvas.sortingOrder = _dragSortingOrder;
+    }
+
+    private void DragIcon(Icon icon, PointerEventData data)
     {
         var container = (RectTransform)_container.transform;
         if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(container, data.position, data.pressEventCamera, out var local)) return;
-        var rect = (RectTransform)icon.transform;
+        var rect = icon.Rect;
         var stride = Stride(icon);
         var from = _icons.IndexOf(icon);
         var to = Mathf.Clamp(Mathf.RoundToInt((local.x - _container.padding.left - rect.rect.width / 2f) / stride), 0, _shownUids.Count - 1);
         if (to != from)
         {
             var step = to > from ? 1 : -1;
-            for (var i = from + step; i != to + step; i += step) _icons[i].SlideFrom(step * stride);
+            for (var i = from + step; i != to + step; i += step) SlideFrom(_icons[i], step * stride);
             _icons.RemoveAt(from);
             _icons.Insert(to, icon);
             var uid = _shownUids[from];
@@ -104,22 +144,34 @@ public class ResolutionOrderView : StateView
             rect.SetSiblingIndex(to);
             LayoutRebuilder.ForceRebuildLayoutImmediate(container);
         }
-        icon.DragTo(local.x - rect.anchoredPosition.x);
+        icon.Portrait.Visual.anchoredPosition = new Vector2(local.x - rect.anchoredPosition.x, 0f);
     }
 
-    private void EndDrag(ResolutionOrderIcon icon)
+    private void EndDrag(Icon icon)
     {
-        icon.EndDrag();
+        icon.Dragging = false;
+        Destroy(icon.DragCanvas);
+        SlideFrom(icon, icon.Portrait.Visual.anchoredPosition.x);
         Reordered?.Invoke(new List<int>(_shownUids));
     }
 
-    private float Stride(ResolutionOrderIcon icon) => ((RectTransform)icon.transform).rect.width + _container.spacing;
+    private float Stride(Icon icon) => icon.Rect.rect.width + _container.spacing;
 
     private void LateUpdate()
     {
+        foreach (var icon in _icons) Slide(icon);
         if (!_outlinesDirty) return;
         _outlinesDirty = false;
         RefreshOutlines();
+    }
+
+    private static void Slide(Icon icon)
+    {
+        if (icon.Dragging) return;
+        var visual = icon.Portrait.Visual;
+        var x = visual.anchoredPosition.x;
+        if (x == 0f) return;
+        visual.anchoredPosition = new Vector2(Mathf.MoveTowards(x, 0f, icon.SlideSpeed * Time.deltaTime), 0f);
     }
 
     private void MarkOutlinesDirty() => _outlinesDirty = true;
@@ -133,8 +185,8 @@ public class ResolutionOrderView : StateView
 
         foreach (var icon in _icons)
         {
-            if (!icon.gameObject.activeSelf || icon.Entity == null) continue;
-            icon.SetBorderColor(BorderColor(icon.Entity, selected));
+            if (!icon.Portrait.gameObject.activeSelf || icon.Entity == null) continue;
+            icon.Portrait.SetBorderColor(BorderColor(icon.Entity, selected));
         }
     }
   

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
@@ -6,15 +7,27 @@ using UnityEngine.UI;
 public class EntityView : StateView
 {
     [FormerlySerializedAs("_label")] [SerializeField] private RectTransform _container;
-    [SerializeField] private UnitLabel _unitLabelPrefab;
-    [FormerlySerializedAs("_abilityIcon")] [SerializeField] private AbilityIcon _abilityIconPrefab;
+    [SerializeField] private GameObject _unit;
+    [SerializeField] private TMP_Text _unitName;
+    [SerializeField] private SquarePortrait _portrait;
+    [FormerlySerializedAs("_abilityIcon")] [SerializeField] private SquarePortrait _abilityIconPrefab;
+    [SerializeField] private PortraitElements _abilityElements = PortraitElements.Mana | PortraitElements.Cooldown;
     [SerializeField] private RectTransform _statusContainer;
-    [SerializeField] private AbilityIcon _statusIconPrefab;
+    [SerializeField] private SquarePortrait _statusIconPrefab;
+    [SerializeField] private PortraitElements _statusElements = PortraitElements.Counter;
+    [SerializeField] private Color _disabledTint = new(1f, 1f, 1f, 0.4f);
     [SerializeField] private TooltipStack _tooltips;
 
-    private readonly List<AbilityIcon> _icons = new();
-    private UnitLabel _unitLabel;
-    private AbilityIcon _tooltipIcon;
+    private sealed class Icon
+    {
+        public SquarePortrait Portrait;
+        public Ability Ability;
+        public Status Status;
+        public GridSource Source;
+    }
+
+    private readonly List<Icon> _icons = new();
+    private Icon _tooltipIcon;
     private RectTransform _tooltipSource;
     private int _labelUid;
     private Entity _detached;
@@ -53,7 +66,7 @@ public class EntityView : StateView
 
     protected override void Render(GridState shown)
     {
-        if (_unitLabel == null) return;
+        if (!_unit.activeSelf) return;
         var real = _detached ?? _gridManager.GridState.GetEntityByUid(_labelUid);
         var entity = _detached ?? shown.GetEntityByUid(_labelUid);
         RenderHealth(real, entity);
@@ -63,7 +76,7 @@ public class EntityView : StateView
 
     private void OnActiveAbilityChanged(string activeId)
     {
-        foreach (var icon in _icons) icon.SetActiveVisual(icon.AbilityId == activeId);
+        foreach (var icon in _icons) icon.Portrait.SetArmed(icon.Ability.Id == activeId);
         RefreshAbilityTooltip();
     }
 
@@ -71,28 +84,28 @@ public class EntityView : StateView
     {
         if (_detached != null) return;
         var player = _gridManager.Player;
-        var selected = player.State as AbilitySelectedState;
-        var active = selected == null ? null : _icons.Find(icon => icon.AbilityId == selected.AbilityId);
+        var selectedId = (player.State as AbilitySelectedState)?.AbilityId;
+        var active = selectedId == null ? null : _icons.Find(icon => icon.Ability.Id == selectedId);
         if (active != null)
         {
             if (!IsShowing(active)) ShowTooltip(active);
         }
-        else if (!ReferenceEquals(_tooltipIcon, null) && _tooltipIcon.Ability is { IsCastable: true }) HideTooltip();
+        else if (!ReferenceEquals(_tooltipIcon, null) && _tooltipIcon.Ability != null) HideTooltip();
     }
 
-    private void OnIconClicked(AbilityIcon icon)
+    private void OnIconClicked(Icon icon)
     {
-        if (icon.Ability is { IsCastable: true } && _detached == null) _gridManager.Player.OnAbilityActivate(icon.Ability, icon.Source);
+        if (icon.Ability != null && _detached == null) _gridManager.Player.OnAbilityActivate(icon.Ability, icon.Source);
         else if (IsShowing(icon)) HideTooltip();
         else ShowTooltip(icon);
     }
 
-    private void ShowTooltip(AbilityIcon icon)
+    private void ShowTooltip(Icon icon)
     {
         var state = _gridManager.GridState;
         var content = icon.Ability != null ? TooltipText.ForAbility(icon.Ability, state, icon.Source.Entity)
             : TooltipText.ForStatus(icon.Status, state);
-        _tooltipSource = (RectTransform)icon.transform;
+        _tooltipSource = (RectTransform)icon.Portrait.transform;
         _tooltips.OpenRoot(this, content, _tooltipSource, TooltipSide.Right);
         _tooltipIcon = icon;
     }
@@ -104,7 +117,7 @@ public class EntityView : StateView
         _tooltipSource = null;
     }
 
-    private bool IsShowing(AbilityIcon icon) => ReferenceEquals(_tooltipIcon, icon) && _tooltips.IsOpenFor(this, _tooltipSource);
+    private bool IsShowing(Icon icon) => ReferenceEquals(_tooltipIcon, icon) && _tooltips.IsOpenFor(this, _tooltipSource);
 
     private void OnInputChanged(GridSource? source)
     {
@@ -128,32 +141,33 @@ public class EntityView : StateView
             return;
         if (!IdRegistry<EntityAssets>.TryGet(entity.Id, out var entityAssets))
             return;
-        var unitLabel = Instantiate(_unitLabelPrefab, _container);
-        unitLabel.Init(entity.Id, entityAssets.Model2D, IdRegistry<EntityConfig>.TryGet(entity.Id, out var config) ? config.Cost : 0);
-        _unitLabel = unitLabel;
+        _unit.SetActive(true);
+        _unitName.text = entity.Id;
+        _portrait.Init(entityAssets.Model2D);
+        _portrait.SetCost(IdRegistry<EntityConfig>.TryGet(entity.Id, out var config) ? config.Cost : 0);
+        _portrait.SetHealthVisible(entity.TryGetComponent<HealthComponent>(out _));
+        _portrait.Health.SetOwner(entity, _gridManager.ViewerSeat);
         _labelUid = entity.Uid;
-        unitLabel.HealthCounter.SetOwner(entity, _gridManager.ViewerSeat);
         
         if (entity.TryGetComponent<AbilityComponent>(out var abilities))
-            AddAbilityIcons(abilities, entityAssets, source);
+            AddAbilityIcons(abilities, source);
         RenderShown();
     }
 
-    private void AddAbilityIcons(AbilityComponent abilities, EntityAssets entityAssets, GridSource source)
+    private void AddAbilityIcons(AbilityComponent abilities, GridSource source)
     {
         Log($"Selection info: {source.Entity.Id}, abilities={abilities.List.Count}");
-        var abilityIcons = entityAssets.AbilityIcons;
-        for (var i = 0; i < abilities.List.Count; i++)
+        foreach (var ability in abilities.List)
         {
-            if (abilityIcons.Count <= i)
-                break;
-            var icon = Instantiate(_abilityIconPrefab, _container);
-            icon.Init(abilityIcons[i], abilities.List[i], source);
-            icon.OnClicked += OnIconClicked;
+            var icon = new Icon { Portrait = Instantiate(_abilityIconPrefab, _container), Ability = ability, Source = source };
+            icon.Portrait.Configure(_abilityElements);
+            icon.Portrait.Init(IdRegistry<AbilityVisuals>.TryGet(ability.Id, out var visuals) ? visuals.Icon : null);
+            icon.Portrait.SetMana(ability.IsCastable ? ability.ManaCost : null);
+            icon.Portrait.Button.OnClickCompleted += () => OnIconClicked(icon);
             _icons.Add(icon);
         }
         var activeId = _gridManager.Player.ActiveAbilityId;
-        foreach (var icon in _icons) icon.SetActiveVisual(icon.AbilityId == activeId);
+        foreach (var icon in _icons) icon.Portrait.SetArmed(icon.Ability.Id == activeId);
     }
 
     private void RenderAbilities(Entity real, Entity shown)
@@ -163,7 +177,16 @@ public class EntityView : StateView
             || !shown.TryGetComponent<AbilityComponent>(out var shownAbilities)) return;
         var seat = _gridManager.LocalSeat;
         for (var i = 0; i < _icons.Count; i++)
-            _icons[i].Render(shownAbilities.List[i], _detached != null || _gridManager.GridState.CanCastAt(real.Position, realAbilities.List[i], seat));
+            RenderAbility(_icons[i].Portrait, shownAbilities.List[i], _detached != null || _gridManager.GridState.CanCastAt(real.Position, realAbilities.List[i], seat));
+    }
+
+    private void RenderAbility(SquarePortrait portrait, Ability shown, bool castable)
+    {
+        var onCooldown = shown.IsCastable && shown.Cooldown > 0;
+        portrait.SetCooldown(onCooldown ? shown.Cooldown : null);
+        portrait.SetMana(shown.IsCastable ? shown.ManaCost : null);
+        portrait.SetManaDimmed(onCooldown);
+        portrait.SetImageColor(castable || !shown.IsCastable ? Color.white : _disabledTint);
     }
 
     private void RenderStatuses(Entity shown)
@@ -173,9 +196,11 @@ public class EntityView : StateView
         foreach (var status in statuses.Statuses)
         {
             if (!IdRegistry<StatusAssets>.TryGet(status.Id, out var statusAssets)) continue;
-            var icon = Instantiate(_statusIconPrefab, _statusContainer);
-            icon.InitStatus(statusAssets.Icon, status.Count, status);
-            icon.OnClicked += OnIconClicked;
+            var icon = new Icon { Portrait = Instantiate(_statusIconPrefab, _statusContainer), Status = status };
+            icon.Portrait.Configure(_statusElements);
+            icon.Portrait.Init(statusAssets.Icon);
+            icon.Portrait.SetCount(status.Count);
+            icon.Portrait.Button.OnClickCompleted += () => OnIconClicked(icon);
         }
     }
 
@@ -183,17 +208,16 @@ public class EntityView : StateView
     {
         if (real == null || !real.TryGetComponent<HealthComponent>(out var health)) return;
         var next = shown != null && shown.TryGetComponent<HealthComponent>(out var shownHealth) ? shownHealth.Current : 0;
-        _unitLabel.HealthCounter.SetHealthCount(next);
-        _unitLabel.HealthCounter.SetPrevious(health.Current);
-        _unitLabel.HealthCounter.SetDead(shown == null);
+        _portrait.Health.SetHealthCount(next);
+        _portrait.Health.SetPrevious(health.Current);
+        _portrait.Health.SetDead(shown == null);
     }
 
     private void ClearMenu()
     {
         HideTooltip();
-        if (_unitLabel != null) Destroy(_unitLabel.gameObject);
-        foreach (var icon in _icons) Destroy(icon.gameObject);
-        _unitLabel = null;
+        _unit.SetActive(false);
+        foreach (var icon in _icons) Destroy(icon.Portrait.gameObject);
         _detached = null;
         _icons.Clear();
         UnityUtil.DestroyAllChildren(_statusContainer.gameObject);

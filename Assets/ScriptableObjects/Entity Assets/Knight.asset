@@ -15,8 +15,3 @@ MonoBehaviour:
   <Id>k__BackingField: Knight
   Model3D: {fileID: 2971919317264613238, guid: d8e69539bd4f34f8cb0cdefede2f8e5a, type: 3}
   Model2D: {fileID: 4033487972480862772, guid: 3345db9cd15e14c929107923f5f5f4a8, type: 3}
-  AbilityIcons:
-  - {fileID: 21300000, guid: 5170e0068a8cf184fb119834fa7ba0f3, type: 3}
-  - {fileID: 21300000, guid: 8f28955d92038974a9b04aafaeea79b0, type: 3}
-  - {fileID: 21300000, guid: 256205b9c6ca12c45ab7762da8a65631, type: 3}
-  - {fileID: 21300000, guid: b227c6c1c35b36940b602110d9556b13, type: 3}

@@ -7,6 +7,7 @@ public sealed class TooltipContent
     public string Title;
     public int? Mana;
     public int? Cooldown;
+    public GlyphShape Glyph;
     public string Body;
     public readonly Dictionary<string, TooltipContent> Links = new();
 }
@@ -29,6 +30,7 @@ public static class TooltipText
             Mana = ability.IsCastable ? config.ManaCost : null,
             Cooldown = ability.IsCastable && config.Cooldown > 1 ? config.Cooldown : null
         };
+        if (ability.IsCastable) content.Glyph = GlyphOf(ability);
         var keywords = new List<string>();
         foreach (var keyword in KeywordText.All)
         {
@@ -40,6 +42,14 @@ public static class TooltipText
         var body = Body(config, state, caster, content);
         content.Body = keywords.Count > 0 ? string.Join(Separator, keywords) + "\n" + body : body;
         return content;
+    }
+
+    private static GlyphShape GlyphOf(Ability ability)
+    {
+        var targeting = ability.Targeting;
+        if (targeting == null || TargetingShape.ReachesAnywhere(ability)) return null;
+        if (TargetingShape.TryGetArea(targeting, out var cells, out var fromCaster)) return GlyphShape.FromArea(cells, fromCaster);
+        return GlyphShape.FromDirections(TargetingShape.DirectionMask(targeting));
     }
 
     public static TooltipContent ForStatus(Status status, GridState state)

@@ -3,18 +3,21 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.UI;
 
 public class TerrainView : StateView
 {
     [SerializeField] private RectTransform _swatchSlot;
-    [SerializeField] private AbilityIcon _swatchPrefab;
+    [SerializeField] private SquarePortrait _swatchPrefab;
+    [SerializeField] private PortraitElements _swatchElements = PortraitElements.Counter;
     [SerializeField] private TMP_Text _nameText;
     [SerializeField] private TooltipStack _tooltips;
     [SerializeField] private int _snapshotResolution = 256;
     [SerializeField] private Vector3 _studioPosition = new(0f, -1000f, 0f);
 
     private readonly Dictionary<TerrainType, Texture2D> _snapshots = new();
-    private AbilityIcon _swatch;
+    private SquarePortrait _swatch;
+    private RawImage _swatchTexture;
     private GridPosition? _tooltipCell;
 
     private GridPosition? ShownCell => _gridManager.Player.CurrentSelection?.Position;
@@ -23,9 +26,18 @@ public class TerrainView : StateView
     {
         _swatch = Instantiate(_swatchPrefab, _swatchSlot);
         var swatchRect = (RectTransform)_swatch.transform;
-        swatchRect.anchorMin = swatchRect.anchorMax = new Vector2(0f, 0.5f);
+        swatchRect.anchorMin = swatchRect.anchorMax = new Vector2(0.5f, 0.5f);
         swatchRect.anchoredPosition = Vector2.zero;
-        _swatch.OnClicked += ToggleTooltip;
+        _swatch.Configure(_swatchElements);
+        _swatchTexture = new GameObject("Texture", typeof(RectTransform), typeof(RawImage)).GetComponent<RawImage>();
+        var textureRect = _swatchTexture.rectTransform;
+        textureRect.SetParent(_swatch.Image.rectTransform, false);
+        textureRect.anchorMin = Vector2.zero;
+        textureRect.anchorMax = Vector2.one;
+        textureRect.offsetMin = Vector2.zero;
+        textureRect.offsetMax = Vector2.zero;
+        _swatchTexture.raycastTarget = false;
+        _swatch.Button.OnClickCompleted += ToggleTooltip;
         _gridManager.Player.SelectionChanged += OnSelectionChanged;
         base.OnGameStarted();
     }
@@ -51,12 +63,16 @@ public class TerrainView : StateView
         shown.TryGetTerrain(cell.Value, out var terrain);
         IdRegistry<TerrainAssets>.TryGet(terrain.ToString(), out var assets);
         _nameText.text = assets != null ? assets.DisplayName : terrain.ToString();
-        _swatch.InitSwatch(SnapshotFor(terrain, assets), shown.GetTerrainTurns(cell.Value));
+        var turns = shown.GetTerrainTurns(cell.Value);
+        _swatchTexture.texture = SnapshotFor(terrain, assets);
+        _swatch.Init(null);
+        _swatch.SetImageColor(Color.black);
+        _swatch.SetCount(turns > 0 ? turns : null);
     }
 
-    private void ToggleTooltip(AbilityIcon swatch)
+    private void ToggleTooltip()
     {
-        var rect = (RectTransform)swatch.transform;
+        var rect = (RectTransform)_swatch.transform;
         if (_tooltips.IsOpenFor(this, rect) || ShownCell is not { } cell)
         {
             CloseTooltip();

@@ -30,13 +30,19 @@ public class Ability : INameId, ITriggered
         Locked = config.Locked;
     }
 
-    internal bool Execute(GridState state, GridPosition sourcePosition, List<GridPosition> targetPositions)
+    internal bool Execute(GridState state, GridPosition sourcePosition, List<GridPosition> targetPositions,
+                          IReadOnlyList<GridPosition> path = null)
     {
         var source = state.GetEntity(sourcePosition);
         if (source == null) return false;
         var origin = new GridSource(state, sourcePosition, source);
         if (!Targeting.GetEffectSteps(origin, targetPositions, out var steps)) return false;
-        EffectResolver.Run(new EffectContext(origin, this), steps, Effects);
+        if (path != null && !MovePath.IsValid(origin, this, targetPositions[0], path))
+        {
+            GridLog.Warning($"[Ability] {Id} rejected traced path");
+            return false;
+        }
+        EffectResolver.Run(new EffectContext(origin, this, path: path), steps, Effects);
         return true;
     }
 

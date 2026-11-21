@@ -1,46 +1,79 @@
 using System.Collections.Generic;
-using System.Linq;
 
 public abstract class AbilityInputState : PlayerInputState
 {
     protected readonly Ability Ability;
     protected readonly List<GridPosition> Targets;
+    protected readonly List<GridPosition> Path;
     private readonly GridSource _source;
     private readonly GridSteps _selectable;
+    private readonly bool _traceable;
+    private List<GridPosition> _trace;
     private bool _holding;
 
-    protected AbilityInputState(PlayerInputContext ctx, Ability ability, GridSource source, List<GridPosition> targets) : base(ctx)
+    protected AbilityInputState(PlayerInputContext ctx, Ability ability, GridSource source, List<GridPosition> targets,
+                                List<GridPosition> path = null) : base(ctx)
     {
         Ability = ability;
         _source = source;
         Targets = targets ?? new List<GridPosition>();
-        _selectable = ability.Targeting.GetSelectableSteps(source);
+        Path = path;
+        _selectable = AreaOf(ability, source);
+        _traceable = MovePath.CanTrace(ability);
     }
 
     public string AbilityId => Ability.Id;
     public GridSource Source => _source;
-    protected int TargetCount => Ability.Targeting.Targets;
+    protected int TargetCount => Ability.Targeting?.Targets ?? 0;
     public bool Castable => Ctx.Grid.CanCastAt(_source.Position, Ability, Ctx.Dispatcher.LocalSeat);
 
-    public override void OnEnter()
-    {
-        Ctx.Highlights.SetSelected(_source.Position);
-        ShowSelection(Targets);
-    }
+    public override void OnEnter() => Show(Targets, Path);
 
     public override void OnPress(GridSource pressed)
     {
+        if (_traceable && pressed.Position.Equals(_source.Position))
+        {
+            _trace = new List<GridPosition>();
+            ShowTrace();
+            return;
+        }
         _holding = IsValidTarget(pressed.Position);
-        if (_holding) ShowSelection(WithLast(pressed.Position));
+        if (_holding) Show(WithLast(pressed.Position));
+    }
+
+    public override void OnDrag(GridSource dragged)
+    {
+        if (_trace == null) return;
+        var position = dragged.Position;
+        var index = _trace.IndexOf(position);
+        if (position.Equals(_source.Position)) _trace.Clear();
+        else if (index >= 0) _trace.RemoveRange(index + 1, _trace.Count - index - 1);
+        else if (MovePath.CanStep(_source, Ability, _selectable, _trace, position)) _trace.Add(position);
+        else return;
+        ShowTrace();
+    }
+
+    private void ShowTrace()
+    {
+        var nextSteps = MovePath.NextSteps(_source, Ability, _selectable, _trace);
+        if (_trace.Count == 0) Show(Targets, null, nextSteps);
+        else Show(new List<GridPosition> { _trace[_trace.Count - 1] }, _trace, nextSteps);
     }
 
     public override void OnPositionSelected(GridSource clicked)
     {
+        var trace = _trace;
+        _trace = null;
+        if (trace is { Count: > 0 })
+        {
+            Ctx.Controller.TransitionTo(new PreviewState(Ctx, Ability, _source, new List<GridPosition> { trace[trace.Count - 1] }, trace));
+            return;
+        }
         var wasHolding = _holding;
         _holding = false;
         if (!IsValidTarget(clicked.Position))
         {
-            if (wasHolding) ShowSelection(Targets);
+            if (wasHolding) Show(Targets);
             else Ctx.Controller.TransitionTo(new PositionSelectedState(Ctx, clicked));
             return;
         }
@@ -52,7 +85,7 @@ public abstract class AbilityInputState : PlayerInputState
     public override void OnAbilityActivate(Ability ability, GridSource source)
     {
         if (ability.Id == Ability.Id) Ctx.Controller.TransitionTo(new PositionSelectedState(Ctx, _source));
-        else Ctx.Controller.TransitionTo(new AbilitySelectedState(Ctx, ability, source));
+        else Ctx.Controller.TransitionTo(Select(ability, source));
     }
 
     protected bool IsDuplicate(GridPosition position)
@@ -73,37 +106,14 @@ public abstract class AbilityInputState : PlayerInputState
         return targets;
     }
 
-    protected void ShowSelection(List<GridPosition> targets)
+    protected void Show(IReadOnlyList<GridPosition> targets, IReadOnlyList<GridPosition> path = null, GridSteps nextSteps = null)
+        => Ctx.Display.Show(new TargetingSnapshot(_source, Ability, _selectable, targets, path, nextSteps));
+
+    private bool IsValidTarget(GridPosition position) => Ability.IsCastable && _selectable.Contains(position);
+
+    private static GridSteps AreaOf(Ability ability, GridSource source)
     {
-        Ctx.Highlights.Clear();
-        Ctx.Highlights.Highlight(_selectable, HighlightType.AvailableTargets);
-        if (Ability.Targeting is DirectionTargeting) Ctx.Highlights.DirectionChevrons(_selectable);
-        if (targets.Count == 0)
-        {
-            Ctx.Manager.ClearPreview();
-            return;
-        }
-        if (Ability.Targeting.GetEffectSteps(_source, targets[targets.Count - 1], out var list))
-        {
-            if (Ability.Targeting is DirectionTargeting { MaxHits: > 0 }) ShowProjectiles(list);
-            else Ctx.Highlights.Highlight(list, HighlightType.EffectArea);
-        }
-        if (targets.Count != TargetCount
-            || !Ctx.Manager.Preview(seat => new AbilityCommand(seat, Ability.Id, _source.Position.Dim1, ToIndices(targets))))
-            Ctx.Manager.ClearPreview();
-    }
-
-    protected static int[] ToIndices(IEnumerable<GridPosition> positions) => positions.Select(p => p.Dim1).ToArray();
-
-    private bool IsValidTarget(GridPosition position) => _selectable.Contains(position);
-
-    private void ShowProjectiles(GridSteps steps)
-    {
-        foreach (var ray in steps.GetSteps().GroupBy(step => step.Direction))
-        {
-            var impact = ray.OrderBy(step => step.Distance).Last().Position;
-            Ctx.Highlights.Highlight(new HashSet<GridPosition> { impact }, HighlightType.EffectArea);
-            Ctx.Highlights.Projectile(_source.Position, impact);
-        }
+        if (ability.Targeting != null) return ability.Targeting.GetSelectableSteps(source);
+        return ability.Trigger?.Range?.GetGridSteps(source) ?? new GridSteps();
     }
 }

@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8e8c085ecec47d19bf5cbcfc1e9124a, type: 3}
+  m_Name: Druid
+  m_EditorClassIdentifier: Assembly-CSharp::EntityAssets
+  <Id>k__BackingField: Druid
+  Model3D: {fileID: 8299898262911833588, guid: 4c55da4ffa4004e15bd88fb26edc9d8e, type: 3}
+  Model2D: {fileID: -852462898721426846, guid: 424914e9b49064ab386eb744fb5dc61a, type: 3}

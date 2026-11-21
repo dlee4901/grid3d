@@ -27,14 +27,16 @@ public class TeamBuilder : LoggableBehaviour
     [SerializeField] private TMP_Text _costText;
     [SerializeField] private UnitFilterView _filter;
     [SerializeField] private RectTransform _unitGrid;
-    [SerializeField] private UnitPortrait _unitCardPrefab;
+    [SerializeField] private SquarePortrait _unitCardPrefab;
+    [SerializeField] private PortraitElements _unitCardElements = PortraitElements.Cost;
+    [SerializeField] private float _unitCardHoldTime;
     [SerializeField] private ScrollRect _unitScroll;
     [SerializeField] private EntityView _entityView;
     [SerializeField] private ResolutionOrderView _resolutionOrder;
     [SerializeField] private float _dragLift = 0.5f;
     [SerializeField] private float _holdTime = 0.25f;
 
-    private static string _mapId = "TestMap1";
+    private static string _mapId = "8x8";
     private static string _teamId;
 
     private GridDefinition _map;
@@ -58,7 +60,7 @@ public class TeamBuilder : LoggableBehaviour
     private string _loadedId;
 
     private readonly List<SavedTeam> _teams = new();
-    private readonly List<(EntityConfig Config, UnitPortrait Card)> _cards = new();
+    private readonly List<(EntityConfig Config, SquarePortrait Card)> _cards = new();
 
     private void Start()
     {
@@ -528,6 +530,7 @@ public class TeamBuilder : LoggableBehaviour
     private void BindPanel()
     {
         var maps = new List<GridDefinition>(Maps());
+        maps.Sort((a, b) => a.Size.CompareTo(b.Size));
         _mapDropdown.ClearOptions();
         _mapDropdown.AddOptions(maps.ConvertAll(map => map.Id));
         _mapDropdown.SetValueWithoutNotify(maps.FindIndex(map => map.Id == _map.Id));
@@ -551,7 +554,10 @@ public class TeamBuilder : LoggableBehaviour
         {
             IdRegistry<EntityAssets>.TryGet(config.Id, out var assets);
             var card = Instantiate(_unitCardPrefab, _unitGrid);
-            card.Init(assets.Model2D, config.Cost);
+            card.Configure(_unitCardElements);
+            card.Button.HoldTime = _unitCardHoldTime;
+            card.Init(assets.Model2D);
+            card.SetCost(config.Cost);
             var cardConfig = config;
             card.Button.OnClickCompleted += () => PressCard(cardConfig);
             card.Button.OnHoldTriggered += () => HoldCard(cardConfig);

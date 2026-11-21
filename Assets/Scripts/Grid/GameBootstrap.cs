@@ -13,9 +13,10 @@ public class GameBootstrap : LoggableBehaviour
     [SerializeField] private GridManager _gridManager;
     [SerializeField] private List<EntityAssets> _entityAssets;
     [SerializeField] private List<StatusAssets> _statusAssets;
+    [SerializeField] private List<AbilityVisuals> _abilityVisuals;
     [SerializeField] private List<TerrainAssets> _terrainAssets;
     [SerializeField] private bool _autoStart = true;
-    [SerializeField] private string _mapId = "TestMap1";
+    [SerializeField] private string _mapId = "8x8";
     [SerializeField] private string _team1Id = TestTeamId;
     [SerializeField] private string _team2Id = TestTeamId;
     [SerializeField] private StartMode _startMode = StartMode.Local;
@@ -69,10 +70,10 @@ public class GameBootstrap : LoggableBehaviour
         foreach (var id in spawnable)
         {
             if (!IdRegistry<EntityConfig>.TryGet(id, out var entityConfig)) continue;
-            if (!IdRegistry<EntityAssets>.TryGet(id, out var entityAssets))
+            if (!IdRegistry<EntityAssets>.TryGet(id, out _))
                 LogWarning($"Entity '{id}' has no EntityAssets (no model/sprite)");
-            else if (entityAssets.AbilityIcons.Count != entityConfig.Abilities.Count)
-                LogError($"Entity '{id}' has {entityConfig.Abilities.Count} abilities but {entityAssets.AbilityIcons.Count} ability icons");
+            foreach (var abilityId in entityConfig.Abilities)
+                if (!IdRegistry<AbilityVisuals>.TryGet(abilityId, out _)) LogError($"Ability '{abilityId}' on '{id}' has no AbilityVisuals (no icon)");
         }
     }
 
@@ -94,13 +95,14 @@ public class GameBootstrap : LoggableBehaviour
         ContentRegistry.RegisterAll();
         RegistryManager.Register(_entityAssets);
         RegistryManager.Register(_statusAssets);
+        RegistryManager.Register(_abilityVisuals);
         RegistryManager.Register(_terrainAssets);
     }
 
     private static void CreateTestTeam()
     {
         if (JsonHandler.Exists(TestTeamId)) return;
-        JsonHandler.SaveData(new SavedTeam(TestTeamId, "TestMap1", new List<SavedUnit>
+        JsonHandler.SaveData(new SavedTeam(TestTeamId, "8x8", new List<SavedUnit>
         {
             new("Rogue", new[] { 9, 54 }),
             new("Fire Mage", new[] { 11, 52 }),

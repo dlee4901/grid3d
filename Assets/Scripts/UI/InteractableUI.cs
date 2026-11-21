@@ -26,6 +26,12 @@ public class InteractableUI : LoggableBehaviour, IPointerEnterHandler, IPointerE
     [SerializeField] private float _pressScale = 1f;
     [SerializeField] private List<GameObject> _scaleTargets;
 
+    public float HoldTime
+    {
+        get => _holdTime;
+        set => _holdTime = value;
+    }
+
     private Image _overlayImage;
     private Vector3 _baseScale = Vector3.one;
 

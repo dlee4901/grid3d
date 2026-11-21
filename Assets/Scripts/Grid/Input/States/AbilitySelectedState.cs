@@ -9,7 +9,7 @@ public class AbilitySelectedState : AbilityInputState
     {
         if (IsDuplicate(position))
         {
-            ShowSelection(Targets);
+            Show(Targets);
             return;
         }
         var targets = WithLast(position);
@@ -20,7 +20,7 @@ public class AbilitySelectedState : AbilityInputState
             return;
         }
         Targets.Add(position);
-        ShowSelection(Targets);
+        Show(Targets);
     }
 
     public override void OnCancel() => Ctx.Controller.TransitionTo(new PositionSelectedState(Ctx, Source));

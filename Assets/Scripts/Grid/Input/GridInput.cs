@@ -20,11 +20,13 @@ public class GridInput : LoggableBehaviour
     [SerializeField] private float _cancelClickMaxSeconds = 1f;
     private float? _cancelPressTime;
     private bool _pressedOnGrid;
+    private GridPosition? _dragPosition;
 
     public bool IsPointerOverUI { get; private set; }
 
     public event Action<GridSource> OnPositionPressed;
     public event Action<GridSource> OnPositionSelected;
+    public event Action<GridSource> OnPositionDragged;
     public event Action OnCancelClicked;
     public event Action OnReleasedOffGrid;
 
@@ -53,7 +55,15 @@ public class GridInput : LoggableBehaviour
             return;
         }
         if (_selectAction.WasPressedThisFrame()) HandlePress(PointerCell());
+        else if (_pressedOnGrid && _selectAction.IsPressed()) HandleDrag(PointerCell());
         if (_selectAction.WasReleasedThisFrame()) HandleRelease(PointerCell());
+    }
+
+    private void HandleDrag(GridSource? cell)
+    {
+        if (!cell.HasValue || cell.Value.Position.Equals(_dragPosition)) return;
+        _dragPosition = cell.Value.Position;
+        OnPositionDragged?.Invoke(cell.Value);
     }
 
     private bool IsPointerOverAnyUI()
@@ -87,6 +97,7 @@ public class GridInput : LoggableBehaviour
             return;
         }
         _pressedOnGrid = true;
+        _dragPosition = cell.Value.Position;
         Log($"Press: {Describe(cell)}");
         OnPositionPressed?.Invoke(cell.Value);
     }

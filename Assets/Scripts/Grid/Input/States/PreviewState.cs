@@ -2,8 +2,9 @@ using System.Collections.Generic;
 
 public class PreviewState : AbilityInputState
 {
-    public PreviewState(PlayerInputContext ctx, Ability ability, GridSource source, List<GridPosition> targets)
-        : base(ctx, ability, source, targets) {}
+    public PreviewState(PlayerInputContext ctx, Ability ability, GridSource source, List<GridPosition> targets,
+                        List<GridPosition> path = null)
+        : base(ctx, ability, source, targets, path) {}
 
     public override void OnPress(GridSource pressed) {}
 
@@ -18,7 +19,7 @@ public class PreviewState : AbilityInputState
     public void Confirm()
     {
         if (!Castable) return;
-        var ok = Ctx.Dispatcher.Submit(seat => new AbilityCommand(seat, Ability.Id, Source.Position.Dim1, ToIndices(Targets)));
+        var ok = Ctx.Dispatcher.Submit(seat => AbilityCommand.From(seat, Ability.Id, Source.Position, Targets, Path));
         Ctx.Controller.LogState($"AbilityCommand: {Ability.Id} ok={ok}");
         Ctx.Controller.TransitionTo(new IdleState(Ctx));
     }

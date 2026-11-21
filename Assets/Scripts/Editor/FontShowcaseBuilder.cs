@@ -8,11 +8,11 @@ using UnityEngine.UI;
 public static class FontShowcaseBuilder
 {
     private const string OutputPath = "Assets/Prefabs/UI/FontShowcase.prefab";
-    private const string HeartPrefabPath = "Assets/Prefabs/UI/HealthCounter.prefab";
-    private const string ManaPrefabPath = "Assets/Prefabs/UI/Mana.prefab";
+    private const string HeartPrefabPath = "Assets/Prefabs/UI/Health.prefab";
+    private const string CounterPrefabPath = "Assets/Prefabs/UI/Counter.prefab";
     private const string FontsFolder = "Assets/Visuals/Fonts";
     private const string HeartNumber = "10";
-    private const string ManaNumber = "99";
+    private const string CounterNumber = "99";
     private const float LabelWidth = 360f;
     private const float CellWidth = 176f;
     private const float RowHeight = 72f;
@@ -28,7 +28,7 @@ public static class FontShowcaseBuilder
     private static void Build()
     {
         var heartPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(HeartPrefabPath);
-        var manaPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(ManaPrefabPath);
+        var counterPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(CounterPrefabPath);
         var headerFont = GetOrCreateFontAsset($"{FontsFolder}/Oswald/Oswald-Regular.ttf") ?? TMP_Settings.defaultFontAsset;
 
         var root = new GameObject("FontShowcase", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter), typeof(FontShowcase));
@@ -61,7 +61,7 @@ public static class FontShowcaseBuilder
             AddText(row, label, labelFont, LabelWidth, 36, TextAlignmentOptions.MidlineLeft);
             for (var i = 0; i < Weights.Length; i++)
             {
-                if (fonts[i] != null) AddCell(row, Weights[i], fonts[i], heartPrefab, manaPrefab);
+                if (fonts[i] != null) AddCell(row, Weights[i], fonts[i], heartPrefab, counterPrefab);
                 else AddSpacer(row, CellWidth);
             }
         }
@@ -104,14 +104,14 @@ public static class FontShowcaseBuilder
         return row.transform;
     }
 
-    private static void AddCell(Transform row, string weight, TMP_FontAsset fontAsset, GameObject heartPrefab, GameObject manaPrefab)
+    private static void AddCell(Transform row, string weight, TMP_FontAsset fontAsset, GameObject heartPrefab, GameObject counterPrefab)
     {
         var cell = new GameObject(weight, typeof(RectTransform), typeof(HorizontalLayoutGroup));
         cell.transform.SetParent(row, false);
         ((RectTransform)cell.transform).sizeDelta = new Vector2(CellWidth, RowHeight);
         Layout(cell.GetComponent<HorizontalLayoutGroup>(), 16, TextAnchor.MiddleCenter);
         AddNumbered(cell.transform, heartPrefab, fontAsset, HeartNumber);
-        AddNumbered(cell.transform, manaPrefab, fontAsset, ManaNumber);
+        AddNumbered(cell.transform, counterPrefab, fontAsset, CounterNumber);
     }
 
     private static void AddSpacer(Transform row, float width)

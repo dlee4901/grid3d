@@ -4,7 +4,7 @@ using System.Text;
 
 public static class CommandCodec
 {
-    public const byte Version = 1;
+    public const byte Version = 2;
     public const int MaxTargets = 64;
 
     private const byte AbilityTag = 1;
@@ -24,6 +24,9 @@ public static class CommandCodec
                     writer.Write(ability.SourcePosition);
                     writer.Write(ability.TargetPositions.Length);
                     foreach (var target in ability.TargetPositions) writer.Write(target);
+                    var path = ability.Path ?? System.Array.Empty<int>();
+                    writer.Write(path.Length);
+                    foreach (var position in path) writer.Write(position);
                     break;
                 case EndTurnCommand endTurn:
                     writer.Write(EndTurnTag);
@@ -59,6 +62,10 @@ public static class CommandCodec
         if (count < 0 || count > MaxTargets) return null;
         var targets = new int[count];
         for (var i = 0; i < count; i++) targets[i] = reader.ReadInt32();
-        return new AbilityCommand(issuer, abilityId, source, targets);
+        var pathCount = reader.ReadInt32();
+        if (pathCount < 0 || pathCount > MaxTargets) return null;
+        var path = new int[pathCount];
+        for (var i = 0; i < pathCount; i++) path[i] = reader.ReadInt32();
+        return new AbilityCommand(issuer, abilityId, source, targets, path);
     }
 }

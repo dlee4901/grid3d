@@ -1765,6 +1765,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6663219629014106784}
   - component: {fileID: 5550556883031735244}
+  - component: {fileID: 1636753427832957665}
   m_Layer: 0
   m_Name: Mage
   m_TagString: Untagged
@@ -1804,7 +1805,7 @@ Animator:
   m_GameObject: {fileID: 6769735443732236303}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: a87b91f34cdea4deaabb4929455b7aaf, type: 2}
+  m_Controller: {fileID: 22100000, guid: e6604524162af42efb29945b48a2511b, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -1816,6 +1817,20 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &1636753427832957665
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6769735443732236303}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e41816ffe9774c98a7c0ba83e36985ee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityModel
+  _debug: 0
+  _animator: {fileID: 5550556883031735244}
 --- !u!1 &6789839115717120638
 GameObject:
   m_ObjectHideFlags: 0

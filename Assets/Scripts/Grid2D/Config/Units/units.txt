@@ -1,0 +1,9 @@
+<entity name> <health>/<cost>
+- <ability name> <mana cost> [glyph] <description>
+
+##########################################
+
+skeleton 1/1
+- move 1 + traverse 1 square
+- bone bash 1 + deal 1 damage
+
