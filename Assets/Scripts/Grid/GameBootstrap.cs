@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 public class GameBootstrap : LoggableBehaviour
 {
@@ -74,17 +73,6 @@ public class GameBootstrap : LoggableBehaviour
                 LogWarning($"Entity '{id}' has no EntityAssets (no model/sprite)");
             foreach (var abilityId in entityConfig.Abilities)
                 if (!IdRegistry<AbilityVisuals>.TryGet(abilityId, out _)) LogError($"Ability '{abilityId}' on '{id}' has no AbilityVisuals (no icon)");
-        }
-    }
-
-    private void Update()
-    {
-        if (_debug && _gridManager.IsGameStarted
-            && Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
-        {
-            var state = _gridManager.GridState;
-            _gridManager.Turns.EndTurn();
-            Log($"[debug] end turn -> active={state.ActivePlayer}, turn={state.Turn}, mana={state.GetMana(state.ActivePlayer)}");
         }
     }
 

@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: Sword Slash
   m_EditorClassIdentifier: Assembly-CSharp::AbilityVisuals
   <Id>k__BackingField: Sword Slash
-  Icon: {fileID: 21300000, guid: 8f28955d92038974a9b04aafaeea79b0, type: 3}
+  Icon: {fileID: 21300000, guid: 6be75faaa5d546d1be721e845d3338f5, type: 3}
   CasterAction: 2

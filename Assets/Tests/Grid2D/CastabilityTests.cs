@@ -10,13 +10,6 @@ public class CastabilityTests
     }
 
     [Test]
-    public void AbilityCostingMoreThanMana_IsNotCastable()
-    {
-        var state = TestGame.Start(TestContent.Expensive, TestContent.Cheap).State;
-        Assert.IsFalse(state.CanCast(state.GetEntity(TestGame.Player1Position), TestGame.FirstAbilityAt(state, TestGame.Player1Position), 1));
-    }
-
-    [Test]
     public void LockedAbility_IsNotCastable()
     {
         var state = TestGame.Start(TestContent.Locked, TestContent.Cheap).State;

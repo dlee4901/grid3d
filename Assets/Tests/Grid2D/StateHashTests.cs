@@ -7,9 +7,8 @@ public class StateHashTests
     private static TurnExecutor PlayShortGame()
     {
         var executor = TestGame.Start(TestContent.Step, TestContent.Cheap);
-        executor.Apply(new AbilityCommand(1, TestContent.Step, TestGame.Player1Position, new[] { 1 }));
-        executor.Apply(new EndTurnCommand(1, 1500));
-        executor.Apply(new EndTurnCommand(2, 2500));
+        executor.Apply(new AbilityCommand(1, TestContent.Step, TestGame.Player1Position, new[] { 1 }, elapsedMs: 1500));
+        executor.Apply(new PassCommand(2, 2500));
         executor.Apply(new AbilityCommand(1, TestContent.Step, 1, new[] { 2 }));
         return executor;
     }
@@ -42,9 +41,9 @@ public class StateHashTests
     public void AppliedCommands_AreLoggedInOrder()
     {
         var executor = PlayShortGame();
-        Assert.AreEqual(7, executor.Log.Count);
+        Assert.AreEqual(6, executor.Log.Count);
         Assert.IsInstanceOf<SpawnTeamsCommand>(executor.Log[2]);
-        Assert.IsInstanceOf<AbilityCommand>(executor.Log[6]);
+        Assert.IsInstanceOf<AbilityCommand>(executor.Log[5]);
     }
 
     [Test]
@@ -53,13 +52,10 @@ public class StateHashTests
         var executor = TestGame.Start(TestContent.Step, TestContent.Cheap);
         var count = executor.Log.Count;
         var hash = executor.StateHash;
-        Assert.IsFalse(executor.Apply(new EndTurnCommand(2)));
+        Assert.IsFalse(executor.Apply(new PassCommand(2)));
         Assert.AreEqual(count, executor.Log.Count);
         Assert.AreEqual(hash, executor.StateHash);
     }
-
-    [Test]
-    public void Hash_CoversMana() => AssertChangesHash(state => state.SpendMana(2, 1));
 
     [Test]
     public void Hash_CoversTimeBank() => AssertChangesHash(state => state.SpendTime(1, 1));
@@ -73,7 +69,7 @@ public class StateHashTests
 
     [Test]
     public void Hash_CoversCooldowns() => AssertChangesHash(state =>
-        TestGame.FirstAbilityAt(state, TestGame.Player1Position).ApplyCooldown(1));
+        TestGame.FirstAbilityAt(state, TestGame.Player1Position).ApplyCooldown(3));
 
     [Test]
     public void Hash_CoversPositions() => AssertChangesHash(state =>
@@ -100,8 +96,8 @@ public class StateHashTests
         try
         {
             var executor = TestGame.Start(TestContent.Cheap, TestContent.Cheap);
-            executor.State.SpendMana(1, 1);
-            executor.Apply(new EndTurnCommand(1));
+            executor.State.SpendTime(1, 1);
+            executor.Apply(new PassCommand(1));
             Assert.AreEqual(1, errors.Count);
             StringAssert.Contains("outside a command", errors[0]);
         }

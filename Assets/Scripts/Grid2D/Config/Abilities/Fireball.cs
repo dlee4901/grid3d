@@ -7,18 +7,18 @@ public static partial class AbilityConfigs
         Id = "Fireball",
         DisplayName = "Fireball",
         Description = "Deal {Damage} damage and apply {Burning} in an area.",
-        ManaCost = 2,
         Effects = new List<AbilityEffect>()
         {
+            new DamageEffect()
+            {
+                Relation = Occupant.Units & ~Occupant.Self,
+                Amount = 3,
+                Area = true
+            },
             new TerrainEffect()
             {
                 Relation = Occupant.Any,
                 Terrain = TerrainType.Burning
-            },
-            new DamageEffect()
-            {
-                Relation = Occupant.Units & ~Occupant.Self,
-                Amount = 3
             }
         },
         Targeting = new PositionTargeting()
@@ -29,7 +29,7 @@ public static partial class AbilityConfigs
                 {
                     new GridTraversal()
                     {
-                        Direction = GridDirection.Line,
+                        Direction = GridDirection.All,
                         Linear = false,
                         MaxDistance = 1,
                         Passthrough = Occupant.Any
@@ -42,7 +42,7 @@ public static partial class AbilityConfigs
                 {
                     new GridTraversal()
                     {
-                        Direction = GridDirection.Straight,
+                        Direction = GridDirection.Orthogonal,
                         Linear = false,
                         MaxDistance = 2,
                         Passthrough = Occupant.Any

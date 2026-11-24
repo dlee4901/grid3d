@@ -35,6 +35,8 @@ internal sealed class TriggerSystem
         {
             var trigger = triggered.Trigger;
             if (trigger == null || trigger.On != e.On) continue;
+            var ability = ReactionInstance.OwnerOf(triggered) as Ability;
+            if (ability != null && (ability.Cooldown > 0 || ability.Locked)) continue;
             if (!(self && e.On == GameEvent.Died) && !IsOnBoard(holder)) continue;
             var origin = new GridSource(_state, holder.Position, holder);
             if (!Hears(trigger, origin, e.Subject, self ? e.Other : e.Subject)) continue;
@@ -49,6 +51,11 @@ internal sealed class TriggerSystem
             else
                 steps = Participants(holder, e.Subject, holder.Position.StepsTo(e.Subject.Position));
 
+            if (ability != null && ability.Config.Cooldown > 0)
+            {
+                if (!EffectResolver.AffectsAny(ctx, steps, triggered.Effects)) continue;
+                ability.RecordCast();
+            }
             EffectResolver.Run(ctx, steps, triggered.Effects);
         }
     }
@@ -57,9 +64,16 @@ internal sealed class TriggerSystem
     {
         if (holder.TryGetComponent<AbilityComponent>(out var abilities))
             foreach (var ability in abilities.List)
+            {
                 if (ability.Trigger != null) yield return ability;
+                foreach (var reaction in ability.Config.Reactions) yield return new ReactionInstance(ability, reaction);
+            }
         if (holder.TryGetComponent<StatusComponent>(out var statuses))
-            foreach (var status in statuses.Statuses) yield return status;
+            foreach (var status in statuses.Statuses)
+            {
+                yield return status;
+                foreach (var reaction in status.Config.Reactions) yield return new ReactionInstance(status, reaction);
+            }
     }
 
     private bool IsOnBoard(Entity entity) => _state.GetEntity(entity.Position) == entity;
@@ -77,9 +91,9 @@ internal sealed class TriggerSystem
     private GridSteps Participants(Entity holder, Entity other, int distance)
     {
         var steps = new GridSteps();
-        if (IsOnBoard(holder)) steps.Add(new GridStep(holder.Position, GridDirection.Line, 0));
+        if (IsOnBoard(holder)) steps.Add(new GridStep(holder.Position, GridDirection.All, 0));
         if (other != null && other != holder && IsOnBoard(other))
-            steps.Add(new GridStep(other.Position, GridDirection.Line, distance));
+            steps.Add(new GridStep(other.Position, GridDirection.All, distance));
         return steps;
     }
 }

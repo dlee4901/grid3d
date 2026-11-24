@@ -5,11 +5,11 @@ public static class TestGame
     public const int Player1Position = 0;
     public const int Player2Position = 4;
 
-    public static GridDefinition Map(int manaPerTurn = 3, int player2Position = Player2Position, int maxTeamCost = 10)
+    public static GridDefinition Map(int player2Position = Player2Position, int maxTeamCost = 10)
     {
         var map = new GridDefinition
         {
-            Id = "Test.Map", X = 5, Y = 1, ManaPerTurn = manaPerTurn, MaxTeamCost = maxTeamCost,
+            Id = "Test.Map", X = 5, Y = 1, MaxTeamCost = maxTeamCost,
             PlayerStartPositions = new List<PositionConfig>
             {
                 new() { PositionValues = new List<int> { Player1Position } },
@@ -20,10 +20,10 @@ public static class TestGame
         return map;
     }
 
-    public static TurnExecutor Start(string player1Ability, string player2Ability, int manaPerTurn = 3,
+    public static TurnExecutor Start(string player1Ability, string player2Ability,
                                      int player2Position = Player2Position)
     {
-        var map = Map(manaPerTurn, player2Position);
+        var map = Map(player2Position);
         var executor = TurnExecutor.ForDefinition(map);
         executor.Apply(new LoadTeamCommand(1, Team(map, Player1Position, player1Ability)));
         executor.Apply(new LoadTeamCommand(2, Team(map, player2Position, player2Ability)));
@@ -38,12 +38,12 @@ public static class TestGame
     }
 
     public static TurnExecutor StartOn(int x, int y, (int Position, string Ability)[] player1,
-                                       (int Position, string Ability)[] player2, int manaPerTurn = 3,
+                                       (int Position, string Ability)[] player2,
                                        string[] layout = null)
     {
         var map = new GridDefinition
         {
-            Id = $"Test.Map.{x}x{y}", X = x, Y = y, Layout = layout, ManaPerTurn = manaPerTurn, MaxTeamCost = 100,
+            Id = $"Test.Map.{x}x{y}", X = x, Y = y, Layout = layout, MaxTeamCost = 100,
             PlayerStartPositions = new List<PositionConfig>
             {
                 new() { PositionValues = Positions(player1) },

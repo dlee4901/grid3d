@@ -53,7 +53,7 @@ public class TargetingShapeTests
         {
             Traversals = new System.Collections.Generic.List<GridTraversal>
             {
-                new GridTraversal { Direction = GridDirection.Straight, Linear = false, MaxDistance = 4, Passthrough = passthrough }
+                new GridTraversal { Direction = GridDirection.Orthogonal, Linear = false, MaxDistance = 4, Passthrough = passthrough }
             }
         };
         return selection.GetGridSteps(source);
@@ -95,7 +95,7 @@ public class TargetingShapeTests
     {
         var executor = TestGame.Start(TestContent.Pair, TestContent.Cheap);
         Assert.IsFalse(executor.Apply(new AbilityCommand(1, TestContent.Pair, TestGame.Player1Position, new[] { 4, 4 })));
-        Assert.AreEqual(3, executor.State.GetMana(1));
+        Assert.AreEqual(1, executor.State.ActivePlayer);
         Assert.AreEqual(0, TestContent.Counter.Hits);
     }
 
@@ -112,15 +112,16 @@ public class TargetingShapeTests
     {
         var executor = TestGame.Start(TestContent.Pair, TestContent.Cheap);
         Assert.IsFalse(executor.Apply(new AbilityCommand(1, TestContent.Pair, TestGame.Player1Position, new[] { 3, 4 })));
-        Assert.AreEqual(3, executor.State.GetMana(1));
+        Assert.AreEqual(1, executor.State.ActivePlayer);
     }
 
     [Test]
-    public void Stab_EmptySquare_IsRejected()
+    public void Stab_NoEnemyInReach_IsNotCastable()
     {
         var executor = TestGame.Start(TestContent.StabEnemy, TestContent.Cheap);
+        var state = executor.State;
+        Assert.IsFalse(state.CanCast(state.GetEntity(TestGame.Player1Position), TestGame.FirstAbilityAt(state, TestGame.Player1Position), 1));
         Assert.IsFalse(executor.Apply(new AbilityCommand(1, TestContent.StabEnemy, TestGame.Player1Position, new[] { 1 })));
-        Assert.AreEqual(3, executor.State.GetMana(1));
     }
 
     [Test]

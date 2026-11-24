@@ -74,6 +74,7 @@ public class TooltipStack : MonoBehaviour
 
     private static Rect VisibleRect(RectTransform source)
     {
+        if (source.TryGetComponent<SquarePortrait>(out var portrait)) return portrait.TooltipAnchor;
         var corners = new Vector3[4];
         var min = new Vector2(float.MaxValue, float.MaxValue);
         var max = new Vector2(float.MinValue, float.MinValue);

@@ -9,10 +9,12 @@ public sealed class DamageRoll
     public bool Prevented { get; internal set; }
     public string Cause { get; }
     public bool FromAbility { get; }
+    public bool Area { get; }
     public IReadOnlyList<(string Source, int Delta)> Modifiers => _modifiers;
 
-    internal DamageRoll(int amount, string cause, bool fromAbility)
+    internal DamageRoll(int amount, string cause, bool fromAbility, bool area = false)
     {
+        Area = area;
         Amount = amount;
         BaseAmount = amount;
         Cause = cause;

@@ -18,11 +18,19 @@ public class AbilityComponent : IEntityComponent
         }
     }
 
-    internal void OnCast(Ability cast)
+    private AbilityComponent() { }
+
+    public IEntityComponent Copy()
     {
-        cast.RecordCast();
-        if ((cast.Keywords & Keyword.Opener) != 0) return;
+        var copy = new AbilityComponent();
         foreach (var ability in _list)
-            if (ability != cast && ability.IsCastable && (ability.Keywords & Keyword.Finisher) == 0) ability.ApplyCooldown(1);
+        {
+            var clone = ability.Copy();
+            copy._list.Add(clone);
+            copy._dictionary.Add(clone.Id, clone);
+        }
+        return copy;
     }
+
+    internal void OnCast(Ability cast) => cast.RecordCast();
 }

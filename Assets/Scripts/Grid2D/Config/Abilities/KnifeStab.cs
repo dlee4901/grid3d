@@ -7,10 +7,10 @@ public static partial class AbilityConfigs
         Id = "Knife Stab",
         DisplayName = "Knife Stab",
         Description = "Stab an adjacent unit for {Damage} damage.",
-        ManaCost = 1,
+        Keywords = Keyword.Opener,
         Effects = new List<AbilityEffect>
         {
-            new DamageEffect { Relation = Occupant.Units & ~Occupant.Self, Amount = 3 }
+            new DamageEffect { Relation = Occupant.Units & ~Occupant.Self, Amount = 4 }
         },
         Targeting = new PositionTargeting
         {
@@ -19,7 +19,7 @@ public static partial class AbilityConfigs
                 MinDistance = 1,
                 Traversals = new List<GridTraversal>
                 {
-                    new GridTraversal { Direction = GridDirection.Straight, Linear = false, MaxDistance = 1, Passthrough = Occupant.Any }
+                    new GridTraversal { Direction = GridDirection.Orthogonal, Linear = false, MaxDistance = 1, Passthrough = Occupant.Any }
                 }
             }
         }

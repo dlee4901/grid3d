@@ -8,13 +8,15 @@ public class EntityView : StateView
 {
     [FormerlySerializedAs("_label")] [SerializeField] private RectTransform _container;
     [SerializeField] private GameObject _unit;
-    [SerializeField] private TMP_Text _unitName;
     [SerializeField] private SquarePortrait _portrait;
+    [SerializeField] private TMP_Text _unitName;
     [FormerlySerializedAs("_abilityIcon")] [SerializeField] private SquarePortrait _abilityIconPrefab;
-    [SerializeField] private PortraitElements _abilityElements = PortraitElements.Mana | PortraitElements.Cooldown;
+    [SerializeField] private PortraitElements _abilityElements = PortraitElements.Counter | PortraitElements.Cooldown;
+    [SerializeField] private PortraitCorner _abilityCounterCorner = PortraitCorner.BottomRight;
     [SerializeField] private RectTransform _statusContainer;
     [SerializeField] private SquarePortrait _statusIconPrefab;
     [SerializeField] private PortraitElements _statusElements = PortraitElements.Counter;
+    [SerializeField] private PortraitCorner _statusCounterCorner = PortraitCorner.BottomLeft;
     [SerializeField] private Color _disabledTint = new(1f, 1f, 1f, 0.4f);
     [SerializeField] private TooltipStack _tooltips;
 
@@ -35,6 +37,7 @@ public class EntityView : StateView
     protected override void Start()
     {
         base.Start();
+        _portrait.Button.OnClickCompleted += TogglePortraitTooltip;
         _gridManager.Player.SelectionChanged += OnInputChanged;
         _gridManager.Player.OnActiveAbilityChanged += OnActiveAbilityChanged;
         _gridManager.Player.TargetingChanged += RefreshAbilityTooltip;
@@ -44,6 +47,7 @@ public class EntityView : StateView
     protected override void OnDestroy()
     {
         base.OnDestroy();
+        if (_portrait != null) _portrait.Button.OnClickCompleted -= TogglePortraitTooltip;
         if (_gridManager == null) return;
         _gridManager.StateChanged -= Rebuild;
         if (_gridManager.Player != null)
@@ -110,6 +114,20 @@ public class EntityView : StateView
         _tooltipIcon = icon;
     }
 
+    private void TogglePortraitTooltip()
+    {
+        var rect = (RectTransform)_portrait.transform;
+        var entity = _detached ?? _gridManager.GridState.GetEntityByUid(_labelUid);
+        if (_tooltips.IsOpenFor(this, rect) || entity == null)
+        {
+            HideTooltip();
+            return;
+        }
+        _tooltips.OpenRoot(this, TooltipText.ForEntity(entity), rect, TooltipSide.Right);
+        _tooltipIcon = null;
+        _tooltipSource = rect;
+    }
+
     private void HideTooltip()
     {
         _tooltips.Close(this);
@@ -142,6 +160,7 @@ public class EntityView : StateView
         if (!IdRegistry<EntityAssets>.TryGet(entity.Id, out var entityAssets))
             return;
         _unit.SetActive(true);
+        _unitName.gameObject.SetActive(_detached != null);
         _unitName.text = entity.Id;
         _portrait.Init(entityAssets.Model2D);
         _portrait.SetCost(IdRegistry<EntityConfig>.TryGet(entity.Id, out var config) ? config.Cost : 0);
@@ -161,8 +180,9 @@ public class EntityView : StateView
         {
             var icon = new Icon { Portrait = Instantiate(_abilityIconPrefab, _container), Ability = ability, Source = source };
             icon.Portrait.Configure(_abilityElements);
+            icon.Portrait.PlaceCounter(_abilityCounterCorner);
             icon.Portrait.Init(IdRegistry<AbilityVisuals>.TryGet(ability.Id, out var visuals) ? visuals.Icon : null);
-            icon.Portrait.SetMana(ability.IsCastable ? ability.ManaCost : null);
+            if (!ability.HasCounter) icon.Portrait.SetCooldownCounter(ability.Config.Cooldown > 0 ? ability.Config.Cooldown : null);
             icon.Portrait.Button.OnClickCompleted += () => OnIconClicked(icon);
             _icons.Add(icon);
         }
@@ -177,15 +197,13 @@ public class EntityView : StateView
             || !shown.TryGetComponent<AbilityComponent>(out var shownAbilities)) return;
         var seat = _gridManager.LocalSeat;
         for (var i = 0; i < _icons.Count; i++)
-            RenderAbility(_icons[i].Portrait, shownAbilities.List[i], _detached != null || _gridManager.GridState.CanCastAt(real.Position, realAbilities.List[i], seat));
+            RenderAbility(_icons[i].Portrait, shown, shownAbilities.List[i], _detached != null || _gridManager.GridState.CanCastAt(real.Position, realAbilities.List[i], seat));
     }
 
-    private void RenderAbility(SquarePortrait portrait, Ability shown, bool castable)
+    private void RenderAbility(SquarePortrait portrait, Entity holder, Ability shown, bool castable)
     {
-        var onCooldown = shown.IsCastable && shown.Cooldown > 0;
-        portrait.SetCooldown(onCooldown ? shown.Cooldown : null);
-        portrait.SetMana(shown.IsCastable ? shown.ManaCost : null);
-        portrait.SetManaDimmed(onCooldown);
+        if (shown.HasCounter) portrait.SetCount(shown.CounterFor(holder));
+        portrait.SetCooldown(shown.Cooldown > 0 ? shown.Cooldown : null);
         portrait.SetImageColor(castable || !shown.IsCastable ? Color.white : _disabledTint);
     }
 
@@ -198,6 +216,7 @@ public class EntityView : StateView
             if (!IdRegistry<StatusAssets>.TryGet(status.Id, out var statusAssets)) continue;
             var icon = new Icon { Portrait = Instantiate(_statusIconPrefab, _statusContainer), Status = status };
             icon.Portrait.Configure(_statusElements);
+            icon.Portrait.PlaceCounter(_statusCounterCorner);
             icon.Portrait.Init(statusAssets.Icon);
             icon.Portrait.SetCount(status.Count);
             icon.Portrait.Button.OnClickCompleted += () => OnIconClicked(icon);

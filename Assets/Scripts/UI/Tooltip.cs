@@ -11,7 +11,6 @@ public class Tooltip : MonoBehaviour
     [SerializeField] private RectTransform _header;
     [SerializeField] private TMP_Text _body;
     [SerializeField] private Counter _prefab;
-    [SerializeField] private CounterStyle _manaStyle = CounterStyle.Mana;
     [SerializeField] private CounterStyle _cooldownStyle = CounterStyle.Clock;
     [SerializeField] private ShapeGlyph _shapeGlyphPrefab;
     [SerializeField] private float _counterSize = 48f;
@@ -31,7 +30,6 @@ public class Tooltip : MonoBehaviour
         _title.text = content.Title;
         var icons = 0;
         if (content.Glyph != null) { AddGlyph(content.Glyph); icons++; }
-        if (content.Mana.HasValue) { AddCounter(_manaStyle, content.Mana.Value); icons++; }
         if (content.Cooldown.HasValue) { AddCounter(_cooldownStyle, content.Cooldown.Value); icons++; }
         _body.text = content.Body;
         FitWidth(icons);
@@ -86,6 +84,7 @@ public class Tooltip : MonoBehaviour
             TooltipSide.Left => new Vector2(anchor.xMin - gap - size.x + inset, anchor.yMax + inset),
             _ => new Vector2(anchor.xMin - inset, anchor.yMin - gap + inset)
         };
+        if (side != TooltipSide.Below && topLeft.y - size.y < 0f) topLeft.y = anchor.yMin - inset + size.y;
         topLeft.x = Mathf.Clamp(topLeft.x, 0f, Mathf.Max(0f, Screen.width - size.x));
         topLeft.y = Mathf.Clamp(topLeft.y, Mathf.Min(size.y, Screen.height), Screen.height);
         Panel.position = topLeft;

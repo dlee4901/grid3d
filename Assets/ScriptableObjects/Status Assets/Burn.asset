@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: Burn
   m_EditorClassIdentifier: Assembly-CSharp::StatusAssets
   <Id>k__BackingField: Burn
-  Icon: {fileID: 21300000, guid: 68e1f3d1470827b49b3b3347af0e4f6d, type: 3}
+  Icon: {fileID: 21300000, guid: adc92409668c40e987f42a9ff6864ee0, type: 3}

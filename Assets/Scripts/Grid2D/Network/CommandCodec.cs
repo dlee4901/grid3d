@@ -4,11 +4,11 @@ using System.Text;
 
 public static class CommandCodec
 {
-    public const byte Version = 2;
+    public const byte Version = 3;
     public const int MaxTargets = 64;
 
     private const byte AbilityTag = 1;
-    private const byte EndTurnTag = 2;
+    private const byte ForfeitTag = 3;
 
     public static byte[] Encode(Command command)
     {
@@ -27,10 +27,10 @@ public static class CommandCodec
                     var path = ability.Path ?? System.Array.Empty<int>();
                     writer.Write(path.Length);
                     foreach (var position in path) writer.Write(position);
+                    writer.Write(ability.ElapsedMs);
                     break;
-                case EndTurnCommand endTurn:
-                    writer.Write(EndTurnTag);
-                    writer.Write(endTurn.ElapsedMs);
+                case ForfeitCommand:
+                    writer.Write(ForfeitTag);
                     break;
                 default:
                     throw new NotSupportedException($"{command.GetType().Name} has no wire format");
@@ -48,7 +48,7 @@ public static class CommandCodec
         return reader.ReadByte() switch
         {
             AbilityTag => ReadAbility(reader, issuer),
-            EndTurnTag => new EndTurnCommand(issuer, reader.ReadInt32()),
+            ForfeitTag => new ForfeitCommand(issuer),
             _ => null
         };
     }
@@ -66,6 +66,6 @@ public static class CommandCodec
         if (pathCount < 0 || pathCount > MaxTargets) return null;
         var path = new int[pathCount];
         for (var i = 0; i < pathCount; i++) path[i] = reader.ReadInt32();
-        return new AbilityCommand(issuer, abilityId, source, targets, path);
+        return new AbilityCommand(issuer, abilityId, source, targets, path, reader.ReadInt32());
     }
 }

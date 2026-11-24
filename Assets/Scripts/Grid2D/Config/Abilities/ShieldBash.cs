@@ -6,22 +6,21 @@ public static partial class AbilityConfigs
     {
         Id = "Shield Bash",
         DisplayName = "Shield Bash",
-        Description = "Bash an adjacent unit for {Damage} damage and push it back {Push} squares.",
-        ManaCost = 1,
+        Cooldown = 2,
+        Description = "Gain {Shield} facing a direction. Push an adjacent unit there back {Push} squares, then deal {Damage} damage to it.",
         Effects = new List<AbilityEffect>
         {
-            new DamageEffect { Relation = Occupant.Units & ~Occupant.Self, Amount = 2 },
-            new PushEffect { Relation = Occupant.Units & ~Occupant.Self, Distance = 2 }
+            new StatusEffect { Relation = Occupant.Any, OnCaster = true, Status = "Shield" },
+            new PushEffect { Relation = Occupant.Units & ~Occupant.Self, Distance = 2 },
+            new DamageEffect { Relation = Occupant.Units & ~Occupant.Self, Amount = 1 }
         },
-        Targeting = new PositionTargeting
+        Targeting = new DirectionTargeting
         {
-            SelectableArea = new GridSelection
+            EffectArea = new GridSelection
             {
-                MinDistance = 1,
-                Selectable = Occupant.Units,
                 Traversals = new List<GridTraversal>
                 {
-                    new GridTraversal { Direction = GridDirection.Straight, Linear = false, MaxDistance = 1, Passthrough = Occupant.Any }
+                    new GridTraversal { Direction = GridDirection.Orthogonal, Linear = true, MaxDistance = 1, Passthrough = Occupant.Any }
                 }
             }
         }

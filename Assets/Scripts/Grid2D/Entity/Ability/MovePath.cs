@@ -37,25 +37,8 @@ public static class MovePath
         var from = path.Count == 0 ? origin.Position : path[path.Count - 1];
         foreach (var position in selectable.GetPositions())
             if (CanStep(origin, ability, selectable, path, position))
-                next.Add(new GridStep(position, DirectionOf(from, position), 1));
+                next.Add(new GridStep(position, GridUtil.DirectionBetween(from, position), 1));
         return next;
-    }
-
-    private static GridDirection DirectionOf(GridPosition from, GridPosition to)
-    {
-        var dx = System.Math.Sign(to.Dim2.x - from.Dim2.x);
-        var dy = System.Math.Sign(to.Dim2.y - from.Dim2.y);
-        return (dx, dy) switch
-        {
-            (0, 1) => GridDirection.North,
-            (1, 1) => GridDirection.NorthEast,
-            (1, 0) => GridDirection.East,
-            (1, -1) => GridDirection.SouthEast,
-            (0, -1) => GridDirection.South,
-            (-1, -1) => GridDirection.SouthWest,
-            (-1, 0) => GridDirection.West,
-            _ => GridDirection.NorthWest
-        };
     }
 
     public static bool IsValid(GridSource origin, Ability ability, GridPosition target, IReadOnlyList<GridPosition> path)

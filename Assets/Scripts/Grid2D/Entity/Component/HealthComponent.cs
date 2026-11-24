@@ -9,6 +9,8 @@ public class HealthComponent : IEntityComponent
         Current = health;
     }
     
+    public IEntityComponent Copy() => new HealthComponent(Starting) { Current = Current };
+
     internal bool ApplyDamage(int amount)
     {
         if (amount <= 0) return false;

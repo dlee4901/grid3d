@@ -1,29 +1,47 @@
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 
 public class CameraRig : LoggableBehaviour
 {
+    private const float TopElevation = 90f;
+    private const float QuarterTurn = 90f;
+
     [SerializeField] private GridManager _gridManager;
     [SerializeField] private CinemachineCamera[] _playerCameras;
     [SerializeField] private bool _faceLocalPlayer = false;
-    [SerializeField] private float _minHeight = 4f;
-    [SerializeField] private float _maxHeight = 20f;
+    [SerializeField, FormerlySerializedAs("_minHeight")] private float _minDistance = 4f;
+    [SerializeField, FormerlySerializedAs("_maxHeight")] private float _maxDistance = 20f;
     [SerializeField] private float _zoomStep = 1f;
-    [SerializeField] private float _resetDuration = 0.35f;
+    [SerializeField] private float _smoothTime = 0.15f;
+    [SerializeField] private float _orbitDegreesPerPixel = 0.25f;
+    [SerializeField] private float _minElevation = 0f;
 
     private Transform[] _targets;
     private CinemachineFollow[] _follows;
     private Bounds _bounds;
-    private float _defaultHeight;
+    private float _defaultDistance;
     private int _active;
-    private float _resetProgress = 1f;
-    private Vector3 _resetFromPosition;
-    private float _resetFromHeight;
-    private Vector2? _lastPanPoint;
+    private Vector2? _lastDragPoint;
     private InputAction _panAction;
     private InputAction _pointAction;
     private InputAction _zoomAction;
+
+    private Vector3 _focus;
+    private Vector3 _shownFocus;
+    private Vector3 _focusVelocity;
+    private float _yaw;
+    private float _shownYaw;
+    private float _yawVelocity;
+    private float _elevation = TopElevation;
+    private float _shownElevation = TopElevation;
+    private float _elevationVelocity;
+    private float _distance;
+    private float _shownDistance;
+    private float _distanceVelocity;
+
+    public bool TopDown { get; private set; } = true;
 
     private void OnDestroy()
     {
@@ -41,14 +59,16 @@ public class CameraRig : LoggableBehaviour
             _targets[i].SetParent(transform);
             _follows[i] = _playerCameras[i].GetComponent<CinemachineFollow>();
         }
-        _defaultHeight = _follows[0].FollowOffset.y;
+        _defaultDistance = _follows[0].FollowOffset.y;
         foreach (var camera in GetComponentsInChildren<CinemachineCamera>(true))
         {
             var index = System.Array.IndexOf(_playerCameras, camera);
             camera.Target.TrackingTarget = _targets[Mathf.Max(index, 0)];
             camera.PreviousStateIsValid = false;
         }
-        for (var i = 0; i < _targets.Length; i++) SetView(i, _bounds.center, _defaultHeight);
+        _focus = _shownFocus = _bounds.center;
+        _distance = _shownDistance = _defaultDistance;
+        for (var i = 0; i < _targets.Length; i++) Apply(i);
         _panAction = InputSystem.actions.FindAction("Player/Pan");
         _pointAction = InputSystem.actions.FindAction("Player/Point");
         _zoomAction = InputSystem.actions.FindAction("Player/Zoom");
@@ -58,51 +78,73 @@ public class CameraRig : LoggableBehaviour
 
     public void ResetView()
     {
-        _resetFromPosition = _targets[_active].position;
-        _resetFromHeight = _follows[_active].FollowOffset.y;
-        _resetProgress = 0f;
+        _focus = _bounds.center;
+        _yaw = Mathf.Round(_yaw / 360f) * 360f;
+        _distance = _defaultDistance;
+        _elevation = TopElevation;
     }
 
-    private void StepReset()
-    {
-        _resetProgress = Mathf.MoveTowards(_resetProgress, 1f, Time.deltaTime / _resetDuration);
-        var t = Mathf.SmoothStep(0f, 1f, _resetProgress);
-        SetView(_active, Vector3.Lerp(_resetFromPosition, _bounds.center, t), Mathf.Lerp(_resetFromHeight, _defaultHeight, t));
-    }
+    public void Rotate() => _yaw += QuarterTurn;
 
-    private void SetView(int index, Vector3 position, float height)
+    public void ToggleTopDown()
     {
-        _targets[index].position = position;
-        _follows[index].FollowOffset = new Vector3(0f, height, 0f);
+        TopDown = !TopDown;
+        if (TopDown) _elevation = TopElevation;
     }
 
     private void Update()
     {
         if (_targets == null) return;
-        if (_resetProgress < 1f) StepReset();
-        ReadPan();
+        ReadDrag();
         ReadZoom();
+        Smooth();
+        Apply(_active);
     }
+
+    private void Smooth()
+    {
+        _shownFocus = Vector3.SmoothDamp(_shownFocus, _focus, ref _focusVelocity, _smoothTime);
+        _shownYaw = Mathf.SmoothDamp(_shownYaw, _yaw, ref _yawVelocity, _smoothTime);
+        _shownElevation = Mathf.SmoothDamp(_shownElevation, _elevation, ref _elevationVelocity, _smoothTime);
+        _shownDistance = Mathf.SmoothDamp(_shownDistance, _distance, ref _distanceVelocity, _smoothTime);
+    }
+
+    private void Apply(int index)
+    {
+        var yaw = BaseYaw(index) + _shownYaw;
+        _targets[index].SetPositionAndRotation(_shownFocus, Quaternion.Euler(0f, yaw, 0f));
+        var elevation = _shownElevation * Mathf.Deg2Rad;
+        var height = _shownDistance * Mathf.Sin(elevation);
+        var back = _shownDistance * Mathf.Cos(elevation);
+        _follows[index].FollowOffset = new Vector3(0f, height, -back);
+    }
+
+    private static float BaseYaw(int index) => index == 1 ? 180f : 0f;
 
     private void FaceLocalPlayer()
     {
         var active = _faceLocalPlayer ? Mathf.Clamp(_gridManager.LocalSeat - 1, 0, _playerCameras.Length - 1) : 0;
-        if (active != _active) _resetProgress = 1f;
         _active = active;
         for (var i = 0; i < _playerCameras.Length; i++) _playerCameras[i].Priority = i == _active ? 0 : -1;
     }
 
-    private void ReadPan()
+    private void ReadDrag()
     {
         if (!_panAction.IsPressed())
         {
-            _lastPanPoint = null;
+            _lastDragPoint = null;
             return;
         }
         var point = _pointAction.ReadValue<Vector2>();
-        if (_lastPanPoint.HasValue) Pan(point - _lastPanPoint.Value);
+        if (_lastDragPoint.HasValue) Drag(point - _lastDragPoint.Value);
         else if (_gridManager.Input.IsPointerOverUI) return;
-        _lastPanPoint = point;
+        _lastDragPoint = point;
+    }
+
+    private void Drag(Vector2 screenDelta)
+    {
+        if (TopDown) Pan(screenDelta);
+        else Orbit(screenDelta);
     }
 
     private void ReadZoom()
@@ -113,23 +155,30 @@ public class CameraRig : LoggableBehaviour
 
     private void Pan(Vector2 screenDelta)
     {
-        _resetProgress = 1f;
         var camera = _gridManager.MainCamera;
-        var height = _follows[_active].FollowOffset.y;
-        var unitsPerPixel = 2f * height * Mathf.Tan(camera.fieldOfView * 0.5f * Mathf.Deg2Rad) / Screen.height;
+        var unitsPerPixel = 2f * _shownDistance * Mathf.Tan(camera.fieldOfView * 0.5f * Mathf.Deg2Rad) / Screen.height;
         var right = Vector3.ProjectOnPlane(camera.transform.right, Vector3.up).normalized;
         var up = Vector3.ProjectOnPlane(camera.transform.up, Vector3.up).normalized;
-        var target = _targets[_active];
-        var position = target.position - (right * screenDelta.x + up * screenDelta.y) * unitsPerPixel;
+        var position = _focus - (right * screenDelta.x + up * screenDelta.y) * unitsPerPixel;
         position.x = Mathf.Clamp(position.x, _bounds.min.x, _bounds.max.x);
         position.z = Mathf.Clamp(position.z, _bounds.min.z, _bounds.max.z);
-        target.position = position;
+        _focus = position;
+        _shownFocus = position;
+        _focusVelocity = Vector3.zero;
+    }
+
+    private void Orbit(Vector2 screenDelta)
+    {
+        _yaw += screenDelta.x * _orbitDegreesPerPixel;
+        _elevation = Mathf.Clamp(_elevation - screenDelta.y * _orbitDegreesPerPixel, _minElevation, TopElevation);
+        _shownYaw = _yaw;
+        _shownElevation = _elevation;
+        _yawVelocity = 0f;
+        _elevationVelocity = 0f;
     }
 
     private void Zoom(float amount)
     {
-        _resetProgress = 1f;
-        var height = Mathf.Clamp(_follows[_active].FollowOffset.y - amount * _zoomStep, _minHeight, _maxHeight);
-        _follows[_active].FollowOffset = new Vector3(0f, height, 0f);
+        _distance = Mathf.Clamp(_distance - amount * _zoomStep, _minDistance, _maxDistance);
     }
 }

@@ -12,6 +12,7 @@ public sealed class GridState
     public int Winner { get; private set; }
     public bool IsGameOver => Outcome != GameOutcome.InProgress;
     public bool CanPlayerAct(int player) => !IsGameOver && ActivePlayer == player;
+    public bool HasActedThisTurn => _actingUid >= 0;
 
     public int X => Definition.X;
     public int Y => Definition.Y;
@@ -22,9 +23,10 @@ public sealed class GridState
     private readonly Entity[] _entities;
     private readonly TerrainType[] _terrain;
     private readonly int[] _terrainTurns;
-    private readonly int[] _mana;
     private readonly int[] _timeMs;
     private int _consecutivePasses;
+    private int _actingUid = -1;
+    internal bool HoldTurnEnd { get; set; }
     private int _nextUid;
     
     private readonly TeamData[] _loadedTeams;
@@ -41,17 +43,18 @@ public sealed class GridState
         _entities = new Entity[definition.Size];
         _terrain = (TerrainType[])definition.TerrainMap.Clone();
         _terrainTurns = (int[])definition.TerrainTurns.Clone();
-        _mana = new int[PlayerSlots];
         _loadedTeams = new TeamData[PlayerSlots];
         
-        RefillMana(ActivePlayer);
         _timeMs = new int[PlayerSlots];
         for (var p = 1; p <= Definition.PlayerCount; p++) _timeMs[p] = definition.PlayerStartingTimeSeconds * 1000;
         SeedStartingEntities();
     }
     
+    internal void SetActingUnit(Entity entity) => _actingUid = entity.Uid;
+
     internal void AdvanceTurn()
     {
+        if (HoldTurnEnd) return;
         _consecutivePasses = 0;
         StartNextTurn();
         ResolveForcedPasses();
@@ -81,7 +84,7 @@ public sealed class GridState
 
     private void StartNextTurn()
     {
-        EndAbilityTurn(ActivePlayer);
+        TickCooldowns(ActivePlayer);
         foreach (var entity in ResolutionOrder.Entities)
             if (entity.TryGetComponent<ControlComponent>(out var control) && control.PlayerController == ActivePlayer)
                 Triggers.Emit(new TriggerEvent(GameEvent.TurnEnd, entity));
@@ -89,21 +92,8 @@ public sealed class GridState
         TickTerrain();
         ActivePlayer = ActivePlayer % Definition.PlayerCount + 1;
         Turn++;
-        RefillMana(ActivePlayer);
+        _actingUid = -1;
     }
-
-    public int GetMana(int player) => player < 1 || player > Definition.PlayerCount ? 0 : _mana[player];
-
-    public bool HasMana(int player, int cost) => GetMana(player) >= cost;
-
-    internal bool SpendMana(int player, int cost)
-    {
-        if (!HasMana(player, cost)) return false;
-        _mana[player] -= cost;
-        return true;
-    }
-
-    private void RefillMana(int player) => _mana[player] = Definition.ManaPerTurn;
 
     public int GetTimeMs(int player) => player < 1 || player > Definition.PlayerCount ? 0 : _timeMs[player];
 
@@ -120,7 +110,7 @@ public sealed class GridState
         var entity = GetEntity(position);
         if (entity == null || !IdRegistry<TerrainConfig>.TryGet(_terrain[position.Dim1].ToString(), out var config)) return;
         var steps = new GridSteps();
-        steps.Add(new GridStep(position, GridDirection.Line, 0));
+        steps.Add(new GridStep(position, GridDirection.All, 0));
         EffectResolver.Run(new EffectContext(new GridSource(this, position, entity), null), steps, config.Effects);
     }
 
@@ -133,7 +123,7 @@ public sealed class GridState
         }
     }
 
-    private void EndAbilityTurn(int player)
+    private void TickCooldowns(int player)
     {
         for (var i = 0; i < _entities.Length; i++)
         {
@@ -180,6 +170,8 @@ public sealed class GridState
             if (!IdRegistry<EntityConfig>.TryGet(placement.UnitId, out var config)) continue;
             SetEntityPosition(new GridPosition(this, placement.Position), Entity.Create(config, player));
         }
+        foreach (var entity in ResolutionOrder.Entities) Triggers.Emit(new TriggerEvent(GameEvent.GameStart, entity));
+        Triggers.Resolve();
     }
     
     internal void LoadPlayerTeam(int player, TeamData teamData)
@@ -250,7 +242,7 @@ public sealed class GridState
         _terrain[position.Dim1] = terrain;
         _terrainTurns[position.Dim1] = terrain == TerrainType.Plain ? 0
             : refresh ? System.Math.Max(_terrainTurns[position.Dim1], turns) : turns;
-        ApplyTerrainAt(position);
+        if (IdRegistry<TerrainConfig>.TryGet(terrain.ToString(), out var config) && config.AppliesOnPlace) ApplyTerrainAt(position);
     }
 
     public int GetTerrainTurns(GridPosition position) => position.IsValid() ? _terrainTurns[position.Dim1] : 0;
@@ -297,7 +289,9 @@ public sealed class GridState
         => CanPlayerAct(player) && IsControllable(position, player) && CanCast(_entities[position.Dim1], ability, player);
 
     public bool CanCast(Entity entity, Ability ability, int player)
-        => ability.IsCastable && !ability.Locked && ability.Cooldown == 0 && HasMana(player, ability.ManaCost);
+        => (_actingUid < 0 || entity.Uid == _actingUid)
+           && ability.IsCastable && !ability.Locked && ability.Cooldown == 0
+           && ability.HasTarget(new GridSource(this, entity.Position, entity));
 
     public bool HasCastableAbility(Entity entity, int player)
     {
@@ -330,17 +324,39 @@ public sealed class GridState
     
     internal void ClearMoves() => _moves.Clear();
 
-    internal bool ChangeEntityPosition(GridPosition startPosition, GridPosition targetPosition, bool teleport = false)
+    internal bool ChangeEntityPosition(GridPosition startPosition, GridPosition targetPosition, bool teleport = false, bool applyTerrain = true)
     {
         if (!TryGetEntity(startPosition, out var entity) || !IsTraversable(targetPosition)) return false;
         _entities[targetPosition.Dim1] = entity;
         _entities[startPosition.Dim1] = null;
         entity.SetPosition(targetPosition);
         _moves.Add(new EntityMove(entity.Uid, startPosition, targetPosition, teleport));
-        ApplyTerrainAt(targetPosition);
+        if (applyTerrain) ApplyTerrainAt(targetPosition);
         return true;
     }
     
+    internal void ApplyStatus(Entity holder, StatusConfig config, int amount, int param = 0)
+    {
+        if (!holder.TryGetComponent<StatusComponent>(out var statuses)) return;
+        if (config.OnePerSource && amount > 0)
+            foreach (var other in _entities)
+            {
+                if (other == null || other == holder || !other.TryGetComponent<StatusComponent>(out var otherStatuses)) continue;
+                var existing = otherStatuses.Find(config);
+                if (existing != null && existing.Param == param) otherStatuses.Remove(existing);
+            }
+        if (!statuses.Apply(config, amount, param) || config.OnExpire.Count == 0 || GetEntity(holder.Position) != holder) return;
+        var steps = new GridSteps();
+        steps.Add(new GridStep(holder.Position, GridDirection.All, 0));
+        EffectResolver.Run(new EffectContext(new GridSource(this, holder.Position, holder), null), steps, config.OnExpire);
+    }
+
+    internal void Kill(Entity target, Entity killer, int distance, DamageRoll hit = null)
+    {
+        RemoveEntity(target.Position);
+        Triggers.Emit(new TriggerEvent(GameEvent.Died, target, killer, distance, hit));
+    }
+
     internal bool RemoveEntity(GridPosition position)
     {
         if (!position.IsValid()) return false;
@@ -365,10 +381,10 @@ public sealed class GridState
         hash.Add((int)Outcome);
         hash.Add(Winner);
         hash.Add(_consecutivePasses);
+        hash.Add(_actingUid);
         hash.Add(_nextUid);
         for (var player = 1; player <= Definition.PlayerCount; player++)
         {
-            hash.Add(_mana[player]);
             hash.Add(_timeMs[player]);
         }
         foreach (var entity in _entities) AddEntity(ref hash, entity);
@@ -412,6 +428,7 @@ public sealed class GridState
             {
                 hash.Add(status.Id);
                 hash.Add(status.Count);
+                hash.Add(status.Param);
             }
         }
 
@@ -422,8 +439,8 @@ public sealed class GridState
         foreach (var ability in abilities.List)
         {
             hash.Add(ability.Id);
+            hash.Add(ability.Count);
             hash.Add(ability.Cooldown);
-            hash.Add(ability.CastsThisTurn);
             hash.Add(ability.Delay);
             hash.Add(ability.Locked);
         }

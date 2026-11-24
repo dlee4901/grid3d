@@ -23,10 +23,10 @@ public class EffectResolutionTests
     }
 
     [Test]
-    public void AllyOnlyEffect_SkipsEnemy()
+    public void AllyOnlyEffect_OnEnemy_IsRejected()
     {
         var executor = TestGame.Start(TestContent.CountAllies, TestContent.Cheap, player2Position: 1);
-        Assert.IsTrue(executor.Apply(new AbilityCommand(1, TestContent.CountAllies, TestGame.Player1Position, new[] { 1 })));
+        Assert.IsFalse(executor.Apply(new AbilityCommand(1, TestContent.CountAllies, TestGame.Player1Position, new[] { 1 })));
         Assert.AreEqual(0, TestContent.AllyCounter.Hits);
     }
 

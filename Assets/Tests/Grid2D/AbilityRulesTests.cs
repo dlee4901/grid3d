@@ -21,29 +21,27 @@ public class AbilityRulesTests
         var executor = TestGame.Start(TestContent.Axe, TestContent.Tough, player2Position: 1);
         Assert.IsTrue(executor.Apply(SwingEast()));
         Assert.AreEqual(5, HealthAt(executor, 1));
-        Assert.AreEqual(1, AxeOf(executor).Cooldown);
-        Assert.IsTrue(executor.Apply(new EndTurnCommand(1)));
+        Assert.AreEqual(2, executor.State.ActivePlayer);
         Assert.AreEqual(0, AxeOf(executor).Cooldown);
     }
 
     [Test]
-    public void Axe_Far_Deals3_Cooldown2_TicksAtEndOfTurn()
+    public void Axe_Far_Deals3_Cooldown2_TicksAtEndOfOwnTurn()
     {
         var executor = TestGame.Start(TestContent.Axe, TestContent.Tough, player2Position: 3);
         Assert.IsTrue(executor.Apply(SwingEast()));
         Assert.AreEqual(7, HealthAt(executor, 3));
-        Assert.AreEqual(2, AxeOf(executor).Cooldown);
-        Assert.IsTrue(executor.Apply(new EndTurnCommand(1)));
         Assert.AreEqual(1, AxeOf(executor).Cooldown);
     }
 
     [Test]
     public void Axe_FarKill_StillCoolsDown()
     {
-        var executor = TestGame.Start(TestContent.Axe, TestContent.Cheap, player2Position: 3);
+        var executor = TestGame.StartOn(5, 1, new[] { (0, TestContent.Axe) },
+                                        new[] { (3, TestContent.Cheap), (4, TestContent.Tough) });
         Assert.IsTrue(executor.Apply(SwingEast()));
         Assert.IsNull(executor.State.GetEntity(3));
-        Assert.AreEqual(2, AxeOf(executor).Cooldown);
+        Assert.AreEqual(1, AxeOf(executor).Cooldown);
     }
 
     [Test]
@@ -51,11 +49,10 @@ public class AbilityRulesTests
     {
         var executor = TestGame.Start(TestContent.Axe, TestContent.Tough, player2Position: 3);
         Assert.IsTrue(executor.Apply(SwingEast()));
-        Assert.IsTrue(executor.Apply(new EndTurnCommand(1)));
-        Assert.IsTrue(executor.Apply(new EndTurnCommand(2)));
+        Assert.IsTrue(executor.Apply(new PassCommand(2)));
         Assert.AreEqual(2, executor.State.ActivePlayer);
         Assert.AreEqual(0, AxeOf(executor).Cooldown);
-        Assert.IsTrue(executor.Apply(new EndTurnCommand(2)));
+        Assert.IsTrue(executor.Apply(new PassCommand(2)));
         Assert.AreEqual(1, executor.State.ActivePlayer);
         Assert.IsTrue(executor.Apply(SwingEast()));
     }
@@ -65,8 +62,8 @@ public class AbilityRulesTests
     {
         var executor = TestGame.Start(TestContent.Poke, TestContent.Cheap);
         Assert.IsTrue(executor.Apply(new AbilityCommand(1, TestContent.Poke, TestGame.Player1Position, new[] { 1 })));
+        Assert.AreEqual(2, executor.State.ActivePlayer);
         Assert.IsFalse(executor.Apply(new AbilityCommand(1, TestContent.Poke, TestGame.Player1Position, new[] { 1 })));
-        Assert.AreEqual(2, executor.State.GetMana(1));
     }
 
     [Test]
@@ -74,17 +71,16 @@ public class AbilityRulesTests
     {
         var executor = TestGame.Start(TestContent.Poke, TestContent.Cheap);
         Assert.IsTrue(executor.Apply(new AbilityCommand(1, TestContent.Poke, TestGame.Player1Position, new[] { 1 })));
-        Assert.IsTrue(executor.Apply(new EndTurnCommand(1)));
-        Assert.IsTrue(executor.Apply(new EndTurnCommand(2)));
+        Assert.IsTrue(executor.Apply(new PassCommand(2)));
         Assert.IsTrue(executor.Apply(new AbilityCommand(1, TestContent.Poke, TestGame.Player1Position, new[] { 1 })));
     }
 
-    [TestCase(1, 1)]
-    [TestCase(3, 2)]
-    public void AxeSwing_AdjacentHit_ReducesCooldown(int enemyPosition, int expectedCooldown)
+    [TestCase(1, 0)]
+    [TestCase(3, 1)]
+    public void AxeThrow_AdjacentHit_ReducesCooldown(int enemyPosition, int expectedCooldown)
     {
-        var executor = TestGame.Start(TestContent.AxeSwingKit, TestContent.Tough, player2Position: enemyPosition);
-        Assert.IsTrue(executor.Apply(new AbilityCommand(1, "Axe Swing", TestGame.Player1Position, new[] { 1 })));
+        var executor = TestGame.Start(TestContent.AxeThrowKit, TestContent.Tough, player2Position: enemyPosition);
+        Assert.IsTrue(executor.Apply(new AbilityCommand(1, "Axe Throw", TestGame.Player1Position, new[] { 1 })));
         Assert.AreEqual(expectedCooldown, AxeOf(executor).Cooldown);
     }
 }

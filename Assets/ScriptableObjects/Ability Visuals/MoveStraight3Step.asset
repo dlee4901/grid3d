@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: MoveStraight3Step
   m_EditorClassIdentifier: Assembly-CSharp::AbilityVisuals
   <Id>k__BackingField: MoveStraight3Step
-  Icon: {fileID: 21300000, guid: 29a1226f7b5e20240942612e151c3c4c, type: 3}
+  Icon: {fileID: 21300000, guid: 240c820dfae244a483ef224ce48e54fa, type: 3}
   CasterAction: 0

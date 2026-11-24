@@ -20,12 +20,13 @@ public sealed class TurnExecutor
 
     public event System.Action<Command> CommandApplied;
 
-    public GridState Preview(Command command)
+    public GridState Preview(Command command, bool throughTurnEnd = true)
     {
         var state = new GridState(_state.Definition);
         foreach (var logged in _log) logged.ApplyTo(state);
         if (command.RequiresActiveTurn && !state.CanPlayerAct(command.IssuingPlayer)) return null;
         state.ClearMoves();
+        state.HoldTurnEnd = !throughTurnEnd;
         return command.ApplyTo(state) ? state : null;
     }
 

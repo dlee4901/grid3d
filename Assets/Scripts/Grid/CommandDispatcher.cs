@@ -16,5 +16,6 @@ public sealed class CommandDispatcher
 
     public bool Submit(Func<int, Command> build) => Enabled && _executor.Apply(build(_localSeat()));
 
-    public GridState Preview(Func<int, Command> build) => _executor.Preview(build(_localSeat()));
+    public GridState Preview(Func<int, Command> build, bool throughTurnEnd)
+        => _executor.Preview(build(_localSeat()), throughTurnEnd);
 }

@@ -5,7 +5,6 @@ using UnityEngine;
 public sealed class TooltipContent
 {
     public string Title;
-    public int? Mana;
     public int? Cooldown;
     public GlyphShape Glyph;
     public string Body;
@@ -27,7 +26,6 @@ public static class TooltipText
         var content = new TooltipContent
         {
             Title = Title(config),
-            Mana = ability.IsCastable ? config.ManaCost : null,
             Cooldown = ability.IsCastable && config.Cooldown > 1 ? config.Cooldown : null
         };
         if (ability.IsCastable) content.Glyph = GlyphOf(ability);
@@ -66,6 +64,9 @@ public static class TooltipText
         return content;
     }
 
+    public static TooltipContent ForEntity(Entity entity)
+        => new() { Title = entity.Id, Body = Kind("Unit") };
+
     public static TooltipContent ForTerrain(TerrainType terrain, GridState state, int turns)
     {
         IdRegistry<TerrainConfig>.TryGet(terrain.ToString(), out var config);
@@ -74,6 +75,17 @@ public static class TooltipText
         content.Body = $"{kind}\n{Body(config, state, null, content)}";
         return content;
     }
+
+    private static TooltipContent TurnBreakdown(int rounds, int players, int turns)
+        => new()
+        {
+            Title = Count(turns, "turn"),
+            Body = $"{Value(ValueColor, rounds.ToString())}  {Plural(rounds, "round")}\n{Value(ValueColor, $"×{players}")}  {Plural(players, "player")}"
+        };
+
+    private static string Count(int count, string noun) => $"{count} {Plural(count, noun)}";
+
+    private static string Plural(int count, string noun) => count == 1 ? noun : noun + "s";
 
     private static string Title(EffectConfig config) => config.DisplayName ?? config.Id;
 
@@ -86,7 +98,11 @@ public static class TooltipText
                 var id = $"tr:{terrainConfig.Id}";
                 terrainEffect.TryGetValueRange(state, out var turns, out _);
                 content.Links[id] = ForTerrain(terrainEffect.Terrain, state, turns);
-                return Link(id, LinkColor, terrainConfig.DisplayName ?? terrainConfig.Id);
+                var name = Link(id, LinkColor, terrainConfig.DisplayName ?? terrainConfig.Id);
+                if (turns <= 0) return name;
+                var turnsId = $"val:{token}";
+                content.Links[turnsId] = TurnBreakdown(terrainEffect.Rounds, state.Definition.PlayerCount, turns);
+                return $"{name} {Link(turnsId, ValueColor, turns.ToString())}";
             }
             if (caster != null && effect is DamageEffect damage && damage.Amount.TryGetConstant(out var baseAmount))
             {

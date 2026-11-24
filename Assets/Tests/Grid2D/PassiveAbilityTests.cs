@@ -21,15 +21,14 @@ public class PassiveAbilityTests
         => Assert.IsTrue(executor.Apply(new AbilityCommand(player, ability, source, new[] { target })));
 
     private static void EndTurn(TurnExecutor executor, int player)
-        => Assert.IsTrue(executor.Apply(new EndTurnCommand(player)));
+        => Assert.IsTrue(executor.Apply(new PassCommand(player)));
 
     [Test]
-    public void Burn_TicksOnOwnersTurnEnd_ThenExpires()
+    public void Burn_TicksAtEndOfOwnersTurn_ThenExpires()
     {
         var executor = TestGame.Start(TestContent.BurnTouch, TestContent.Tough, player2Position: 1);
         Cast(executor, 1, TestContent.BurnTouch, 0, 1);
-        Assert.AreEqual(1, Count(executor, 1, "Burn"));
-        EndTurn(executor, 1);
+        Assert.AreEqual(2, executor.State.ActivePlayer);
         Assert.AreEqual(10, Health(executor, 1));
         Assert.AreEqual(1, Count(executor, 1, "Burn"));
         EndTurn(executor, 2);
@@ -38,15 +37,35 @@ public class PassiveAbilityTests
     }
 
     [Test]
-    public void Blaze_BlocksBurn_GainsPower()
+    public void Blaze_BlocksBurn()
     {
         var executor = TestGame.Start(TestContent.BurnTouch, TestContent.Blazing, player2Position: 1);
         Cast(executor, 1, TestContent.BurnTouch, 0, 1);
-        EndTurn(executor, 1);
         EndTurn(executor, 2);
         Assert.AreEqual(10, Health(executor, 1));
-        Assert.AreEqual(1, Count(executor, 1, "Power"));
         Assert.AreEqual(0, Count(executor, 1, "Burn"));
+    }
+
+    [Test]
+    public void Blaze_CounterMirrorsBurnStacks()
+    {
+        var executor = TestGame.StartOn(5, 1, new[] { (0, TestContent.BlazeHitKit) }, new[] { (1, TestContent.Tough) });
+        var holder = executor.State.GetEntity(0);
+        holder.TryGetComponent<AbilityComponent>(out var abilities);
+        var blaze = abilities.Dictionary[AbilityConfigs.Blaze.Id];
+        Assert.IsTrue(blaze.HasCounter);
+        Assert.AreEqual(0, blaze.CounterFor(holder));
+        executor.State.ApplyStatus(holder, StatusConfigs.Burn, 3);
+        Assert.AreEqual(3, blaze.CounterFor(holder));
+    }
+
+    [Test]
+    public void Blaze_AddsAbilityDamagePerBurnStack()
+    {
+        var executor = TestGame.StartOn(5, 1, new[] { (0, TestContent.BlazeHitKit) }, new[] { (1, TestContent.Tough) });
+        executor.State.ApplyStatus(executor.State.GetEntity(0), StatusConfigs.Burn, 2);
+        Cast(executor, 1, TestContent.Hit3, 0, 1);
+        Assert.AreEqual(5, Health(executor, 1));
     }
 
     [Test]
@@ -62,7 +81,6 @@ public class PassiveAbilityTests
     {
         var executor = TestGame.Start(TestContent.BurnTouch, TestContent.Armored, player2Position: 1);
         Cast(executor, 1, TestContent.BurnTouch, 0, 1);
-        EndTurn(executor, 1);
         EndTurn(executor, 2);
         Assert.AreEqual(9, Health(executor, 1));
     }
@@ -92,12 +110,12 @@ public class PassiveAbilityTests
     }
 
     [Test]
-    public void ShieldBash_Damages_AndPushesTwo()
+    public void ShieldBash_PushesTwo_ThenDamages()
     {
         var executor = TestGame.Start(TestContent.ShieldBash, TestContent.Tough, player2Position: 1);
         Cast(executor, 1, TestContent.ShieldBash, 0, 1);
         Assert.IsNull(At(executor, 1));
-        Assert.AreEqual(8, Health(executor, 3));
+        Assert.AreEqual(9, Health(executor, 3));
     }
 
     [Test]
@@ -131,35 +149,6 @@ public class PassiveAbilityTests
         Assert.AreEqual(6, Health(executor, 4));
         Assert.AreEqual(6, Health(executor, 7));
         Assert.AreEqual(10, Health(executor, 5));
-    }
-
-    [Test]
-    public void Retaliate_HitsAdjacentAttacker()
-    {
-        var executor = TestGame.Start(TestContent.Hit3, TestContent.Retaliator, player2Position: 1);
-        Cast(executor, 1, TestContent.Hit3, 0, 1);
-        Assert.AreEqual(7, Health(executor, 1));
-        Assert.IsNull(At(executor, 0));
-    }
-
-    [Test]
-    public void Retaliate_IgnoresDistantAttacker()
-    {
-        var executor = TestGame.Start(TestContent.Axe, TestContent.Retaliator, player2Position: 3);
-        Cast(executor, 1, TestContent.Axe, 0, 1);
-        Assert.AreEqual(7, Health(executor, 3));
-        Assert.IsNotNull(At(executor, 0));
-    }
-
-    [Test]
-    public void Retaliate_IgnoresDiagonalAttacker()
-    {
-        var executor = TestGame.StartOn(3, 3,
-            new[] { (0, TestContent.SwordSlash) },
-            new[] { (4, TestContent.Retaliator) });
-        Cast(executor, 1, TestContent.SwordSlash, 0, 1);
-        Assert.AreEqual(6, Health(executor, 4));
-        Assert.AreEqual(10, Health(executor, 0));
     }
 
     [Test]
@@ -201,9 +190,9 @@ public class PassiveAbilityTests
         var state = TestGame.Start(TestContent.Tough, TestContent.Tough, player2Position: 1).State;
         state.GetEntity(1).TryGetComponent<StatusComponent>(out var statuses);
         var before = state.ComputeHash();
-        statuses.AdjustStatus(StatusConfigs.Burn, 1);
+        statuses.Apply(StatusConfigs.Burn, 1, 0);
         Assert.AreNotEqual(before, state.ComputeHash());
-        statuses.AdjustStatus(StatusConfigs.Burn, -1);
+        statuses.Apply(StatusConfigs.Burn, -1, 0);
         Assert.AreEqual(before, state.ComputeHash());
     }
 }

@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public enum GridDirection {North, NorthEast, East, SouthEast, South, SouthWest, West, NorthWest, NorthCone, EastCone, SouthCone, WestCone, Vertical, Horizontal, Diagonal, Straight, Line, Custom}
+public enum GridDirection {North, NorthEast, East, SouthEast, South, SouthWest, West, NorthWest, NorthCone, EastCone, SouthCone, WestCone, Vertical, Horizontal, Diagonal, Orthogonal, All, Custom}
 public enum GridDirectionFacing {North, East, South, West}
 
 // [Flags] 
@@ -36,7 +36,7 @@ public class GridTraversal
     public Occupant Passthrough { get; init; } = Occupant.Empty;
 
     public GridTraversal? Chain { get; init; }
-    public int ChainOffset { get; init; } = 0; // IF (n > 0) n ~ distance ELSE maxDistReached + n ~ maxDistReached
+    public bool ChainAll { get; init; } = false;
 
     public List<GridStep> GetSteps(GridSource source)
     {
@@ -56,7 +56,7 @@ public class GridTraversal
 
     public List<GridStep> GetTraceSteps(GridSource source)
     {
-        return GetTraceSteps(source, new GridStep(source.Position, Direction, 0));
+        return GetTraceSteps(source, new GridStep(source.Position, FacingDirection(source), 0));
     }
 
     private List<GridStep> GetTraceSteps(GridSource source, GridStep initialGridStep)
@@ -68,7 +68,9 @@ public class GridTraversal
     {
         var steps = new HashSet<GridStep>();
         var queue = new Queue<GridStep>();
-        var initialStep = new GridStep(source.Position, Direction, 0);
+        var chained = new List<GridStep>();
+        var direction = FacingDirection(source);
+        var initialStep = new GridStep(source.Position, direction, 0);
         steps.Add(initialStep);
         queue.Enqueue(initialStep);
         
@@ -77,7 +79,7 @@ public class GridTraversal
             var widthPositions = GetWidthPositions(source, StartWidth, initialStep.Position, initialStep.Direction);
             foreach (var position in widthPositions)
             {
-                var widthStep = new GridStep(position, Direction, 0);
+                var widthStep = new GridStep(position, direction, 0);
                 steps.Add(widthStep);
                 queue.Enqueue(widthStep);
             }
@@ -88,13 +90,22 @@ public class GridTraversal
         while (queue.Count > 0)
         {
             var currentStep = queue.Dequeue();
+            var expanded = false;
             foreach (var nextStep in Expand(source, currentStep.Position, currentStep.Distance + 1, currentStep.Direction))
             {
+                expanded = true;
                 if (!steps.Add(nextStep)) continue;
                 queue.Enqueue(nextStep);
                 yield return steps;
             }
+            if (Chain != null && currentStep.Distance > 0 && (ChainAll || !expanded)) chained.Add(currentStep);
         }
+
+        foreach (var end in chained)
+            foreach (var step in Chain!.GetStepsSet(new GridSource(source.Grid, end.Position, source.Entity))) 
+                if (step.Distance > 0 && !step.Position.Equals(source.Position))
+                    steps.Add(new GridStep(step.Position, end.Direction, end.Distance + step.Distance));
+        yield return steps;
     }
 
     private IEnumerable<GridStep> Expand(GridSource source, GridPosition currentPosition, int curDistance, GridDirection gridDirection)
@@ -104,8 +115,7 @@ public class GridTraversal
         var grid = source.Grid;
         if (MaxDistance != Unlimited && curDistance > MaxDistance) yield break;
 
-        var directionFacing = source.Entity?.Facing ?? GridDirectionFacing.North;
-        var directionVectors = GetDirectionVectors(gridDirection, directionFacing);
+        var directionVectors = GetDirectionVectors(gridDirection);
         var currentPosition2D = currentPosition.Dim2;
 
         for (var i = 0; i < directionVectors.Length; i++)
@@ -120,10 +130,6 @@ public class GridTraversal
 
             if (Linear) yield return new GridStep(position, (GridDirection)i, curDistance);
             else        yield return new GridStep(position, gridDirection, curDistance);
-
-            if (Chain == null || curDistance < ChainOffset) continue;
-            foreach (var step in Chain.Expand(source, position, curDistance, Chain.Direction))
-                yield return step;
         }
     }
 
@@ -134,8 +140,7 @@ public class GridTraversal
     {
         List<GridPosition> widthPositions = new();
         
-        var directionFacing = source.Entity?.Facing ?? GridDirectionFacing.North;
-        var directionVectors = GetDirectionVectors(gridDirection, directionFacing);
+        var directionVectors = GetDirectionVectors(gridDirection);
         
         var zeroTuple = (0, 0);
         var leftShift = zeroTuple;
@@ -176,10 +181,27 @@ public class GridTraversal
         return widthPositions;
     }
 
-    private (int, int)[] GetDirectionVectors(GridDirection gridDirection, GridDirectionFacing gridDirectionFacing=GridDirectionFacing.North)
+    private GridDirection FacingDirection(GridSource source)
+    {
+        if (AbsoluteDirection) return Direction;
+        var facing = source.Entity?.Facing ?? GridDirectionFacing.North;
+        return Rotate(Direction, facing);
+    }
+
+    public static GridDirection Rotate(GridDirection direction, GridDirectionFacing facing)
+    {
+        var quarterRotations = (int)facing;
+        if (direction < GridDirection.NorthCone) return (GridDirection)(((int)direction + quarterRotations * 2) % UnidirectionalCount);
+        if (direction <= GridDirection.WestCone) return GridDirection.NorthCone + ((int)direction - (int)GridDirection.NorthCone + quarterRotations) % 4;
+        if (direction is GridDirection.Vertical or GridDirection.Horizontal && quarterRotations % 2 == 1)
+            return direction == GridDirection.Vertical ? GridDirection.Horizontal : GridDirection.Vertical;
+        return direction;
+    }
+
+    private (int, int)[] GetDirectionVectors(GridDirection gridDirection)
     {
         var unitVectors = new (int, int)[UnidirectionalCount];
-        var absoluteDirections = GetAbsoluteDirections(gridDirection, gridDirectionFacing);
+        var absoluteDirections = GetAbsoluteDirections(gridDirection);
         for (var i = 0; i < UnidirectionalCount; i++)
         {
             var xOffset = 0;
@@ -198,7 +220,7 @@ public class GridTraversal
 
     public bool[] DirectionMask() => GetAbsoluteDirections(Direction);
 
-    private bool[] GetAbsoluteDirections(GridDirection gridDirection, GridDirectionFacing gridDirectionFacing=GridDirectionFacing.North)
+    private bool[] GetAbsoluteDirections(GridDirection gridDirection)
     {
         var absoluteDirections = new bool[UnidirectionalCount];//List<bool>{false, false, false, false, false, false, false, false};
         switch (gridDirection)
@@ -258,10 +280,10 @@ public class GridTraversal
             case GridDirection.Diagonal:
                 for (var i = 1; i < UnidirectionalCount; i += 2) absoluteDirections[i] = true;
                 break;
-            case GridDirection.Straight:
+            case GridDirection.Orthogonal:
                 for (var i = 0; i < UnidirectionalCount; i += 2) absoluteDirections[i] = true;
                 break;
-            case GridDirection.Line:
+            case GridDirection.All:
                 for (var i = 0; i < UnidirectionalCount; i++) absoluteDirections[i] = true;
                 break;
             case GridDirection.Custom:
@@ -270,18 +292,6 @@ public class GridTraversal
             default:
                 return absoluteDirections;
         }
-        var shift = gridDirectionFacing switch
-        {
-            GridDirectionFacing.East => 6,
-            GridDirectionFacing.South => 4,
-            GridDirectionFacing.West => 2,
-            _ => 0
-        };
-        if (shift == 0) return absoluteDirections;
-  
-        var buffer = new bool[UnidirectionalCount];
-        Array.Copy(absoluteDirections, shift, buffer, 0, UnidirectionalCount - shift);
-        Array.Copy(absoluteDirections, 0, buffer, UnidirectionalCount - shift, shift);
-        return buffer;
+        return absoluteDirections;
     }
 }

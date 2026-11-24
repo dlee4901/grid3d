@@ -20,6 +20,10 @@ MonoBehaviour:
     Color: {r: 1, g: 0.8509804, b: 0, a: 1}
     EdgeIntensity: 16
     UIAlpha: 0.25
+  _possibleTargets:
+    Color: {r: 1, g: 0.8509804, b: 0, a: 1}
+    EdgeIntensity: 4
+    UIAlpha: 0.125
   _selectionArea:
     Color: {r: 1, g: 0.8509804, b: 0, a: 1}
     EdgeIntensity: 16
@@ -28,6 +32,10 @@ MonoBehaviour:
     Color: {r: 1, g: 0, b: 0, a: 1}
     EdgeIntensity: 16
     UIAlpha: 0.375
+  _confirmTarget:
+    Color: {r: 1, g: 0.2509804, b: 0.2509804, a: 1}
+    EdgeIntensity: 64
+    UIAlpha: 0.5
   _selected:
     Color: {r: 1, g: 1, b: 1, a: 1}
     EdgeIntensity: 16

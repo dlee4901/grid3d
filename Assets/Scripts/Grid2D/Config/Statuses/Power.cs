@@ -8,6 +8,9 @@ public static partial class StatusConfigs
         DisplayName = "Power",
         Description = "Damage dealt by this unit's abilities is increased by 1 per stack.",
         Trigger = new Trigger { On = GameEvent.DamageDealt, When = Is.AbilityDamage },
-        Effects = new List<AbilityEffect> { new ModifyDamageEffect { Amount = Var.Count } }
+        Effects = new List<AbilityEffect>
+        {
+            new ModifyDamageEffect { Amount = Var.Count }
+        }
     };
 }

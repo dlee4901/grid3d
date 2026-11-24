@@ -32,7 +32,7 @@ public class LockstepSessionTests
         var (hostLink, guestLink) = LoopbackLink.CreatePair();
         var host = CreatePeer(hostLink, "host", true, TestGame.Team(Map, TestGame.Player1Position, TestContent.Step));
         var guest = CreatePeer(guestLink, "guest", false,
-                               guestTeam ?? TestGame.Team(Map, TestGame.Player2Position, TestContent.Cheap));
+                               guestTeam ?? TestGame.Team(Map, TestGame.Player2Position, TestContent.Step));
         host.Session.Start();
         guest.Session.Start();
         Pump(host.Link, guest.Link);
@@ -46,6 +46,10 @@ public class LockstepSessionTests
     }
 
     private static void SendRaw(LoopbackLink from, NetMessage message) => from.Send(message.Encode());
+
+    private static AbilityCommand HostStep() => new(1, TestContent.Step, TestGame.Player1Position, new[] { 1 });
+
+    private static AbilityCommand GuestStep() => new(2, TestContent.Step, TestGame.Player2Position, new[] { 3 });
 
     [Test]
     public void Handshake_StartsBothPeersFromTheSameState()
@@ -72,11 +76,12 @@ public class LockstepSessionTests
     public void TurnHandoff_StaysInSync()
     {
         var (host, guest) = Connect();
-        Assert.IsTrue(host.Executor.Apply(new EndTurnCommand(1, 1200)));
+        Assert.IsTrue(host.Executor.Apply(new AbilityCommand(1, TestContent.Step, TestGame.Player1Position, new[] { 1 }, elapsedMs: 1200)));
         Pump(host.Link, guest.Link);
-        Assert.IsTrue(guest.Executor.Apply(new EndTurnCommand(2, 3400)));
+        Assert.IsTrue(guest.Executor.Apply(new AbilityCommand(2, TestContent.Step, TestGame.Player2Position, new[] { 3 }, elapsedMs: 3400)));
         Pump(host.Link, guest.Link);
         Assert.AreEqual(1, guest.Executor.State.ActivePlayer);
+        Assert.AreEqual(host.Executor.State.GetTimeMs(2), guest.Executor.State.GetTimeMs(2));
         Assert.AreEqual(host.Executor.StateHash, guest.Executor.StateHash);
         Assert.AreEqual(LockstepSession.SessionPhase.Playing, host.Session.Phase);
         Assert.AreEqual(LockstepSession.SessionPhase.Playing, guest.Session.Phase);
@@ -95,7 +100,7 @@ public class LockstepSessionTests
     {
         var (host, guest) = Connect();
         var sequence = host.Executor.Log.Count;
-        SendRaw(guest.Link, NetMessage.ForCommand(sequence, 0UL, CommandCodec.Encode(new EndTurnCommand(2))));
+        SendRaw(guest.Link, NetMessage.ForCommand(sequence, 0UL, CommandCodec.Encode(GuestStep())));
         Pump(host.Link, guest.Link);
         StringAssert.Contains("rejected", host.Session.FailureReason);
     }
@@ -105,7 +110,7 @@ public class LockstepSessionTests
     {
         var (host, guest) = Connect();
         var sequence = guest.Executor.Log.Count;
-        SendRaw(host.Link, NetMessage.ForCommand(sequence, 12345UL, CommandCodec.Encode(new EndTurnCommand(1))));
+        SendRaw(host.Link, NetMessage.ForCommand(sequence, 12345UL, CommandCodec.Encode(HostStep())));
         Pump(host.Link, guest.Link);
         StringAssert.Contains("desync", guest.Session.FailureReason);
     }
@@ -115,7 +120,7 @@ public class LockstepSessionTests
     {
         var (host, guest) = Connect();
         var sequence = guest.Executor.Log.Count + 1;
-        SendRaw(host.Link, NetMessage.ForCommand(sequence, 0UL, CommandCodec.Encode(new EndTurnCommand(1))));
+        SendRaw(host.Link, NetMessage.ForCommand(sequence, 0UL, CommandCodec.Encode(HostStep())));
         Pump(host.Link, guest.Link);
         StringAssert.Contains("expected command", guest.Session.FailureReason);
     }
@@ -161,7 +166,7 @@ public class LockstepSessionTests
     public void RejectedPeerCommand_ForfeitsThePeer()
     {
         var (host, guest) = Connect();
-        SendRaw(guest.Link, NetMessage.ForCommand(host.Executor.Log.Count, 0UL, CommandCodec.Encode(new EndTurnCommand(2))));
+        SendRaw(guest.Link, NetMessage.ForCommand(host.Executor.Log.Count, 0UL, CommandCodec.Encode(GuestStep())));
         Pump(host.Link, guest.Link);
         Assert.AreEqual(1, host.Executor.State.Winner);
     }
@@ -170,7 +175,7 @@ public class LockstepSessionTests
     public void Desync_StopsTheMatchWithoutAWinner()
     {
         var (host, guest) = Connect();
-        SendRaw(host.Link, NetMessage.ForCommand(guest.Executor.Log.Count, 12345UL, CommandCodec.Encode(new EndTurnCommand(1))));
+        SendRaw(host.Link, NetMessage.ForCommand(guest.Executor.Log.Count, 12345UL, CommandCodec.Encode(HostStep())));
         Pump(host.Link, guest.Link);
         Assert.AreEqual(LockstepSession.SessionPhase.Failed, guest.Session.Phase);
         Assert.AreEqual(GameOutcome.InProgress, guest.Executor.State.Outcome);

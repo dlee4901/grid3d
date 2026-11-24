@@ -6,12 +6,15 @@ public static partial class AbilityConfigs
     {
         Id = "MoveStraight3Step",
         DisplayName = "Move",
-        Description = "Move 3 squares",
-        Effects = new List<AbilityEffect> { new MoveEffect() },
-        Targeting = Straight3Step()
+        Description = "Move 3 squares.",
+        Effects = new List<AbilityEffect>
+        {
+            new MoveEffect()
+        },
+        Targeting = OrthogonalSteps(3)
     };
 
-    private static PositionTargeting Straight3Step() => new()
+    private static PositionTargeting OrthogonalSteps(int distance, Occupant passthrough = Occupant.Empty) => new()
     {
         SelectableArea = new GridSelection()
         {
@@ -20,9 +23,10 @@ public static partial class AbilityConfigs
             {
                 new GridTraversal()
                 {
-                    Direction = GridDirection.Straight,
-                    MaxDistance = 3,
-                    Linear = false
+                    Direction = GridDirection.Orthogonal,
+                    MaxDistance = distance,
+                    Linear = false,
+                    Passthrough = passthrough
                 }
             }
         }

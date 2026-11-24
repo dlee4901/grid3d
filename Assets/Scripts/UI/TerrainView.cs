@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
@@ -10,7 +9,6 @@ public class TerrainView : StateView
     [SerializeField] private RectTransform _swatchSlot;
     [SerializeField] private SquarePortrait _swatchPrefab;
     [SerializeField] private PortraitElements _swatchElements = PortraitElements.Counter;
-    [SerializeField] private TMP_Text _nameText;
     [SerializeField] private TooltipStack _tooltips;
     [SerializeField] private int _snapshotResolution = 256;
     [SerializeField] private Vector3 _studioPosition = new(0f, -1000f, 0f);
@@ -57,12 +55,10 @@ public class TerrainView : StateView
         var cell = ShownCell;
         if (!Equals(cell, _tooltipCell)) CloseTooltip();
         _swatch.gameObject.SetActive(cell.HasValue);
-        _nameText.text = "";
         if (!cell.HasValue) return;
 
         shown.TryGetTerrain(cell.Value, out var terrain);
         IdRegistry<TerrainAssets>.TryGet(terrain.ToString(), out var assets);
-        _nameText.text = assets != null ? assets.DisplayName : terrain.ToString();
         var turns = shown.GetTerrainTurns(cell.Value);
         _swatchTexture.texture = SnapshotFor(terrain, assets);
         _swatch.Init(null);

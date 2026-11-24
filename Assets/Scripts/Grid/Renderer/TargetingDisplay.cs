@@ -31,8 +31,9 @@ public class TargetingDisplay
             _highlights.Highlight(snapshot.Selectable, HighlightType.EffectArea);
             return;
         }
-        _highlights.Highlight(snapshot.Selectable, HighlightType.AvailableTargets);
-        if (targeting is DirectionTargeting) _highlights.DirectionChevrons(snapshot.Selectable);
+        _highlights.Highlight(snapshot.Selectable, HighlightType.PossibleTargets);
+        _highlights.Highlight(snapshot.Valid, HighlightType.AvailableTargets);
+        if (targeting is DirectionTargeting) _highlights.DirectionChevrons(snapshot.Valid);
         if (snapshot.NextSteps != null) _highlights.DirectionChevrons(snapshot.NextSteps);
         if (snapshot.TargetCount == 0)
         {
@@ -46,7 +47,11 @@ public class TargetingDisplay
         }
         if (snapshot.TargetCount != targeting.Targets
             || !_manager.Preview(seat => AbilityCommand.From(seat, snapshot.Ability.Id, snapshot.Source.Position, snapshot.Targets, snapshot.Path)))
+        {
             _manager.ClearPreview();
+            return;
+        }
+        _highlights.Highlight(new HashSet<GridPosition> { snapshot.LastTarget }, HighlightType.ConfirmTarget);
     }
 
     private void ShowProjectiles(GridPosition source, GridSteps steps)

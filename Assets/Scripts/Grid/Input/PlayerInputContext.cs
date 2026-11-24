@@ -4,5 +4,6 @@ public class PlayerInputContext
     public GridInput Input;
     public TargetingDisplay Display;
     public CommandDispatcher Dispatcher;
+    public TurnController Turns;
     public GridState Grid;
 }

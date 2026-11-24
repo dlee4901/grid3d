@@ -26,6 +26,8 @@ public static class RegistryValidator
             return;
         }
         if (!seen.Add(entityId) || config.Abilities == null) return;
+        if (config.Abilities.Count > EntityConfig.MaxAbilities)
+            issues.Add($"Entity '{entityId}' has {config.Abilities.Count} abilities (max {EntityConfig.MaxAbilities})");
         foreach (var abilityId in config.Abilities)
             if (!IdRegistry<AbilityConfig>.TryGet(abilityId, out _))
                 issues.Add($"Entity '{entityId}' references unregistered ability '{abilityId}'");

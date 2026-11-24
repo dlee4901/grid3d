@@ -7,7 +7,6 @@ public static partial class AbilityConfigs
         Id = "Snack",
         DisplayName = "Snack",
         Description = "Gain {Power}.",
-        ManaCost = 1,
         Cooldown = 2,
         Effects = new List<AbilityEffect>
         {
@@ -19,7 +18,7 @@ public static partial class AbilityConfigs
             {
                 Traversals = new List<GridTraversal>
                 {
-                    new GridTraversal { Direction = GridDirection.Straight, MaxDistance = 0 }
+                    new GridTraversal { Direction = GridDirection.Orthogonal, MaxDistance = 0 }
                 }
             }
         }

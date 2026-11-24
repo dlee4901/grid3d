@@ -24,7 +24,7 @@ public class ForfeitTests
     {
         var executor = TestGame.Start(TestContent.Cheap, TestContent.Cheap);
         executor.Apply(new ForfeitCommand(2));
-        Assert.IsFalse(executor.Apply(new EndTurnCommand(1)));
+        Assert.IsFalse(executor.Apply(new PassCommand(1)));
     }
 
     [Test]
@@ -39,7 +39,7 @@ public class ForfeitTests
     [Test]
     public void ForfeitAfterDraw_IsRejected()
     {
-        var executor = TestGame.Start(TestContent.Expensive, TestContent.Expensive);
+        var executor = TestGame.Start(TestContent.Locked, TestContent.Locked);
         Assert.IsFalse(executor.Apply(new ForfeitCommand(1)));
         Assert.AreEqual(GameOutcome.Draw, executor.State.Outcome);
     }

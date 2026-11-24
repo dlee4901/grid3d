@@ -6,12 +6,26 @@ public static partial class AbilityConfigs
     {
         Id = "Blaze",
         DisplayName = "Blaze",
-        Description = "Burn deals no damage to this unit. Instead, each Burn tick grants {Power}.",
-        Trigger = new Trigger { On = GameEvent.DamageTaken, When = Is.DamageFrom("Burn") },
-        Effects = new List<AbilityEffect>
+        Description = "Burn deals no damage to this unit. Counts this unit's Burn stacks; each adds 1 damage to its abilities.",
+        CounterStatus = "Burn",
+        Reactions = new List<Reaction>
         {
-            new ModifyDamageEffect { Prevent = true },
-            new StatusEffect { Relation = Occupant.Self, Status = "Power", Amount = 1 }
+            new()
+            {
+                Trigger = new Trigger { On = GameEvent.DamageTaken, When = Is.DamageFrom("Burn") },
+                Effects = new List<AbilityEffect>
+                {
+                    new ModifyDamageEffect { Prevent = true }
+                }
+            },
+            new()
+            {
+                Trigger = new Trigger { On = GameEvent.DamageDealt, When = Is.AbilityDamage },
+                Effects = new List<AbilityEffect>
+                {
+                    new ModifyDamageEffect { Amount = Var.SourceCounter("Blaze") }
+                }
+            }
         }
     };
 }

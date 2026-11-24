@@ -30,6 +30,7 @@ public class TeamBuilder : LoggableBehaviour
     [SerializeField] private SquarePortrait _unitCardPrefab;
     [SerializeField] private PortraitElements _unitCardElements = PortraitElements.Cost;
     [SerializeField] private float _unitCardHoldTime;
+    [SerializeField] private DropShadow.Direction _unitCardShadow = DropShadow.Direction.Right;
     [SerializeField] private ScrollRect _unitScroll;
     [SerializeField] private EntityView _entityView;
     [SerializeField] private ResolutionOrderView _resolutionOrder;
@@ -196,6 +197,14 @@ public class TeamBuilder : LoggableBehaviour
         StartDrag(placed, placed == null ? config.Id : null, true);
     }
 
+    private GridDirectionFacing GhostFacing(DraftUnit unit, string armedUnitId)
+    {
+        var state = _gridManager.GridState;
+        if (unit != null && state.GetEntity(new GridPosition(state, unit.Positions[_side - 1])) is { } placed) return placed.Facing;
+        IdRegistry<EntityConfig>.TryGet(unit?.UnitId ?? armedUnitId, out var config);
+        return Entity.Create(config, _side).Facing;
+    }
+
     private void StartDrag(DraftUnit unit, string armedUnitId, bool fromCard)
     {
         _selected = unit;
@@ -204,7 +213,7 @@ public class TeamBuilder : LoggableBehaviour
         _draggingFromCard = fromCard;
         _unitScroll.enabled = !fromCard;
         IdRegistry<EntityAssets>.TryGet(unit?.UnitId ?? armedUnitId, out var assets);
-        _ghost = Instantiate(assets.Model3D, Vector3.zero, _side == 2 ? Quaternion.Euler(0f, 180f, 0f) : Quaternion.identity);
+        _ghost = Instantiate(assets.Model3D, Vector3.zero, EntityRenderer.RotationOf(GhostFacing(unit, armedUnitId)));
         _ghostHeight = EntityRenderer.ModelHeight(_ghost);
         _ghost.SetActive(!fromCard);
         if (unit != null) _gridManager.Renderer.Entities.HideModel(new GridPosition(_gridManager.GridState, unit.Positions[_side - 1]));
@@ -548,13 +557,14 @@ public class TeamBuilder : LoggableBehaviour
     {
         var configs = new List<EntityConfig>();
         foreach (var field in typeof(UnitConfigs).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static))
-            if (field.GetValue(null) is EntityConfig config && IdRegistry<EntityAssets>.TryGet(config.Id, out _)) configs.Add(config);
+            if (field.GetValue(null) is EntityConfig { Cost: > 0 } config && IdRegistry<EntityAssets>.TryGet(config.Id, out _)) configs.Add(config);
         configs.Sort((a, b) => a.Cost != b.Cost ? a.Cost.CompareTo(b.Cost) : string.Compare(a.Id, b.Id, StringComparison.Ordinal));
         foreach (var config in configs)
         {
             IdRegistry<EntityAssets>.TryGet(config.Id, out var assets);
             var card = Instantiate(_unitCardPrefab, _unitGrid);
             card.Configure(_unitCardElements);
+            card.SetShadowDirection(_unitCardShadow);
             card.Button.HoldTime = _unitCardHoldTime;
             card.Init(assets.Model2D);
             card.SetCost(config.Cost);

@@ -1,9 +1,72 @@
-<entity name> <health>/<cost>
-- <ability name> <mana cost> [glyph] <description>
+<entity name> <cost>/<health>
+- <ability name> <cooldown> [keywords] (<targeting>) <description>
+- <passive ability name> [cooldown]/[counter/state] [keywords] (<targeting>) <description>
+
+<STATUS NAME> [counter/state] (<description>)
+
+<TERRAIN NAME> [counter] (<description>)
 
 ##########################################
 
-skeleton 1/1
-- move 1 + traverse 1 square
-- bone bash 1 + deal 1 damage
+Skeleton 1/1
+- move 1 (orthogonal nonlinear 2) traverse squares
+- bone bash 1 (orthogonal linear 1 target:unit) deal 2 damage
+- undead 0/ on game start, gain REVIVE (on death, summon a new copy of this unit where it died)
 
+Bat 1/1
+- move:fly 1 (orthogonal nonlinear 3 passthru:unit) traverse squares
+- rabies bite 1 (orthogonal linear 1 target:unit) give RABIES 4 (on end of turn, tick down. when counter reaches 0, unit dies)
+
+Slime 2/1
+- move 1 (orthogonal nonlinear 2) traverse squares
+- slam 1 (orthogonal linear 1 target:entity) deal 1 damage
+- clone 2 (orthogonal nonlinear 1) create a copy of this unit
+- absorb slime 1 (orthogonal nonlinear 1 target:Slime) absorb target, gain all of its statuses and POWER 1 (increase damage dealt by counter value) then kill target
+
+Rogue 2/3
+- move 1 (orthogonal nonlinear 4) traverse squares
+- knife stab 1 OPENER (orthogonal linear 1 target:entity) deal 4 damage
+- crossbow shot 1 OPENER (orthogonal linear 4 target:entity) deal 2 damage to first unit hit
+
+Assassin 3/3
+- move 1 (orthogonal nonlinear 3 passthru:unit) traverse squares
+- backstab 1 OPENER (orthogonal linear 1 target:entity) deal 4 damage. if hitting back of target, kill it instead
+- mark for death 2 (orthogonal nonlinear 4 passthru:unit target:unit) mark a target. when this unit deals damage to that target, kill it. only 1 target can be marked at a time.
+
+Barbarian 3/5
+- move 1 (orthogonal nonlinear 3) traverse squares
+- axe throw 2 (orthogonal linear 3 direction target:entity) deal 3 damage to first target hit. if target is adjacent, deal 5 damage instead and reduce cooldown by 1
+- snack 2 (self) gain POWER 1
+- enrage 0/ when damage is taken, gain POWER 1
+
+Fire Mage 4/4
+- move 1 (orthogonal nonlinear 3) traverse squares
+- fireball 2 (orthogonal nonlinear 2 passthru:entity) deal 4 damage in an area (all linear 1) and apply terrain BURNING 2 (if entity on square, inflict BURN 1 to it then become PLAIN. tick down end of every turn, become PLAIN at 0)
+- incinerate 2 (north linear 1 passthru:unit chain:(northcone nonlinear 2 passthru:unit)) (east linear 1 passthru:unit chain:(eastcone nonlinear 2 passthru:unit)) (south linear 1 passthru:unit chain:(southcone nonlinear 2 passthru:unit)) (west linear 1 passthru:unit chain:(westcone nonlinear 2 passthru:unit)) deal 4-2 damage based on distance. for each target, deal additional damage equal to BURN stacks it has.
+- blaze /0 each BURN (on end of turn, tick down and deal 1 damage) stack increase damage dealt by 1 and deals 0 to this unit
+
+Knight 4/5
+- move 1 (orthogonal nonlinear 3) traverse squares
+- sword slash 1 (orthogonal linear 1 direction passthru:entity) deal 4 damage in an area (horizontal linear 1 target:entity). lose SHIELD.
+- shield bash 2 (orthogonal linear 1 direction) gain SHIELD (block 1 instance of damage in a direction. cannot have for multiple directions) and push adjacent target up to 2 squares then deal 1 damage to it
+- armored 0/ all instances of ability damage deal 1 less
+
+Druid 5/6
+- move 1 (orthogonal nonlinear 3) traverse squares
+- summon thorns 2 (orthogonal nonlinear 2 passthru:entity) apply terrain THORNS 3 (if entity moves onto square, inflict 1 damage) in an area (all linear 1).
+- summon bat 3 WARMUP 3 (orthogonal nonlinear 1) spawn Bat
+
+Engineer 5/4
+- move 1 (orthogonal nonlinear 3) traverse squares
+- build turret 3 (orthogonal nonlinear 1) spawn Turret
+- upgrade turret 1 (orthogonal nonlinear 1) if Turret upgrade level counter < 3, increase Turret upgrade level counter by 1
+
+Turret 0/3
+- shoot 2/ at end of turn, deal 3 damage to first target hit (north linear 3). apply following in order on upgrade counter increase: range +1, damage +1, pierce
+- upgrade level /0 
+ 
+Necromancer 6/4
+- move 1 (orthogonal nonlinear 3) traverse squares
+- summon skeleton 2 (orthogonal nonlinear 1) spawn Skeleton and grant it revive
+- soul siphon /0 when unit dies, gain 1 stack. on death, deal damage equal to stacks to source unit
+- undead 0/ on game start, gain REVIVE (on death, summon a new copy of this unit where it died)

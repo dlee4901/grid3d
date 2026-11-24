@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-public enum TerrainType { Plain, Burning }
+public enum TerrainType { Plain, Burning, Thorns }
 
 public class PositionConfig
 {
@@ -28,7 +28,6 @@ public sealed class GridDefinition : INameId
     public string[] Layout { get; init; }
     public int MaxTeamCost { get; init; }
     public int PlayerCount { get; init; } = 2;
-    public int ManaPerTurn { get; init; } = 3;
     public int PlayerStartingTimeSeconds { get; init; } = 600;
 
     public List<TerrainPlacement> Terrain { get; init; }

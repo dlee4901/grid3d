@@ -38,7 +38,7 @@ public class NetMessageTests
     [Test]
     public void Command_RoundTrips()
     {
-        var bytes = CommandCodec.Encode(new EndTurnCommand(1, 900));
+        var bytes = CommandCodec.Encode(new AbilityCommand(1, "Fireball", 15, new[] { 37 }, elapsedMs: 900));
         var decoded = RoundTrip(NetMessage.ForCommand(7, 0xDEADBEEFCAFEUL, bytes));
         Assert.AreEqual(7, decoded.Sequence);
         Assert.AreEqual(0xDEADBEEFCAFEUL, decoded.StateHash);
@@ -48,7 +48,7 @@ public class NetMessageTests
     [Test]
     public void EveryTruncation_IsRejectedWithoutThrowing()
     {
-        var bytes = NetMessage.ForCommand(3, 42UL, CommandCodec.Encode(new EndTurnCommand(1, 0))).Encode();
+        var bytes = NetMessage.ForCommand(3, 42UL, CommandCodec.Encode(new ForfeitCommand(1))).Encode();
         for (var length = 0; length < bytes.Length; length++)
             Assert.IsFalse(NetMessage.TryDecode(bytes.AsSpan(0, length).ToArray(), out _), $"length {length}");
     }

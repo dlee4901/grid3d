@@ -8,6 +8,9 @@ public static partial class AbilityConfigs
         DisplayName = "Armored",
         Description = "Take 1 less damage from abilities.",
         Trigger = new Trigger { On = GameEvent.DamageTaken, When = Is.AbilityDamage },
-        Effects = new List<AbilityEffect> { new ModifyDamageEffect { Amount = -1 } }
+        Effects = new List<AbilityEffect>
+        {
+            new ModifyDamageEffect { Amount = -1 }
+        }
     };
 }

@@ -4,6 +4,23 @@ using System.Linq;
 
 public static class GridUtil
 {
+    public static GridDirection DirectionBetween(GridPosition from, GridPosition to)
+    {
+        var dx = System.Math.Sign(to.Dim2.x - from.Dim2.x);
+        var dy = System.Math.Sign(to.Dim2.y - from.Dim2.y);
+        return (dx, dy) switch
+        {
+            (0, 1) => GridDirection.North,
+            (1, 1) => GridDirection.NorthEast,
+            (1, 0) => GridDirection.East,
+            (1, -1) => GridDirection.SouthEast,
+            (0, -1) => GridDirection.South,
+            (-1, -1) => GridDirection.SouthWest,
+            (-1, 0) => GridDirection.West,
+            _ => GridDirection.NorthWest
+        };
+    }
+
     public enum ArithmeticOperation { Add, Subtract, Multiply, Divide }
 
     public static bool BinaryStringContainsEnum(string binaryString, int enumValue)

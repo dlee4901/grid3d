@@ -23,6 +23,12 @@ public class DropShadow : MonoBehaviour
         _ => Vector2.up
     };
 
+    public void SetDirection(Direction direction)
+    {
+        _direction = direction;
+        Apply();
+    }
+
     private void OnEnable() => Apply();
 
 #if UNITY_EDITOR

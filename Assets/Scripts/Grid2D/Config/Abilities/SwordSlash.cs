@@ -6,11 +6,11 @@ public static partial class AbilityConfigs
     {
         Id = "Sword Slash",
         DisplayName = "Sword Slash",
-        Description = "Slash the square in front and both diagonals beside it for {Damage} damage.",
-        ManaCost = 1,
+        Description = "Slash the square in front and both diagonals beside it for {Damage} damage. Lose Shield.",
         Effects = new List<AbilityEffect>
         {
-            new DamageEffect { Relation = Occupant.Units & ~Occupant.Self, Amount = 4 }
+            new DamageEffect { Relation = Occupant.Units & ~Occupant.Self, Amount = 4, Area = true },
+            new StatusEffect { Relation = Occupant.Units & ~Occupant.Self, OnCaster = true, Status = "Shield", Amount = -1 }
         },
         Targeting = new DirectionTargeting
         {

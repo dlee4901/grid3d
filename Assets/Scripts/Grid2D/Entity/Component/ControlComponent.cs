@@ -7,6 +7,8 @@ public class ControlComponent : IEntityComponent
         PlayerController = playerController;
     }
     
+    public IEntityComponent Copy() => new ControlComponent(PlayerController);
+
     public bool IsAlly(ControlComponent controlComponent)
         => controlComponent.PlayerController == PlayerController;
         

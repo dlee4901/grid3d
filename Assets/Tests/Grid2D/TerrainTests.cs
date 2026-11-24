@@ -7,7 +7,7 @@ public class TerrainTests
     {
         var map = new GridDefinition
         {
-            Id = "Test.Map.Burning", X = 5, Y = 1, ManaPerTurn = 3, MaxTeamCost = 10,
+            Id = "Test.Map.Burning", X = 5, Y = 1, MaxTeamCost = 10,
             Terrain = new List<TerrainPlacement>
             {
                 new() { TerrainType = "Burning", Turns = turns, PositionValues = new List<int> { position } }
@@ -24,6 +24,24 @@ public class TerrainTests
         executor.Apply(new LoadTeamCommand(2, TestGame.Team(map, 4, TestContent.Tough)));
         executor.Apply(new SpawnTeamsCommand());
         return executor;
+    }
+
+    [Test]
+    public void Fireball_DealsDamageBeforeCasterCatchesFire()
+    {
+        var executor = TestGame.StartOn(3, 3, new[] { (1, TestContent.FireMageKit) }, new[] { (4, TestContent.Tough) });
+        Assert.IsTrue(executor.Apply(new AbilityCommand(1, AbilityConfigs.Fireball.Id, 1, new[] { 4 })));
+        Assert.AreEqual(7, Health(executor, 4));
+        Assert.AreEqual(1, Burn(executor, 4));
+    }
+
+    [Test]
+    public void Fireball_SquareOfKilledUnitStillBurns()
+    {
+        var executor = TestGame.StartOn(3, 3, new[] { (1, TestContent.FireMageKit) }, new[] { (4, TestContent.Cheap) });
+        Assert.IsTrue(executor.Apply(new AbilityCommand(1, AbilityConfigs.Fireball.Id, 1, new[] { 4 })));
+        Assert.IsNull(executor.State.GetEntity(4));
+        Assert.AreEqual(TerrainType.Burning, TerrainAt(executor, 4));
     }
 
     private static int Health(TurnExecutor executor, int position)
@@ -46,7 +64,7 @@ public class TerrainTests
     }
 
     private static void EndTurn(TurnExecutor executor, int player)
-        => Assert.IsTrue(executor.Apply(new EndTurnCommand(player)));
+        => Assert.IsTrue(executor.Apply(new PassCommand(player)));
 
     [Test]
     public void UnitStartingOnBurning_GainsBurnImmediately_AndFireGoesOut()
@@ -64,6 +82,7 @@ public class TerrainTests
     {
         var executor = TestGame.Start(TestContent.Ignite, TestContent.Tough, player2Position: 1);
         Assert.IsTrue(executor.Apply(new AbilityCommand(1, TestContent.Ignite, TestGame.Player1Position, new[] { 1 })));
+        Assert.AreEqual(10, Health(executor, 1));
         Assert.AreEqual(1, Burn(executor, 1));
         Assert.AreEqual(TerrainType.Plain, TerrainAt(executor, 1));
     }
@@ -85,8 +104,7 @@ public class TerrainTests
         var executor = TestGame.Start(TestContent.Ignite, TestContent.Tough);
         Assert.IsTrue(executor.Apply(new AbilityCommand(1, TestContent.Ignite, TestGame.Player1Position, new[] { 1 })));
         Assert.AreEqual(TerrainType.Burning, TerrainAt(executor, 1));
-        Assert.AreEqual(4, executor.State.GetTerrainTurns(new GridPosition(executor.State, 1)));
-        EndTurn(executor, 1);
+        Assert.AreEqual(3, executor.State.GetTerrainTurns(new GridPosition(executor.State, 1)));
         EndTurn(executor, 2);
         EndTurn(executor, 1);
         Assert.AreEqual(TerrainType.Burning, TerrainAt(executor, 1));
@@ -100,7 +118,7 @@ public class TerrainTests
         var executor = StartOnBurning(4, 2);
         var selection = new GridSelection
         {
-            Traversals = new List<GridTraversal> { new() { Direction = GridDirection.Straight, Linear = false, MaxDistance = GridTraversal.Unlimited, Passthrough = Occupant.Any } }
+            Traversals = new List<GridTraversal> { new() { Direction = GridDirection.Orthogonal, Linear = false, MaxDistance = GridTraversal.Unlimited, Passthrough = Occupant.Any } }
         };
         var source = new GridSource(executor.State, new GridPosition(executor.State, 0), executor.State.GetEntity(0));
         Assert.AreEqual(5, selection.GetGridSteps(source).GetPositions().Count);
@@ -112,7 +130,7 @@ public class TerrainTests
         var executor = StartOnBurning(4, 2);
         var selection = new GridSelection
         {
-            Traversals = new List<GridTraversal> { new() { Direction = GridDirection.Straight, Linear = false, MaxDistance = 4, Passthrough = Occupant.Any } },
+            Traversals = new List<GridTraversal> { new() { Direction = GridDirection.Orthogonal, Linear = false, MaxDistance = 4, Passthrough = Occupant.Any } },
             Terrain = new[] { TerrainType.Burning }
         };
         var source = new GridSource(executor.State, new GridPosition(executor.State, 0), executor.State.GetEntity(0));
@@ -129,57 +147,6 @@ public class TerrainTests
         var ctx = new EffectContext(origin, null);
         Assert.IsTrue(Is.OnTerrain(TerrainType.Burning).Eval(ctx.At(new GridPosition(state, 2), null, 2)));
         Assert.IsFalse(Is.OnTerrain(TerrainType.Burning).Eval(ctx.At(new GridPosition(state, 1), null, 1)));
-    }
-
-    private static TurnExecutor StartFlameStepper(params int[] burning)
-    {
-        var map = new GridDefinition
-        {
-            Id = "Test.Map.FlameStep", X = 5, Y = 1, ManaPerTurn = 3, MaxTeamCost = 10,
-            Terrain = new List<TerrainPlacement>
-            {
-                new() { TerrainType = "Burning", Turns = 6, PositionValues = new List<int>(burning) }
-            },
-            PlayerStartPositions = new List<PositionConfig>
-            {
-                new() { PositionValues = new List<int> { 0 } },
-                new() { PositionValues = new List<int> { 4 } }
-            }
-        };
-        map.Init();
-        var executor = TurnExecutor.ForDefinition(map);
-        executor.Apply(new LoadTeamCommand(1, TestGame.Team(map, 0, TestContent.FlameStepKit)));
-        executor.Apply(new LoadTeamCommand(2, TestGame.Team(map, 4, TestContent.Tough)));
-        executor.Apply(new SpawnTeamsCommand());
-        return executor;
-    }
-
-    [Test]
-    public void FlameStep_TeleportsToDistantBurningSquare()
-    {
-        var executor = StartFlameStepper(3);
-        Assert.IsTrue(executor.Apply(new AbilityCommand(1, "Flame Step", 0, new[] { 3 })));
-        Assert.IsNull(executor.State.GetEntity(0));
-        Assert.IsNotNull(executor.State.GetEntity(3));
-        Assert.AreEqual(1, Burn(executor, 3));
-        Assert.AreEqual(TerrainType.Plain, TerrainAt(executor, 3));
-    }
-
-    [Test]
-    public void FlameStep_RejectsSquaresThatAreNotBurning()
-    {
-        var executor = StartFlameStepper(3);
-        Assert.IsFalse(executor.Apply(new AbilityCommand(1, "Flame Step", 0, new[] { 2 })));
-        Assert.IsNotNull(executor.State.GetEntity(0));
-    }
-
-    [Test]
-    public void FlameStep_GoesOnTwoTurnCooldown()
-    {
-        var executor = StartFlameStepper(2, 3);
-        Assert.IsTrue(executor.Apply(new AbilityCommand(1, "Flame Step", 0, new[] { 3 })));
-        executor.State.GetEntity(3).TryGetComponent<AbilityComponent>(out var abilities);
-        Assert.AreEqual(2, abilities.Dictionary["Flame Step"].Cooldown);
     }
 
     [Test]

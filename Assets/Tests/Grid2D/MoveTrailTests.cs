@@ -44,7 +44,7 @@ public class MoveTrailTests
     {
         var executor = TestGame.StartOn(5, 1, new[] { (0, TestContent.GroundedKit) }, new[] { (4, TestContent.Tough) });
         Assert.IsTrue(executor.Apply(new AbilityCommand(1, Move, 0, new[] { 2 })));
-        Assert.IsTrue(executor.Apply(new EndTurnCommand(1)));
+        Assert.IsTrue(executor.Apply(new PassCommand(2)));
         Assert.AreEqual(0, executor.State.Moves.Count);
     }
 }

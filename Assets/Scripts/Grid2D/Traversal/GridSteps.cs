@@ -39,6 +39,8 @@ public class GridSteps
     private readonly List<HashSet<GridStep>> _steps = new() { new HashSet<GridStep>() };
     private readonly List<Dictionary<GridPosition, HashSet<GridStep>>> _positions = new() { new Dictionary<GridPosition, HashSet<GridStep>>() };
 
+    public GridSteps(int groupCount = 1) => ExpandListCount(groupCount - 1);
+
     public void Add(GridStep gridStep, int index=0)
     {
         ExpandListCount(index);

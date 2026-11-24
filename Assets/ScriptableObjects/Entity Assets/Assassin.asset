@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8e8c085ecec47d19bf5cbcfc1e9124a, type: 3}
+  m_Name: Assassin
+  m_EditorClassIdentifier: Assembly-CSharp::EntityAssets
+  <Id>k__BackingField: Assassin
+  Model3D: {fileID: 3756341339742478992, guid: d2e632b0fecc843dcabe8a1dbda401bb, type: 3}
+  Model2D: {fileID: -4122428650286868189, guid: 87e5356c177544899a0a40e348a2f90f, type: 3}

@@ -6,66 +6,7 @@ public class KeywordTests
         => executor.Apply(new AbilityCommand(1, ability, source, new[] { target }));
 
     private static TurnExecutor Start(string kit)
-        => TestGame.StartOn(3, 3, new[] { (4, kit) }, new[] { (5, TestContent.Tough) }, manaPerTurn: 5);
-
-    [Test]
-    public void Finisher_CastAfterOtherAbility()
-    {
-        var executor = Start(TestContent.DashKit);
-        Assert.IsTrue(Cast(executor, TestContent.Hit3, 4, 5));
-        Assert.IsTrue(Cast(executor, TestContent.Dash, 4, 3));
-    }
-
-    [Test]
-    public void Finisher_NotTwice()
-    {
-        var executor = Start(TestContent.DashKit);
-        Assert.IsTrue(Cast(executor, TestContent.Dash, 4, 3));
-        Assert.IsFalse(Cast(executor, TestContent.Dash, 3, 0));
-    }
-
-    [Test]
-    public void Finisher_BlocksOthersAfterIt()
-    {
-        var executor = Start(TestContent.DashKit);
-        Assert.IsTrue(Cast(executor, TestContent.Dash, 4, 1));
-        Assert.IsFalse(Cast(executor, TestContent.Hit3, 1, 2));
-    }
-
-    [Test]
-    public void Double_CastTwice_NotThrice()
-    {
-        var executor = Start(TestContent.DoubleKit);
-        Assert.IsTrue(Cast(executor, TestContent.Double, 4, 5));
-        Assert.IsTrue(Cast(executor, TestContent.Double, 4, 5));
-        Assert.IsFalse(Cast(executor, TestContent.Double, 4, 5));
-    }
-
-    [Test]
-    public void Double_NotAfterOtherAbility()
-    {
-        var executor = Start(TestContent.DoubleKit);
-        Assert.IsTrue(Cast(executor, TestContent.Hit3, 4, 5));
-        Assert.IsFalse(Cast(executor, TestContent.Double, 4, 5));
-    }
-
-    [Test]
-    public void NimbleMove_AttackThenMoveTwice()
-    {
-        var executor = Start(TestContent.NimbleKit);
-        Assert.IsTrue(Cast(executor, TestContent.Hit3, 4, 5));
-        Assert.IsTrue(Cast(executor, AbilityConfigs.MoveNimble.Id, 4, 3));
-        Assert.IsTrue(Cast(executor, AbilityConfigs.MoveNimble.Id, 3, 0));
-        Assert.IsFalse(Cast(executor, AbilityConfigs.MoveNimble.Id, 0, 1));
-    }
-
-    [Test]
-    public void NimbleMove_MoveThenAttack_Rejected()
-    {
-        var executor = Start(TestContent.NimbleKit);
-        Assert.IsTrue(Cast(executor, AbilityConfigs.MoveNimble.Id, 4, 1));
-        Assert.IsFalse(Cast(executor, TestContent.Hit3, 1, 2));
-    }
+        => TestGame.StartOn(3, 3, new[] { (4, kit) }, new[] { (5, TestContent.Tough) });
 
     private static int CooldownOf(TurnExecutor executor, int position, string ability)
     {
@@ -74,30 +15,52 @@ public class KeywordTests
     }
 
     [Test]
-    public void Cast_PutsOtherAbilitiesOnCooldown1_ReadyNextTurn()
+    public void PlainAbility_EndsTurn()
     {
         var executor = Start(TestContent.GroundedKit);
         Assert.IsTrue(Cast(executor, TestContent.Hit3, 4, 5));
-        Assert.AreEqual(1, CooldownOf(executor, 4, AbilityConfigs.MoveStraight3Step.Id));
-        Assert.IsTrue(executor.Apply(new EndTurnCommand(1)));
-        Assert.AreEqual(0, CooldownOf(executor, 4, AbilityConfigs.MoveStraight3Step.Id));
+        Assert.AreEqual(2, executor.State.ActivePlayer);
     }
 
     [Test]
-    public void Finisher_SkipsSiblingCooldown()
+    public void PlainMove_EndsTurn()
     {
-        var executor = Start(TestContent.DashKit);
-        Assert.IsTrue(Cast(executor, TestContent.Hit3, 4, 5));
-        Assert.AreEqual(0, CooldownOf(executor, 4, TestContent.Dash));
+        var executor = Start(TestContent.GroundedKit);
+        Assert.IsTrue(Cast(executor, AbilityConfigs.MoveStraight3Step.Id, 4, 3));
+        Assert.AreEqual(2, executor.State.ActivePlayer);
+        Assert.IsFalse(Cast(executor, TestContent.Hit3, 3, 0));
     }
 
     [Test]
-    public void Opener_LeavesOtherAbilitiesReady()
+    public void Opener_DoesNotEndTurn()
     {
-        var executor = Start(TestContent.LeadKit);
+        var executor = TestGame.StartOn(3, 3, new[] { (4, TestContent.LeadKit) }, new[] { (2, TestContent.Tough) });
         Assert.IsTrue(Cast(executor, TestContent.Lead, 4, 1));
-        Assert.AreEqual(0, CooldownOf(executor, 1, TestContent.Hit3));
+        Assert.AreEqual(1, executor.State.ActivePlayer);
         Assert.IsTrue(Cast(executor, TestContent.Hit3, 1, 2));
+        Assert.AreEqual(2, executor.State.ActivePlayer);
+    }
+
+    [Test]
+    public void Opener_OnlyCasterCanActAgain()
+    {
+        var executor = TestGame.StartOn(3, 3, new[] { (4, TestContent.LeadKit), (0, TestContent.LeadKit) },
+                                        new[] { (8, TestContent.Tough) });
+        Assert.IsTrue(Cast(executor, TestContent.Lead, 4, 5));
+        Assert.AreEqual(1, executor.State.ActivePlayer);
+        Assert.IsFalse(Cast(executor, TestContent.Lead, 0, 1));
+        Assert.IsTrue(Cast(executor, TestContent.Hit3, 5, 8));
+        Assert.AreEqual(2, executor.State.ActivePlayer);
+    }
+
+    [Test]
+    public void Opener_EndsTurnWhenNotFirstCast()
+    {
+        var executor = Start(TestContent.DoubleOpenerKit);
+        Assert.IsTrue(Cast(executor, TestContent.Lead, 4, 1));
+        Assert.AreEqual(1, executor.State.ActivePlayer);
+        Assert.IsTrue(Cast(executor, TestContent.Lunge, 1, 0));
+        Assert.AreEqual(2, executor.State.ActivePlayer);
     }
 
     [Test]
@@ -109,10 +72,19 @@ public class KeywordTests
     }
 
     [Test]
-    public void PlainMove_AttackThenMove_Rejected()
+    public void Opener_EndsTurnWhenNothingElseIsCastable()
+    {
+        var executor = TestGame.StartOn(3, 3, new[] { (4, TestContent.LeadOnlyKit) }, new[] { (8, TestContent.Tough) });
+        Assert.IsTrue(Cast(executor, TestContent.Lead, 4, 1));
+        Assert.AreEqual(2, executor.State.ActivePlayer);
+    }
+
+    [Test]
+    public void Cooldown1_ReadyOnNextOwnTurn()
     {
         var executor = Start(TestContent.GroundedKit);
         Assert.IsTrue(Cast(executor, TestContent.Hit3, 4, 5));
-        Assert.IsFalse(Cast(executor, AbilityConfigs.MoveStraight3Step.Id, 4, 3));
+        Assert.AreEqual(0, CooldownOf(executor, 4, TestContent.Hit3));
+        Assert.AreEqual(0, CooldownOf(executor, 4, AbilityConfigs.MoveStraight3Step.Id));
     }
 }

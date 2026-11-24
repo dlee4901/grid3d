@@ -18,6 +18,11 @@ public class EntityRenderer : LoggableBehaviour
         public bool PreviewMoved;
         public readonly Queue<Vector3> Waypoints = new();
         public float MoveStartTime;
+        public Quaternion? CastFacing;
+        public Quaternion? Aim;
+        public float TurnVelocity;
+        public Vector3 Guide;
+        public Vector3 MoveVelocity;
     }
 
     [SerializeField] private GridManager _gridManager;
@@ -31,12 +36,16 @@ public class EntityRenderer : LoggableBehaviour
     [SerializeField] private float _pulseStrength = 0.35f;
     [SerializeField] private float _pulseFrequency = 1f;
     [SerializeField] private float _moveSpeed = 12f;
+    [SerializeField] private float _moveSmoothTime = 0.08f;
     [SerializeField] private float _previewMoveDelay = 1f;
+    [SerializeField] private float _turnSmoothTime = 0.12f;
 
     private readonly Dictionary<int, EntityView> _views = new();
     private Canvas _overlayCanvas;
     private Camera _camera;
     private int _hiddenUid = -1;
+    private int _aimUid = -1;
+    private Quaternion _aimRotation;
 
     private GridState Displayed => _gridManager.DisplayedState;
 
@@ -138,13 +147,15 @@ public class EntityRenderer : LoggableBehaviour
         var step = _moveSpeed * Time.deltaTime;
         foreach (var view in _views.Values)
         {
-            if (view.Waypoints.Count > 0 && Time.time >= view.MoveStartTime)
+            if (HasStarted(view))
             {
-                var model = view.Model.transform;
-                model.position = Vector3.MoveTowards(model.position, view.Waypoints.Peek(), step);
-                if (model.position == view.Waypoints.Peek()) view.Waypoints.Dequeue();
+                view.Guide = Vector3.MoveTowards(view.Guide, view.Waypoints.Peek(), step);
+                if (view.Guide == view.Waypoints.Peek()) view.Waypoints.Dequeue();
             }
-            if (view.Visual != null) view.Visual.SetMoving(view.Waypoints.Count > 0 && Time.time >= view.MoveStartTime);
+            Follow(view);
+            if (view.Visual != null) view.Visual.SetMoving(IsMoving(view));
+            if (view.CastFacing != null && (view.Visual == null || !view.Visual.IsActing)) view.CastFacing = null;
+            Turn(view);
         }
     }
 
@@ -154,6 +165,78 @@ public class EntityRenderer : LoggableBehaviour
         var caster = _gridManager.GridState.GetEntity(cast.SourcePosition);
         if (caster == null || !_views.TryGetValue(caster.Uid, out var view) || view.Visual == null) return;
         view.Visual.Play(visuals.CasterAction);
+        if (TryAim(cast, out _, out var rotation)) view.CastFacing = rotation;
+    }
+
+    private bool TryAim(AbilityCommand cast, out Entity caster, out Quaternion rotation)
+    {
+        rotation = Quaternion.identity;
+        caster = _gridManager.GridState.GetEntity(cast.SourcePosition);
+        if (caster == null || cast.TargetPositions.Length == 0) return false;
+        if (!IdRegistry<AbilityConfig>.TryGet(cast.AbilityId, out var config) || config.Targeting is not DirectionTargeting) return false;
+        var target = new GridPosition(_gridManager.GridState, cast.TargetPositions[0]);
+        var offset = _gridRenderer.CellCenter(target) - _gridRenderer.CellCenter(caster.Position);
+        offset.y = 0f;
+        if (offset == Vector3.zero) return false;
+        rotation = Quaternion.LookRotation(offset);
+        return true;
+    }
+
+    private void UpdateAim()
+    {
+        _aimUid = -1;
+        if (_gridManager.PreviewCommand is not AbilityCommand cast) return;
+        if (!TryAim(cast, out var caster, out _aimRotation)) return;
+        _aimUid = caster.Uid;
+    }
+
+    private void Turn(EntityView view)
+    {
+        var model = view.Model.transform;
+        var current = model.eulerAngles.y;
+        var wanted = WantedRotation(view).eulerAngles.y;
+        var yaw = Mathf.SmoothDampAngle(current, wanted, ref view.TurnVelocity, _turnSmoothTime);
+        model.rotation = Quaternion.Euler(0f, yaw, 0f);
+    }
+
+    private Quaternion WantedRotation(EntityView view)
+    {
+        if (view.CastFacing != null) return view.CastFacing.Value;
+        if (IsMoving(view))
+        {
+            var ahead = HasStarted(view) ? view.Waypoints.Peek() : view.Guide;
+            var heading = ahead - view.Model.transform.position;
+            heading.y = 0f;
+            if (heading != Vector3.zero) return Quaternion.LookRotation(heading);
+        }
+        if (view.Aim != null) return view.Aim.Value;
+        return RotationOf(view.Entity.Facing);
+    }
+
+    private const float SettleDistance = 0.01f;
+
+    private static bool HasStarted(EntityView view) => view.Waypoints.Count > 0 && Time.time >= view.MoveStartTime;
+
+    private static bool IsMoving(EntityView view)
+        => HasStarted(view) || (view.Model.transform.position - view.Guide).sqrMagnitude > SettleDistance * SettleDistance;
+
+    private void Follow(EntityView view)
+    {
+        var model = view.Model.transform;
+        if (!IsMoving(view))
+        {
+            model.position = view.Guide;
+            view.MoveVelocity = Vector3.zero;
+            return;
+        }
+        model.position = Vector3.SmoothDamp(model.position, view.Guide, ref view.MoveVelocity, _moveSmoothTime);
+    }
+
+    private void Place(EntityView view, Vector3 position)
+    {
+        view.Model.transform.position = position;
+        view.Guide = position;
+        view.MoveVelocity = Vector3.zero;
     }
 
     private void MoveTo(EntityView view, GridPosition cell)
@@ -170,7 +253,7 @@ public class EntityRenderer : LoggableBehaviour
             view.Cell = cell;
             view.Waypoints.Clear();
             view.PreviewMoved = previewing;
-            view.Model.transform.position = _gridRenderer.CellCenter(cell);
+            Place(view, _gridRenderer.CellCenter(cell));
             return;
         }
         var movePath = PathFromMoves(view, cell);
@@ -179,14 +262,14 @@ public class EntityRenderer : LoggableBehaviour
         if (view.PreviewMoved && (!previewing || movePath == null))
         {
             view.PreviewMoved = false;
-            view.Model.transform.position = _gridRenderer.CellCenter(cell);
+            Place(view, _gridRenderer.CellCenter(cell));
             return;
         }
         var path = movePath ?? new List<GridPosition> { cell };
         if (movePath != null && previewing)
         {
             view.PreviewMoved = true;
-            view.Model.transform.position = _gridRenderer.CellCenter(movePath[0]);
+            Place(view, _gridRenderer.CellCenter(movePath[0]));
             view.MoveStartTime = Time.time + _previewMoveDelay;
         }
         foreach (var step in movePath == null ? path : path.Skip(1)) view.Waypoints.Enqueue(_gridRenderer.CellCenter(step));
@@ -221,6 +304,7 @@ public class EntityRenderer : LoggableBehaviour
     public void RefreshEntities()
     {
         var shown = new HashSet<int>();
+        UpdateAim();
         foreach (var position in Displayed.GetOccupiedEntityPositions())
         {
             var entity = Displayed.GetEntity(position);
@@ -228,6 +312,7 @@ public class EntityRenderer : LoggableBehaviour
             view.Entity = entity;
             view.Shown = entity.Uid != _hiddenUid;
             view.Model.SetActive(view.Shown);
+            view.Aim = entity.Uid == _aimUid ? _aimRotation : null;
             MoveTo(view, position);
             if (entity.TryGetComponent<HealthComponent>(out var health))
             {
@@ -275,15 +360,14 @@ public class EntityRenderer : LoggableBehaviour
         return real != null && real.TryGetComponent<HealthComponent>(out var health) ? health.Current : fallback;
     }
 
+    public static Quaternion RotationOf(GridDirectionFacing facing) => Quaternion.Euler(0f, 90f * (int)facing, 0f);
+
     private bool TryCreateView(Entity entity, out EntityView view)
     {
         view = null;
         if (!IdRegistry<EntityAssets>.TryGet(entity.Id, out var assets) || assets.Model3D == null) return false;
 
-        var rotation = Quaternion.identity;
-        if (entity.TryGetComponent<ControlComponent>(out var control) && control.PlayerController == 2)
-            rotation = Quaternion.Euler(0, 180f, 0);
-
+        var rotation = RotationOf(entity.Facing);
         view = new EntityView
         {
             Model = Instantiate(assets.Model3D, _gridRenderer.CellCenter(entity.Position), rotation, transform),
@@ -291,6 +375,7 @@ public class EntityRenderer : LoggableBehaviour
             Entity = entity,
             Cell = entity.Position
         };
+        view.Guide = view.Model.transform.position;
         if (!view.Model.TryGetComponent(out view.Visual)) LogError($"Model for '{entity.Id}' has no EntityModel component");
         view.Height = ModelHeight(view.Model);
         _views[entity.Uid] = view;

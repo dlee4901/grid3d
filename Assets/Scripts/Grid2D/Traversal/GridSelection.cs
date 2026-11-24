@@ -15,7 +15,7 @@ public class GridSelection
 
     public GridSteps GetGridSteps(GridSource source)
     {
-        var gridSteps = new GridSteps();
+        var gridSteps = new GridSteps(Traversals.Count);
         for (var i = 0; i < Traversals.Count; i++)
         {
             var traversal = Traversals[i];

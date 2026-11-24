@@ -20,6 +20,15 @@ public class PreviewTests
     }
 
     [Test]
+    public void Preview_HeldBeforeTurnEnd_KeepsTurn()
+    {
+        var executor = TestGame.Start(TestContent.KillThenCount, TestContent.Cheap, player2Position: 1);
+        var held = executor.Preview(Hit(), throughTurnEnd: false);
+        Assert.AreEqual(1, held.ActivePlayer);
+        Assert.AreEqual(2, executor.Preview(Hit()).ActivePlayer);
+    }
+
+    [Test]
     public void Preview_MatchesApply()
     {
         var executor = TestGame.Start(TestContent.KillThenCount, TestContent.Cheap, player2Position: 1);

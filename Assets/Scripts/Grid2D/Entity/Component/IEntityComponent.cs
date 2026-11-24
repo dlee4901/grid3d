@@ -1,1 +1,4 @@
-public interface IEntityComponent {}
+public interface IEntityComponent
+{
+    IEntityComponent Copy();
+}

@@ -5,8 +5,8 @@ public static partial class UnitConfigs
     public static readonly EntityConfig Barbarian = new()
     {
         Id = "Barbarian",
-        Cost = 1,
-        Health = 9,
-        Abilities = new List<string> {"MoveStraight3Step", "Axe Swing", "Snack", "Retaliate"}
+        Cost = 3,
+        Health = 5,
+        Abilities = new List<string> {"MoveStraight3Step", "Axe Throw", "Snack", "Enrage"}
     };
 }

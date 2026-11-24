@@ -2,7 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public enum CounterStyle { Default, Mana, Cost, Clock, Ring }
+public enum CounterStyle { Default = 0, Cost = 2, Clock = 3, Ring = 4 }
 
 public class Counter : MonoBehaviour
 {
@@ -16,7 +16,6 @@ public class Counter : MonoBehaviour
     [SerializeField] private Sprite _ringSprite;
 
     [SerializeField] private Color32 _defaultColor = new(128, 128, 128, 255);
-    [SerializeField] private Color32 _manaColor = new(0, 128, 255, 255);
     [SerializeField] private Color32 _costColor = new(192, 144, 0, 255);
     [SerializeField] private Color32 _cooldownColor = new(255, 255, 255, 255);
 
@@ -60,7 +59,6 @@ public class Counter : MonoBehaviour
         _shadow.sprite = sprite;
         _icon.color = _style switch
         {
-            CounterStyle.Mana => _manaColor,
             CounterStyle.Cost => _costColor,
             CounterStyle.Clock or CounterStyle.Ring => _cooldownColor,
             _ => _defaultColor,

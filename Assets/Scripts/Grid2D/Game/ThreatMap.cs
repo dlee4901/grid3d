@@ -23,7 +23,7 @@ public static class ThreatMap
         private readonly Entity _unit;
         private readonly IReadOnlyList<Ability> _abilities;
         private readonly HashSet<GridPosition> _threat;
-        private readonly HashSet<(int, int, int, int)> _visited = new();
+        private readonly HashSet<(int, int)> _visited = new();
 
         public Search(GridState state, Entity unit, IReadOnlyList<Ability> abilities, HashSet<GridPosition> threat)
         {
@@ -38,44 +38,32 @@ public static class ThreatMap
             var ready = 0;
             for (var i = 0; i < _abilities.Count; i++)
                 if (_abilities[i].Cooldown == 0 && !_abilities[i].Locked) ready |= 1 << i;
-            Explore(_unit.Position, ready, 0, _state.Definition.ManaPerTurn, 0);
+            Explore(_unit.Position, ready, 0);
         }
 
-        private void Explore(GridPosition at, int ready, int castOnce, int mana, int casts)
+        private void Explore(GridPosition at, int ready, int casts)
         {
-            if (casts >= MaxCasts || !_visited.Add((at.Dim1, ready, castOnce, mana))) return;
+            if (casts >= MaxCasts || !_visited.Add((at.Dim1, ready))) return;
             var source = new GridSource(_state, at, _unit);
             for (var i = 0; i < _abilities.Count; i++)
             {
                 var ability = _abilities[i];
-                if ((ready & (1 << i)) == 0 || ability.ManaCost > mana || ability.Targeting == null) continue;
-                var nextReady = AfterCast(i, ready, castOnce, out var nextCastOnce);
+                if ((ready & (1 << i)) == 0 || ability.Targeting == null) continue;
+                var continues = casts == 0 && (ability.Keywords & Keyword.Opener) != 0;
+                var nextReady = ability.Config.Cooldown == 0 ? ready : ready & ~(1 << i);
                 var selectable = ability.Targeting.GetSelectableSteps(source);
                 foreach (var target in AllPositions(selectable))
                 {
                     if (IsMove(ability))
                     {
-                        Explore(target, nextReady, nextCastOnce, mana - ability.ManaCost, casts + 1);
+                        if (continues) Explore(target, nextReady, casts + 1);
                         continue;
                     }
                     if (Threatens(ability) && ability.Targeting.GetEffectSteps(source, target, out var steps))
                         _threat.UnionWith(AllPositions(steps));
                 }
-                if (!IsMove(ability)) Explore(at, nextReady, nextCastOnce, mana - ability.ManaCost, casts + 1);
+                if (continues && !IsMove(ability)) Explore(at, nextReady, casts + 1);
             }
-        }
-
-        private int AfterCast(int cast, int ready, int castOnce, out int nextCastOnce)
-        {
-            var ability = _abilities[cast];
-            var bit = 1 << cast;
-            var keepsSelf = (ability.Keywords & Keyword.Double) != 0 && (castOnce & bit) == 0 || ability.Config.Cooldown == 0;
-            nextCastOnce = castOnce | bit;
-            var next = keepsSelf ? ready : ready & ~bit;
-            if ((ability.Keywords & Keyword.Opener) != 0) return next;
-            for (var i = 0; i < _abilities.Count; i++)
-                if (i != cast && (_abilities[i].Keywords & Keyword.Finisher) == 0) next &= ~(1 << i);
-            return next;
         }
 
         private static bool IsMove(Ability ability)

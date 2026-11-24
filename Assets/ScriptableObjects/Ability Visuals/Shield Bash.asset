@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: Shield Bash
   m_EditorClassIdentifier: Assembly-CSharp::AbilityVisuals
   <Id>k__BackingField: Shield Bash
-  Icon: {fileID: 21300000, guid: 256205b9c6ca12c45ab7762da8a65631, type: 3}
+  Icon: {fileID: 21300000, guid: 486415b6248c4f749b789718efcb1841, type: 3}
   CasterAction: 7

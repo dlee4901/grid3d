@@ -10,7 +10,7 @@ public class ResolutionOrderView : StateView
     [SerializeField] private HorizontalLayoutGroup _container;
     [SerializeField] private SquarePortrait _iconPrefab;
     [SerializeField] private PortraitElements _iconElements = PortraitElements.Health;
-    [SerializeField] private float _slideDuration = 0.5f;
+    [SerializeField] private float _slideSmoothTime = 0.15f;
     [SerializeField] private int _dragSortingOrder = 10;
 
     [SerializeField] private Color _selectedColor = new Color32(255, 255, 255, 160);
@@ -24,7 +24,7 @@ public class ResolutionOrderView : StateView
     {
         public SquarePortrait Portrait;
         public Entity Entity;
-        public float SlideSpeed;
+        public float SlideVelocity;
         public bool Dragging;
         public Canvas DragCanvas;
         public RectTransform Rect => (RectTransform)Portrait.transform;
@@ -105,7 +105,7 @@ public class ResolutionOrderView : StateView
     private void SlideFrom(Icon icon, float offset)
     {
         icon.Portrait.Visual.anchoredPosition = new Vector2(offset, 0f);
-        icon.SlideSpeed = Mathf.Abs(offset) / _slideDuration;
+        icon.SlideVelocity = 0f;
     }
 
     private void AddDragRelay(Icon icon)
@@ -165,13 +165,21 @@ public class ResolutionOrderView : StateView
         RefreshOutlines();
     }
 
-    private static void Slide(Icon icon)
+    private const float SlideSettlePixels = 0.5f;
+
+    private void Slide(Icon icon)
     {
         if (icon.Dragging) return;
         var visual = icon.Portrait.Visual;
         var x = visual.anchoredPosition.x;
         if (x == 0f) return;
-        visual.anchoredPosition = new Vector2(Mathf.MoveTowards(x, 0f, icon.SlideSpeed * Time.deltaTime), 0f);
+        var next = Mathf.SmoothDamp(x, 0f, ref icon.SlideVelocity, _slideSmoothTime);
+        if (Mathf.Abs(next) < SlideSettlePixels)
+        {
+            next = 0f;
+            icon.SlideVelocity = 0f;
+        }
+        visual.anchoredPosition = new Vector2(next, 0f);
     }
 
     private void MarkOutlinesDirty() => _outlinesDirty = true;
@@ -199,7 +207,7 @@ public class ResolutionOrderView : StateView
     }
 
     private static bool SyncsToStrip(HighlightType type) 
-        => type is HighlightType.AvailableSources or HighlightType.EffectArea;
+        => type is HighlightType.AvailableSources or HighlightType.EffectArea or HighlightType.ConfirmTarget;
 
     private void OnIconSelected(Entity entity)
     {

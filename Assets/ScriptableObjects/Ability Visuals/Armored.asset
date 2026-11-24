@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: Armored
   m_EditorClassIdentifier: Assembly-CSharp::AbilityVisuals
   <Id>k__BackingField: Armored
-  Icon: {fileID: 21300000, guid: b227c6c1c35b36940b602110d9556b13, type: 3}
+  Icon: {fileID: 21300000, guid: 91b65225a58443d3b253e199026d7c4e, type: 3}
   CasterAction: 0

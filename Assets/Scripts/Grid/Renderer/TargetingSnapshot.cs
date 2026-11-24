@@ -5,16 +5,18 @@ public readonly struct TargetingSnapshot
     public readonly GridSource Source;
     public readonly Ability Ability;
     public readonly GridSteps Selectable;
+    public readonly GridSteps Valid;
     public readonly IReadOnlyList<GridPosition> Targets;
     public readonly IReadOnlyList<GridPosition> Path;
     public readonly GridSteps NextSteps;
 
-    public TargetingSnapshot(GridSource source, Ability ability, GridSteps selectable, IReadOnlyList<GridPosition> targets,
+    public TargetingSnapshot(GridSource source, Ability ability, GridSteps selectable, GridSteps valid, IReadOnlyList<GridPosition> targets,
                              IReadOnlyList<GridPosition> path = null, GridSteps nextSteps = null)
     {
         Source = source;
         Ability = ability;
         Selectable = selectable;
+        Valid = valid;
         Targets = targets;
         Path = path;
         NextSteps = nextSteps;

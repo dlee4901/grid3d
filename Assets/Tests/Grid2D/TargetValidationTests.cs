@@ -12,7 +12,7 @@ public class TargetValidationTests
         Assert.IsTrue(executor.Apply(Move(TestGame.Player1Position, 1)));
         Assert.IsNull(executor.State.GetEntity(TestGame.Player1Position));
         Assert.IsNotNull(executor.State.GetEntity(1));
-        Assert.AreEqual(2, executor.State.GetMana(1));
+        Assert.AreEqual(2, executor.State.ActivePlayer);
     }
 
     [Test]
@@ -21,7 +21,7 @@ public class TargetValidationTests
         var executor = TestGame.Start(TestContent.Step, TestContent.Cheap);
         Assert.IsFalse(executor.Apply(Move(TestGame.Player1Position, 2)));
         Assert.IsNotNull(executor.State.GetEntity(TestGame.Player1Position));
-        Assert.AreEqual(3, executor.State.GetMana(1));
+        Assert.AreEqual(1, executor.State.ActivePlayer);
     }
 
     [Test]
@@ -56,6 +56,6 @@ public class TargetValidationTests
     {
         var executor = TestGame.Start(TestContent.Poke, TestContent.Cheap);
         Assert.IsFalse(executor.Apply(new AbilityCommand(1, TestContent.Poke, TestGame.Player1Position, new int[0])));
-        Assert.AreEqual(3, executor.State.GetMana(1));
+        Assert.AreEqual(1, executor.State.ActivePlayer);
     }
 }

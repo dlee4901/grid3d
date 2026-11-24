@@ -4,6 +4,10 @@ public abstract class Condition
 {
     public static readonly Condition Always = new ConstCondition(true);
     internal abstract bool Eval(in EffectContext ctx);
+
+    public static Condition operator !(Condition condition) => new FuncCondition(ctx => !condition.Eval(ctx));
+    public static Condition operator &(Condition a, Condition b) => new FuncCondition(ctx => a.Eval(ctx) && b.Eval(ctx));
+    public static Condition operator |(Condition a, Condition b) => new FuncCondition(ctx => a.Eval(ctx) || b.Eval(ctx));
 }
 
 internal sealed class ConstCondition : Condition

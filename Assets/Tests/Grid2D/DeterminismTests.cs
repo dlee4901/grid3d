@@ -9,9 +9,9 @@ public class DeterminismTests
         var b = TestGame.Start(TestContent.Cheap, TestContent.Cheap);
         foreach (var executor in new[] { a, b })
         {
-            executor.Apply(new EndTurnCommand(1, 1500));
-            executor.Apply(new EndTurnCommand(2, 2500));
-            executor.Apply(new EndTurnCommand(1, 500));
+            executor.Apply(new PassCommand(1, 1500));
+            executor.Apply(new PassCommand(2, 2500));
+            executor.Apply(new PassCommand(1, 500));
         }
 
         Assert.AreEqual(a.State.PrintGrid(), b.State.PrintGrid());
@@ -19,7 +19,6 @@ public class DeterminismTests
         Assert.AreEqual(a.State.ActivePlayer, b.State.ActivePlayer);
         for (var player = 1; player <= 2; player++)
         {
-            Assert.AreEqual(a.State.GetMana(player), b.State.GetMana(player));
             Assert.AreEqual(a.State.GetTimeMs(player), b.State.GetTimeMs(player));
         }
     }

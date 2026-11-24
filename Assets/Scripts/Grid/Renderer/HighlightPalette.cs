@@ -14,8 +14,10 @@ public class HighlightPalette : ScriptableObject
 {
     [SerializeField] private HighlightStyle _availableSources;
     [SerializeField] private HighlightStyle _availableTargets;
+    [SerializeField] private HighlightStyle _possibleTargets;
     [SerializeField] private HighlightStyle _selectionArea;
     [SerializeField] private HighlightStyle _effectArea;
+    [SerializeField] private HighlightStyle _confirmTarget;
     [SerializeField] private HighlightStyle _selected;
     [SerializeField] private HighlightStyle _hover;
     [SerializeField] private HighlightStyle _startingPositions;
@@ -27,8 +29,10 @@ public class HighlightPalette : ScriptableObject
     {
         HighlightType.AvailableSources => _availableSources,
         HighlightType.AvailableTargets => _availableTargets,
+        HighlightType.PossibleTargets  => _possibleTargets,
         HighlightType.SelectionArea    => _selectionArea,
         HighlightType.EffectArea       => _effectArea,
+        HighlightType.ConfirmTarget    => _confirmTarget,
         HighlightType.Selected         => _selected,
         HighlightType.Hover            => _hover,
         HighlightType.StartingPositions => _startingPositions,

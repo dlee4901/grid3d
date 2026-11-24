@@ -8,19 +8,23 @@ public sealed class AbilityCommand : Command
     public int SourcePosition { get; }
     public int[] TargetPositions { get; }
     public int[] Path { get; }
+    public int ElapsedMs { get; }
 
-    public AbilityCommand(int issuingPlayer, string abilityId, int sourcePosition, int[] targetPositions, int[] path = null)
+    public AbilityCommand(int issuingPlayer, string abilityId, int sourcePosition, int[] targetPositions, int[] path = null,
+                          int elapsedMs = 0)
     {
         IssuingPlayer = issuingPlayer;
         AbilityId = abilityId;
         SourcePosition = sourcePosition;
         TargetPositions = targetPositions;
         Path = path is { Length: > 0 } ? path : null;
+        ElapsedMs = elapsedMs;
     }
 
     public static AbilityCommand From(int issuingPlayer, string abilityId, GridPosition source,
-                                      IReadOnlyList<GridPosition> targets, IReadOnlyList<GridPosition> path = null)
-        => new(issuingPlayer, abilityId, source.Dim1, Indices(targets), path == null ? null : Indices(path));
+                                      IReadOnlyList<GridPosition> targets, IReadOnlyList<GridPosition> path = null,
+                                      int elapsedMs = 0)
+        => new(issuingPlayer, abilityId, source.Dim1, Indices(targets), path == null ? null : Indices(path), elapsedMs);
 
     private static int[] Indices(IReadOnlyList<GridPosition> positions)
     {
@@ -61,15 +65,23 @@ public sealed class AbilityCommand : Command
         if (!state.CanCast(entity, ability, IssuingPlayer))
         {
             GridLog.Warning($"[AbilityCommand] {AbilityId} not castable by player {IssuingPlayer} " +
-                            $"(locked {ability.Locked}, cooldown {ability.Cooldown}, " +
-                            $"mana {state.GetMana(IssuingPlayer)}/{ability.ManaCost})");
+                            $"(locked {ability.Locked}, cooldown {ability.Cooldown})");
             return false;
         }
+        var first = !state.HasActedThisTurn;
         if (!ability.Execute(state, sourcePosition, targetPositions, path)) return false;
-        state.SpendMana(IssuingPlayer, ability.ManaCost);
         abilities.OnCast(ability);
         state.ResolutionOrder.MoveToFront(entity);
         state.Triggers.Resolve();
+        state.SpendTime(IssuingPlayer, ElapsedMs);
+        if (state.IsGameOver) return true;
+        if (!first || (ability.Keywords & Keyword.Opener) == 0)
+        {
+            state.AdvanceTurn();
+            return true;
+        }
+        state.SetActingUnit(entity);
+        if (state.GetAvailableEntityPositions().Count == 0) state.AdvanceTurn();
         return true;
     }
 }

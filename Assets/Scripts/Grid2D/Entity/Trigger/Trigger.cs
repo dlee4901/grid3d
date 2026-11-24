@@ -1,4 +1,4 @@
-public enum GameEvent { TurnEnd, DamageDealt, DamageTaken, Damaged, Died }
+public enum GameEvent { TurnEnd, DamageDealt, DamageTaken, Damaged, Died, GameStart }
 
 public sealed class Trigger
 {

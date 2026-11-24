@@ -7,6 +7,7 @@ public abstract class AbilityInputState : PlayerInputState
     protected readonly List<GridPosition> Path;
     private readonly GridSource _source;
     private readonly GridSteps _selectable;
+    private readonly GridSteps _valid;
     private readonly bool _traceable;
     private List<GridPosition> _trace;
     private bool _holding;
@@ -19,19 +20,22 @@ public abstract class AbilityInputState : PlayerInputState
         Targets = targets ?? new List<GridPosition>();
         Path = path;
         _selectable = AreaOf(ability, source);
+        _valid = ability.IsCastable ? ValidPicks(ability, source, _selectable) : _selectable;
         _traceable = MovePath.CanTrace(ability);
     }
 
     public string AbilityId => Ability.Id;
     public GridSource Source => _source;
     protected int TargetCount => Ability.Targeting?.Targets ?? 0;
-    public bool Castable => Ctx.Grid.CanCastAt(_source.Position, Ability, Ctx.Dispatcher.LocalSeat);
+    public bool Castable => Ctx.Dispatcher.Enabled && Ctx.Grid.CanCastAt(_source.Position, Ability, Ctx.Dispatcher.LocalSeat);
 
     public override void OnEnter() => Show(Targets, Path);
 
+    protected bool StartsTrace(GridPosition position) => _traceable && position.Equals(_source.Position);
+
     public override void OnPress(GridSource pressed)
     {
-        if (_traceable && pressed.Position.Equals(_source.Position))
+        if (StartsTrace(pressed.Position))
         {
             _trace = new List<GridPosition>();
             ShowTrace();
@@ -60,15 +64,18 @@ public abstract class AbilityInputState : PlayerInputState
         else Show(new List<GridPosition> { _trace[_trace.Count - 1] }, _trace, nextSteps);
     }
 
-    public override void OnPositionSelected(GridSource clicked)
+    protected bool TryFinishTrace()
     {
         var trace = _trace;
         _trace = null;
-        if (trace is { Count: > 0 })
-        {
-            Ctx.Controller.TransitionTo(new PreviewState(Ctx, Ability, _source, new List<GridPosition> { trace[trace.Count - 1] }, trace));
-            return;
-        }
+        if (trace is not { Count: > 0 }) return false;
+        Ctx.Controller.TransitionTo(new PreviewState(Ctx, Ability, _source, new List<GridPosition> { trace[trace.Count - 1] }, trace));
+        return true;
+    }
+
+    public override void OnPositionSelected(GridSource clicked)
+    {
+        if (TryFinishTrace()) return;
         var wasHolding = _holding;
         _holding = false;
         if (!IsValidTarget(clicked.Position))
@@ -107,9 +114,20 @@ public abstract class AbilityInputState : PlayerInputState
     }
 
     protected void Show(IReadOnlyList<GridPosition> targets, IReadOnlyList<GridPosition> path = null, GridSteps nextSteps = null)
-        => Ctx.Display.Show(new TargetingSnapshot(_source, Ability, _selectable, targets, path, nextSteps));
+        => Ctx.Display.Show(new TargetingSnapshot(_source, Ability, _selectable, _valid, targets, path, nextSteps));
 
-    private bool IsValidTarget(GridPosition position) => Ability.IsCastable && _selectable.Contains(position);
+    protected bool IsValidTarget(GridPosition position) => Ability.IsCastable && _valid.Contains(position);
+
+    private static GridSteps ValidPicks(Ability ability, GridSource source, GridSteps selectable)
+    {
+        var valid = new GridSteps();
+        foreach (var position in selectable.GetPositions())
+        {
+            if (!ability.CanAffect(source, position)) continue;
+            foreach (var step in selectable.GetStepsAtPosition(position)) valid.Add(step);
+        }
+        return valid;
+    }
 
     private static GridSteps AreaOf(Ability ability, GridSource source)
     {

@@ -6,7 +6,7 @@ public class CommandAuthorityTests
     public void OffTurnCommand_IsRejected()
     {
         var executor = TestGame.Start(TestContent.Cheap, TestContent.Cheap);
-        Assert.IsFalse(executor.Apply(new EndTurnCommand(2)));
+        Assert.IsFalse(executor.Apply(new PassCommand(2)));
         Assert.AreEqual(1, executor.State.ActivePlayer);
     }
 
@@ -17,6 +17,6 @@ public class CommandAuthorityTests
         var command = new AbilityCommand(1, TestContent.Cheap, TestGame.Player2Position,
                                          new[] { TestGame.Player2Position });
         Assert.IsFalse(executor.Apply(command));
-        Assert.AreEqual(3, executor.State.GetMana(1));
+        Assert.AreEqual(1, executor.State.ActivePlayer);
     }
 }

@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: MoveNimble
   m_EditorClassIdentifier: Assembly-CSharp::AbilityVisuals
   <Id>k__BackingField: MoveNimble
-  Icon: {fileID: 21300000, guid: 29a1226f7b5e20240942612e151c3c4c, type: 3}
+  Icon: {fileID: 21300000, guid: 22871411a89d4d089273a5613a8bf4be, type: 3}
   CasterAction: 0

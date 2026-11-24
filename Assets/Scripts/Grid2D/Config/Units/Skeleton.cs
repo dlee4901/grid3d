@@ -5,7 +5,8 @@ public static partial class UnitConfigs
     public static readonly EntityConfig Skeleton = new()
     {
         Id = "Skeleton",
-        Health = 10,
-        Abilities = new List<string>()
+        Cost = 1,
+        Health = 1,
+        Abilities = new List<string> {"MoveStraight2Step", "Bone Bash", "Undead"}
     };
 }

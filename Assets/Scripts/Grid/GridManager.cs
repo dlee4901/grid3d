@@ -11,6 +11,7 @@ public class GridManager : LoggableBehaviour
     [SerializeField] private SeatMode _seatMode = SeatMode.Hotseat;
     [SerializeField] private int _fixedSeat = 1;
     [SerializeField] private bool _timersEnabled = true;
+    [SerializeField] private bool _castingEnabled = true;
 
     private Camera _mainCamera;
     private InputAction _selectAction;
@@ -18,10 +19,13 @@ public class GridManager : LoggableBehaviour
     private TurnExecutor _executor;
     private CommandDispatcher _dispatcher;
     private GridState _preview;
+    private Func<int, Command> _previewBuild;
 
     public GridState GridState => _executor.State;
     public GridState DisplayedState => _preview ?? GridState;
     public bool IsPreviewing => _preview != null;
+    public Command PreviewCommand { get; private set; }
+    public bool PreviewsTurnEnd { get; private set; }
     public GridInput Input { get; private set; }
     public PlayerInputController Player { get; private set; }
     public TurnController Turns { get; private set; }
@@ -43,17 +47,32 @@ public class GridManager : LoggableBehaviour
 
     public bool Preview(Func<int, Command> build)
     {
-        var preview = _dispatcher.Preview(build);
+        Command command = null;
+        var preview = _dispatcher.Preview(seat =>
+        {
+            command = build(seat);
+            return command;
+        }, PreviewsTurnEnd);
         if (preview == null) return false;
         _preview = preview;
+        _previewBuild = build;
+        PreviewCommand = command;
         DisplayChanged?.Invoke();
         return true;
+    }
+
+    public void TogglePreviewTurnEnd()
+    {
+        PreviewsTurnEnd = !PreviewsTurnEnd;
+        if (_previewBuild != null && !Preview(_previewBuild)) ClearPreview();
     }
 
     public void ClearPreview()
     {
         if (_preview == null) return;
         _preview = null;
+        PreviewCommand = null;
+        _previewBuild = null;
         DisplayChanged?.Invoke();
     }
 
@@ -81,7 +100,7 @@ public class GridManager : LoggableBehaviour
         _selectAction = InputSystem.actions.FindAction("Player/Select");
 
         _executor = TurnExecutor.ForDefinition(definition);
-        _dispatcher = new CommandDispatcher(_executor, () => LocalSeat);
+        _dispatcher = new CommandDispatcher(_executor, () => LocalSeat) { Enabled = _castingEnabled };
         if (seedCommands != null) foreach (var command in seedCommands) _executor.Apply(command);
 
         _lastActivePlayer = GridState.ActivePlayer;
@@ -100,8 +119,10 @@ public class GridManager : LoggableBehaviour
     {
         _executor.CommandApplied -= OnCommandApplied;
         _preview = null;
+        PreviewCommand = null;
+        _previewBuild = null;
         _executor = TurnExecutor.ForDefinition(GridState.Definition);
-        _dispatcher = new CommandDispatcher(_executor, () => LocalSeat);
+        _dispatcher = new CommandDispatcher(_executor, () => LocalSeat) { Enabled = _castingEnabled };
         if (seedCommands != null) foreach (var command in seedCommands) _executor.Apply(command);
         _lastActivePlayer = GridState.ActivePlayer;
         _executor.CommandApplied += OnCommandApplied;
@@ -132,6 +153,8 @@ public class GridManager : LoggableBehaviour
     private void OnCommandApplied(Command command)
     {
         _preview = null;
+        PreviewCommand = null;
+        _previewBuild = null;
         if (GridState.ActivePlayer != _lastActivePlayer)
         {
             _lastActivePlayer = GridState.ActivePlayer;

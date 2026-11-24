@@ -1,5 +1,2 @@
 # TODO
-- New state for multi-target input
-- 
-# Completed
-- Unserialize Grid2D classes when completing editor testing to completely decouple from Unity. ex: Unity deserializes member variables which alters initialization
+term for start of game cooldown + move that takes multiple turns to cast also distinguishing not being able to use other abilities while charging vs can

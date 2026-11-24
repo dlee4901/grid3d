@@ -20,6 +20,9 @@ public abstract class AbilityTargeting
     //     return GetEffectSteps(ctx, gridPositions, out gridSteps);
     // }
     
+    public virtual bool GetPickSteps(GridSource source, GridPosition target, out GridSteps steps)
+        => GetEffectSteps(source, target, out steps);
+
     public abstract GridSteps GetSelectableSteps(GridSource source);
     public abstract bool GetEffectSteps(GridSource source, List<GridPosition> targets, out GridSteps gridSteps);
 }
@@ -57,13 +60,23 @@ public class PositionTargeting : AbilityTargeting
         for (var i = 0; i < Targets; i++)
         {
             if (!selectableSteps.Contains(targets[i])) return false;
-
-            var ctxTarget = new GridSource(source.Grid, targets[i], source.Entity);
-
-            if (EffectArea == null) steps.Add(new GridStep(targets[i], GridDirection.Line, 0), i);
-            else steps.Add(EffectArea.GetGridSteps(ctxTarget), i);
+            AddPickArea(steps, source, targets[i], i);
         }
         return true;
+    }
+
+    public override bool GetPickSteps(GridSource source, GridPosition target, out GridSteps steps)
+    {
+        steps = new GridSteps();
+        if (!GetSelectableSteps(source).Contains(target)) return false;
+        AddPickArea(steps, source, target, 0);
+        return true;
+    }
+
+    private void AddPickArea(GridSteps steps, GridSource source, GridPosition target, int index)
+    {
+        if (EffectArea == null) steps.Add(new GridStep(target, GridDirection.All, 0), index);
+        else steps.Add(EffectArea.GetGridSteps(new GridSource(source.Grid, target, source.Entity)), index);
     }
 }
 
@@ -74,7 +87,7 @@ public class DirectionTargeting : AbilityTargeting
 
     public override GridSteps GetSelectableSteps(GridSource source)
     {
-        var grouping = Grouping ?? UngroupedDirections(EffectArea.GetGridSteps(source));
+        var grouping = AbsoluteGrouping(source, EffectArea.GetGridSteps(source));
         var mask = new bool[GridTraversal.UnidirectionalCount];
         for (var i = 0; i < mask.Length; i++) mask[i] = grouping[i] != 0;
         var selection = new GridSelection()
@@ -86,6 +99,7 @@ public class DirectionTargeting : AbilityTargeting
                 {
                     Direction = GridDirection.Custom,
                     CustomDirection = mask,
+                    AbsoluteDirection = true,
                     MaxDistance = 1,
                     Passthrough = Occupant.Any
                 }
@@ -104,19 +118,41 @@ public class DirectionTargeting : AbilityTargeting
         if (targetSteps.Count > 1) return false;
         
         var effectSteps = EffectArea.GetGridSteps(source);
-        var grouping = Grouping ?? UngroupedDirections(effectSteps);
         if (effectSteps.GroupCount == 1)
         {
-            var groupMapSingle = effectSteps.GetGroupMapSingle(grouping);
+            var groupMapSingle = effectSteps.GetGroupMapSingle(AbsoluteGrouping(source, effectSteps));
             foreach (var targetStep in targetSteps) steps.Add(LimitHits(source.Grid, groupMapSingle[targetStep.Direction]));
         }
         else if (effectSteps.GroupCount > 1)
         {
-            var groupMap = effectSteps.GetGroupMap(grouping);
-            foreach (var targetStep in targetSteps) steps.Add(LimitHits(source.Grid, groupMap[targetStep.Direction]));
+            var unrotate = Opposite(FacingOf(source));
+            var relativeGrouping = Grouping ?? Rotated(UngroupedDirections(effectSteps), unrotate);
+            var groupMap = effectSteps.GetGroupMap(relativeGrouping);
+            foreach (var targetStep in targetSteps)
+            {
+                var relativeDirection = GridTraversal.Rotate(targetStep.Direction, unrotate);
+                steps.Add(LimitHits(source.Grid, groupMap[relativeDirection]));
+            }
         }
 
         return true;
+    }
+
+    private static GridDirectionFacing FacingOf(GridSource source) => source.Entity?.Facing ?? GridDirectionFacing.North;
+
+    private static GridDirectionFacing Opposite(GridDirectionFacing facing) => (GridDirectionFacing)((4 - (int)facing) % 4);
+
+    private int[] AbsoluteGrouping(GridSource source, GridSteps effectSteps)
+    {
+        if (Grouping == null) return UngroupedDirections(effectSteps);
+        return Rotated(Grouping, FacingOf(source));
+    }
+
+    private static int[] Rotated(int[] grouping, GridDirectionFacing facing)
+    {
+        var rotated = new int[grouping.Length];
+        for (var i = 0; i < grouping.Length; i++) rotated[(int)GridTraversal.Rotate((GridDirection)i, facing)] = grouping[i];
+        return rotated;
     }
 
     private static int[] UngroupedDirections(GridSteps effectSteps)

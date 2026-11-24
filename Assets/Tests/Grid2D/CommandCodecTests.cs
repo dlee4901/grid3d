@@ -24,17 +24,25 @@ public class CommandCodecTests
     }
 
     [Test]
-    public void EndTurnCommand_RoundTrips()
+    public void AbilityCommand_ElapsedMs_RoundTrips()
     {
-        var bytes = CommandCodec.Encode(new EndTurnCommand(2, 41250));
+        var bytes = CommandCodec.Encode(new AbilityCommand(2, "Fireball", 15, new[] { 37 }, elapsedMs: 41250));
         Assert.IsTrue(CommandCodec.TryDecode(bytes, 2, out var decoded));
-        Assert.AreEqual(41250, ((EndTurnCommand)decoded).ElapsedMs);
+        Assert.AreEqual(41250, ((AbilityCommand)decoded).ElapsedMs);
+    }
+
+    [Test]
+    public void ForfeitCommand_RoundTrips()
+    {
+        var bytes = CommandCodec.Encode(new ForfeitCommand(2));
+        Assert.IsTrue(CommandCodec.TryDecode(bytes, 2, out var decoded));
+        Assert.IsInstanceOf<ForfeitCommand>(decoded);
     }
 
     [Test]
     public void Issuer_ComesFromReceiver_NotFromBytes()
     {
-        var bytes = CommandCodec.Encode(new EndTurnCommand(1, 0));
+        var bytes = CommandCodec.Encode(new ForfeitCommand(1));
         Assert.IsTrue(CommandCodec.TryDecode(bytes, 2, out var decoded));
         Assert.AreEqual(2, decoded.IssuingPlayer);
     }
@@ -58,13 +66,13 @@ public class CommandCodecTests
         Assert.IsTrue(original.Apply(command));
         Assert.IsTrue(replayed.Apply(decoded));
         Assert.AreEqual(original.State.PrintGrid(), replayed.State.PrintGrid());
-        Assert.AreEqual(original.State.GetMana(1), replayed.State.GetMana(1));
+        Assert.AreEqual(original.StateHash, replayed.StateHash);
     }
 
     [Test]
     public void WrongVersion_IsRejected()
     {
-        var bytes = CommandCodec.Encode(new EndTurnCommand(1, 0));
+        var bytes = CommandCodec.Encode(new ForfeitCommand(1));
         bytes[0] = CommandCodec.Version + 1;
         Assert.IsFalse(CommandCodec.TryDecode(bytes, 1, out _));
     }
@@ -72,7 +80,7 @@ public class CommandCodecTests
     [Test]
     public void UnknownTag_IsRejected()
     {
-        var bytes = CommandCodec.Encode(new EndTurnCommand(1, 0));
+        var bytes = CommandCodec.Encode(new ForfeitCommand(1));
         bytes[1] = 255;
         Assert.IsFalse(CommandCodec.TryDecode(bytes, 1, out _));
     }
@@ -88,7 +96,7 @@ public class CommandCodecTests
     [Test]
     public void TrailingBytes_AreRejected()
     {
-        var bytes = CommandCodec.Encode(new EndTurnCommand(1, 0));
+        var bytes = CommandCodec.Encode(new ForfeitCommand(1));
         Array.Resize(ref bytes, bytes.Length + 1);
         Assert.IsFalse(CommandCodec.TryDecode(bytes, 1, out _));
     }
@@ -97,7 +105,7 @@ public class CommandCodecTests
     public void OversizedTargetCount_IsRejected()
     {
         var bytes = CommandCodec.Encode(new AbilityCommand(1, "A", 0, new int[0]));
-        var countOffset = bytes.Length - 4;
+        var countOffset = bytes.Length - 8;
         BitConverter.GetBytes(CommandCodec.MaxTargets + 1).CopyTo(bytes, countOffset);
         Assert.IsFalse(CommandCodec.TryDecode(bytes, 1, out _));
     }

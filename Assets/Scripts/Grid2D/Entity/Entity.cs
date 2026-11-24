@@ -20,7 +20,10 @@ public class Entity : INameId
     
     public static Entity Create(EntityConfig config, int playerController)
     {
-        var entity = new Entity(config.Id, config.Cost);
+        var entity = new Entity(config.Id, config.Cost)
+        {
+            Facing = playerController == 2 ? GridDirectionFacing.South : GridDirectionFacing.North
+        };
         entity.AddComponent(new HealthComponent(config.Health));
         entity.AddComponent(new AbilityComponent(config.Abilities));
         entity.AddComponent(new ControlComponent(playerController));
@@ -28,6 +31,13 @@ public class Entity : INameId
         return entity;
     }
     
+    internal Entity Copy()
+    {
+        var copy = new Entity(Id, Cost) { Facing = Facing };
+        foreach (var (type, component) in _components) copy._components[type] = component.Copy();
+        return copy;
+    }
+
     internal void AddComponent<T>(T component) where T : class, IEntityComponent
         => _components[typeof(T)] = component;
     

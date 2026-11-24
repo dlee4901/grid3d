@@ -19,6 +19,7 @@ public class PlayerInputController : LoggableBehaviour
             Controller = this,
             Input = input,
             Dispatcher = dispatcher,
+            Turns = manager.Turns,
             Display = new TargetingDisplay(manager, highlights),
             Grid = grid
         };

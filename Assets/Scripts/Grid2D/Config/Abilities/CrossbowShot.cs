@@ -6,8 +6,8 @@ public static partial class AbilityConfigs
     {
         Id = "Crossbow Shot",
         DisplayName = "Crossbow Shot",
-        Description = "Fire diagonally up to 4 squares, dealing {Damage} damage.",
-        ManaCost = 1,
+        Description = "Fire up to 4 squares in a line, dealing {Damage} damage.",
+        Keywords = Keyword.Opener,
         Effects = new List<AbilityEffect>
         {
             new DamageEffect { Relation = Occupant.Units & ~Occupant.Self, Amount = 2 }
@@ -21,7 +21,7 @@ public static partial class AbilityConfigs
                 {
                     new GridTraversal
                     {
-                        Direction = GridDirection.Diagonal,
+                        Direction = GridDirection.Orthogonal,
                         Linear = true,
                         MaxDistance = 4,
                         Passthrough = Occupant.Any
